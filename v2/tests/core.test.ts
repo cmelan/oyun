@@ -10,7 +10,7 @@ import { level4 } from '../src/core/levels';
 import {
   sandCapacity, makeMonster, sandHit, empathyTick,
   bossSandHit, bossCageResolve, pick3, pointRectDist,
-  mimicNextId, assistFactors, familyStars,
+  mimicNextId, assistFactors, familyStars, streakStart, streakAnswer,
 } from '../src/core/logic';
 import { level10 } from '../src/core/levels';
 import { regionTreePool } from '../src/core/world';
@@ -243,6 +243,18 @@ describe('v2 içerik: B5–B10', () => {
       const id = mimicNextId(['elma', 'kiraz', 'ceviz'], 'elma');
       expect(['kiraz', 'ceviz']).toContain(id);
     }
+  });
+  it('ilk-deneme serisi: 3 üst üste doğru → kutlama; yanlış sıfırlar, ceza yok', () => {
+    const s = { run: 0, wrong: false };
+    streakStart(s); expect(streakAnswer(s, true)).toBe(false);  /* 1 */
+    streakStart(s); expect(streakAnswer(s, true)).toBe(false);  /* 2 */
+    streakStart(s); expect(streakAnswer(s, true)).toBe(true);   /* 3 → celebrate */
+    streakStart(s); expect(streakAnswer(s, false)).toBe(false); /* wrong resets run */
+    expect(s.run).toBe(0);
+    expect(streakAnswer(s, true)).toBe(false); /* correct after retry: no streak credit */
+    streakStart(s);
+    expect(streakAnswer(s, true)).toBe(false); /* fresh question counts again */
+    expect(s.run).toBe(1);
   });
   it('görünmez yardım: sınırlı, etiketsiz, 2 ölüme kadar devreye girmez', () => {
     expect(assistFactors({ deaths: 0 }).monsterSpd).toBe(1);

@@ -202,7 +202,7 @@ export class LevelScene extends Scene {
 
   /* modal answers, called from main wiring */
   resolveTreeAnswer(correct: boolean, treeId: string): void {
-    if (!correct) { this.shake(CONFIG.tree.wrongShake, .15); sfx('puff'); return; }
+    if (!correct) { this.shake(CONFIG.tree.wrongShake, .15); sfx('hmm'); return; }
     const tr = this.L.trees.find(t => t.id === treeId && !t.awake);
     if (tr) {
       tr.awake = true; sfx('wake');
@@ -212,7 +212,7 @@ export class LevelScene extends Scene {
     this.hooks.ui.showTreeWake(treeId, () => { this.hooks.ui.hideOverlay(); this.setModal(false); });
   }
   resolveMimicAnswer(correct: boolean): void {
-    if (!correct) { this.shake(CONFIG.tree.wrongShake, .15); sfx('puff'); return; }
+    if (!correct) { this.shake(CONFIG.tree.wrongShake, .15); sfx('hmm'); return; }
     this.hooks.ui.hideOverlay(); this.setModal(false);
     this.startFinish();
   }

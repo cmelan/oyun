@@ -81,4 +81,10 @@ window.addEventListener('pointerdown', () => initAudio(!!save.muted), { once: tr
 startMusic();
 ui.setGameplayVisible(false);
 ui.showMenu();
+
+/* e2e hook: ?test exposes the UI + level starter so Playwright scripts can
+   drive screens directly (never active for players). */
+if (new URLSearchParams(location.search).has('test')) {
+  (window as any).__ckk = { ui, startLevel };
+}
 export { game, sfx };

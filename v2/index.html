@@ -27,7 +27,7 @@
   .ghost:active{transform:translateY(2px);box-shadow:0 2px 0 rgba(0,0,0,.13);}
   #ov{position:absolute;inset:0;z-index:8;display:flex;align-items:center;justify-content:center;background:rgba(15,43,41,.55);backdrop-filter:blur(3px);text-align:center;padding:18px;}
   #ov.hidden{display:none;}
-  .card{background:#fff7ec;border-radius:26px;padding:22px 24px 18px;max-width:520px;max-height:92vh;overflow-y:auto;box-shadow:0 12px 0 rgba(0,0,0,.18);}
+  .card{position:relative;background:#fff7ec;border-radius:26px;padding:22px 24px 18px;max-width:520px;max-height:92vh;overflow-y:auto;box-shadow:0 12px 0 rgba(0,0,0,.18);}
   .card h1{margin:0 0 6px;color:#1f4d4a;font-size:23px;line-height:1.15;}
   .card p{margin:6px 0 14px;color:#37635f;font-size:14px;line-height:1.5;}
   .card .row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;}
@@ -62,6 +62,10 @@
   .famRow .star{font-size:17px;}
   #hud{position:absolute;top:14px;left:50%;transform:translateX(-50%);z-index:6;display:flex;gap:6px;font-size:24px;pointer-events:none;text-shadow:0 2px 3px rgba(0,0,0,.25);}
   #hintBar{position:absolute;top:64px;left:50%;transform:translateX(-50%);z-index:6;background:rgba(255,247,236,.92);color:#1f4d4a;font-weight:bold;font-size:14px;padding:8px 18px;border-radius:14px;box-shadow:0 4px 0 rgba(0,0,0,.15);opacity:0;transition:opacity .25s;pointer-events:none;max-width:80%;text-align:center;}
+  .confetti{position:absolute;top:-32px;z-index:9;pointer-events:none;animation:confettiFall 1.7s ease-in forwards;}
+  @keyframes confettiFall{0%{transform:translateY(0) rotate(0deg);opacity:1}100%{transform:translateY(84vh) rotate(320deg);opacity:0}}
+  .journalPlus{position:absolute;top:10px;right:14px;background:#ffd54a;color:#5a4400;font-weight:bold;font-size:14px;padding:5px 10px;border-radius:12px;box-shadow:0 3px 0 rgba(0,0,0,.15);animation:journalPop .5s ease-out;}
+  @keyframes journalPop{0%{transform:scale(0) rotate(-14deg)}70%{transform:scale(1.2) rotate(4deg)}100%{transform:scale(1) rotate(0)}}
 </style>
 </head>
 <body>

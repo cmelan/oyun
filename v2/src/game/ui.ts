@@ -4,10 +4,13 @@ import { S, setLang, getLang, LANGS, type Lang } from '../core/i18n';
 import { TREES, treeName } from '../core/trees';
 import { TOOLS, type Eye } from '../core/config';
 import { WORLD, LEVEL_META, type ClueTier } from '../core/world';
-import { familyStars, pick3 } from '../core/logic';
+import { familyStars, pick3, streakStart, streakAnswer, type StreakState } from '../core/logic';
 import type { SaveData } from '../core/save';
 import { getTreeArt, getChoiceArt } from './art';
-import { speak } from './audio';
+import { speak, sfx } from './audio';
+
+/* Clue-tier picture cue so pre-readers can tell what kind of clue they see. */
+const TIER_ICON: Record<ClueTier, string> = { leaf: '🍃', bark: '🪵', silhouette: '🌳' };
 
 export interface UICallbacks {
   onStart(levelIdx: number): void;
@@ -31,6 +34,7 @@ const $ = (id: string) => document.getElementById(id)!;
 export class UI {
   private cb: UICallbacks;
   private save: SaveData;
+  private streak: StreakState = { run: 0, wrong: false }; /* session-only */
   constructor(cb: UICallbacks, save: SaveData) {
     this.cb = cb; this.save = save;
     this.buildLangRow();
@@ -121,6 +125,21 @@ export class UI {
   }
   private sayBtn(text: string): string {
     return `<span class="sayBtn" data-say="${text}" role="button" aria-label="dinle">🔊</span>`;
+  }
+  /* Celebration confetti over the overlay (big = streak burst). */
+  private confetti(big = false): void {
+    const ov = $('ov');
+    const glyphs = ['🍃', '⭐', '💛', '✨', '🌸'];
+    for (let i = 0; i < (big ? 28 : 14); i++) {
+      const sp = document.createElement('span');
+      sp.className = 'confetti';
+      sp.textContent = glyphs[i % glyphs.length];
+      sp.style.left = `${6 + Math.random() * 88}%`;
+      sp.style.animationDelay = `${Math.random() * .4}s`;
+      sp.style.fontSize = `${14 + Math.random() * 16}px`;
+      ov.appendChild(sp);
+      window.setTimeout(() => sp.remove(), 2100);
+    }
   }
 
   /* ---------- screens ---------- */
@@ -217,33 +236,55 @@ export class UI {
     (card.querySelector('#nMenu') as HTMLElement).onclick = () => this.showMenu();
   }
 
-  /* ---------- tree recognition card (3 clue tiers) ---------- */
-  showTreeQuestion(treeId: string, pool: string[], tier: ClueTier): void {
-    const choices = pick3(treeId, pool);
-    const qKey = tier === 'bark' ? 'tree.question.bark' : tier === 'silhouette' ? 'tree.question.silhouette' : 'tree.question';
-    const clue = getTreeArt(treeId, tier, 120);
-    const isPhoto = !clue.startsWith('data:');
-    const card = this.show(`<h1>${S(qKey)}</h1>
-      <div class="clueBadge"><img class="${isPhoto ? 'photo' : ''}" src="${clue}" alt=""></div>
+  /* ---------- recognition card (tree tiers + mimic boss share one component) ----------
+     Audio-first for pre-readers: the question is spoken on open, every tapped
+     choice speaks its name, correct answers celebrate (confetti; extra burst +
+     chime on a 3-in-a-row first-try streak), wrong answers get a kind sound and
+     an immediate retry — no fail state. */
+  private showRecognition(correctId: string, pool: string[], opts: {
+    titleHtml: string; spoken: string; clue: string; withDesc: boolean;
+    onAnswer: (ok: boolean) => void;
+  }): void {
+    const choices = pick3(correctId, pool);
+    const isPhoto = !opts.clue.startsWith('data:');
+    streakStart(this.streak);
+    const card = this.show(`${opts.titleHtml}
+      <div class="clueBadge"><img class="${isPhoto ? 'photo' : ''}" src="${opts.clue}" alt=""></div>
       <div class="treeChoices">` + choices.map(id => {
         const info = TREES[id];
         return `<button class="treeChoice" data-id="${id}">
           <img src="${getChoiceArt(id, 72)}" alt="">
           <span class="nameRow"><span class="tName">${treeName(id)}</span>${this.sayBtn(treeName(id))}</span>
-          <span class="tDesc">${info?.desc || ''}</span></button>`;
+          ${opts.withDesc ? `<span class="tDesc">${info?.desc || ''}</span>` : ''}</button>`;
       }).join('') + '</div>');
     card.querySelectorAll<HTMLButtonElement>('.treeChoice').forEach(btn => {
       btn.onclick = () => {
-        const ok = btn.dataset.id === treeId;
-        if (!ok) btn.classList.add('dim');
-        this.cb.onTreeAnswer(ok, treeId);
+        const ok = btn.dataset.id === correctId;
+        speak(treeName(btn.dataset.id!)); /* say what the child tapped — teaches every pick */
+        const streakHit = streakAnswer(this.streak, ok);
+        if (ok) { this.confetti(streakHit); if (streakHit) sfx('streak'); }
+        else btn.classList.add('dim');
+        opts.onAnswer(ok);
       };
     });
     this.wireSayButtons(card);
+    speak(opts.spoken); /* auto-read the question */
+  }
+
+  showTreeQuestion(treeId: string, pool: string[], tier: ClueTier): void {
+    const qKey = tier === 'bark' ? 'tree.question.bark' : tier === 'silhouette' ? 'tree.question.silhouette' : 'tree.question';
+    this.showRecognition(treeId, pool, {
+      titleHtml: `<h1>${TIER_ICON[tier]} ${S(qKey)}</h1>`,
+      spoken: S(qKey),
+      clue: getTreeArt(treeId, tier, 120),
+      withDesc: true,
+      onAnswer: ok => this.cb.onTreeAnswer(ok, treeId),
+    });
   }
   showTreeWake(treeId: string, onDone: () => void): void {
     const info = TREES[treeId]; const nm = treeName(treeId);
     const card = this.show(`<div class="wakeCard"><div class="eyes">${S('tree.wake.eyes')}</div>
+      <div class="journalPlus">+1 📖</div>
       <div class="clueBadge"><img src="${getTreeArt(treeId, 'leaf', 120)}" alt=""></div>
       <div class="tBig nameRow"><span><b>${nm}</b>${S('tree.wake.title')}</span>${this.sayBtn(nm)}</div>
       <p style="margin:2px 0 0">${S('journal.family')}${info?.family || ''} · ${info?.desc || ''}</p>
@@ -251,26 +292,18 @@ export class UI {
       <p class="hint">${S('tree.wake.body')}</p>
       <div class="row"><button class="play" id="tDone">${S('ui.resume')}</button></div></div>`);
     (card.querySelector('#tDone') as HTMLElement).onclick = onDone;
+    speak(nm); /* reinforce the learned name */
   }
 
-  /* ---------- mimic boss card: find the real tree ---------- */
+  /* ---------- mimic boss card: find the real tree (same component) ---------- */
   showMimicQuestion(realId: string, pool: string[], tier: ClueTier): void {
-    const choices = pick3(realId, pool);
-    const clue = getTreeArt(realId, tier === 'leaf' ? 'bark' : tier, 120); /* mimic is always ≥ bark difficulty */
-    const card = this.show(`<h1>${S('boss.mimic.title')}</h1><p>${S('boss.mimic.question')}</p>
-      <div class="clueBadge"><img src="${clue}" alt=""></div>
-      <div class="treeChoices">` + choices.map(id =>
-        `<button class="treeChoice" data-id="${id}">
-          <img src="${getChoiceArt(id, 72)}" alt="">
-          <span class="nameRow"><span class="tName">${treeName(id)}</span>${this.sayBtn(treeName(id))}</span>
-        </button>`).join('') + '</div>');
-    card.querySelectorAll<HTMLButtonElement>('.treeChoice').forEach(btn => {
-      btn.onclick = () => {
-        const ok = btn.dataset.id === realId;
-        if (!ok) btn.classList.add('dim');
-        this.cb.onMimicAnswer(ok);
-      };
+    const mimicTier = tier === 'leaf' ? 'bark' : tier; /* mimic is always ≥ bark difficulty */
+    this.showRecognition(realId, pool, {
+      titleHtml: `<h1>${TIER_ICON[mimicTier]} ${S('boss.mimic.title')}</h1><p>${S('boss.mimic.question')}</p>`,
+      spoken: S('boss.mimic.question'),
+      clue: getTreeArt(realId, mimicTier, 120),
+      withDesc: true,
+      onAnswer: ok => this.cb.onMimicAnswer(ok),
     });
-    this.wireSayButtons(card);
   }
 }

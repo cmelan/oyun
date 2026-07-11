@@ -48,7 +48,7 @@ function seq(a: number[], dur: number, gap: number, type: OscillatorType, vol: n
 }
 
 export type SfxName = 'jump' | 'freeze' | 'burn' | 'grow' | 'cut' | 'sand' | 'shrink' | 'boing' | 'puff' | 'ding'
-  | 'heal' | 'thud' | 'cage' | 'bosshurt' | 'hurt' | 'clear' | 'win' | 'sad' | 'wake' | 'land';
+  | 'heal' | 'thud' | 'cage' | 'bosshurt' | 'hurt' | 'clear' | 'win' | 'sad' | 'wake' | 'land' | 'hmm' | 'streak';
 
 export function sfx(n: SfxName, extra?: number): void {
   if (!audio || muted) return;
@@ -73,6 +73,9 @@ export function sfx(n: SfxName, extra?: number): void {
     case 'sad': seq([440, 392, 330, 262], .3, 150, 'sine', .2); break;
     case 'wake': seq([392, 523, 659, 880], .28, 90, 'sine', .24); break;
     case 'land': { const fall = extra ?? .5; beep(190 - fall * 70, .09, 'triangle', .22, 140); noise(.08, .1 + fall * .08, 400); break; }
+    /* quiz feedback: kind, never harsh */
+    case 'hmm': beep(330, .18, 'sine', .16, 290); break;              /* gentle "try again" */
+    case 'streak': seq([784, 988, 1319, 1568], .22, 70, 'sine', .2); break; /* first-try streak sparkle */
   }
 }
 

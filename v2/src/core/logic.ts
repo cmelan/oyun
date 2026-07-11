@@ -78,6 +78,18 @@ export function mimicNextId(pool: string[], exclude: string | undefined, rng: ()
   return options.length ? options[(rng() * options.length) | 0] : pool[0];
 }
 
+/* --- First-try streak: 3 first-try correct answers in a row earn an extra
+   celebration. Wrong answers just reset the run — never a punishment path. --- */
+export interface StreakState { run: number; wrong: boolean }
+export function streakStart(s: StreakState): void { s.wrong = false; }
+/* Returns true when this answer completes a 3-streak (celebrate!). */
+export function streakAnswer(s: StreakState, correct: boolean): boolean {
+  if (!correct) { s.wrong = true; s.run = 0; return false; }
+  if (s.wrong) return false;            /* correct after retries: no streak credit */
+  s.run++;
+  return s.run % 3 === 0;
+}
+
 /* --- Invisible assist: repeated deaths in a level gently widen the margins.
    No labels, no shame; resets per level. Bounded so the game never plays itself. --- */
 export interface AssistState { deaths: number }
