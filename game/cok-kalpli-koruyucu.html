@@ -1,0 +1,1386 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<title>Çok Kalpli Koruyucu</title>
+<style>
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;}
+  html,body{margin:0;height:100%;background:#0f2b29;overflow:hidden;font-family:"Trebuchet MS","Segoe UI","Noto Sans Arabic","Geeza Pro",system-ui,sans-serif;}
+  html[dir="rtl"] .card{text-align:right;}
+  #wrap{position:relative;width:100%;height:100%;display:flex;align-items:center;justify-content:center;}
+  canvas{display:block;width:100%;height:100%;object-fit:contain;background:#57c0ba;touch-action:none;}
+  .top{position:absolute;top:12px;width:42px;height:42px;border:none;border-radius:13px;background:rgba(255,247,236,.85);color:#1f4d4a;font-size:20px;cursor:pointer;box-shadow:0 4px 0 rgba(0,0,0,.15);z-index:7;}
+  .top:active{transform:translateY(2px);box-shadow:0 2px 0 rgba(0,0,0,.15);}
+  #restart{right:12px;} #mute{right:60px;} #fsBtn{right:108px;} #pauseBtn{right:156px;}
+  .pad{position:absolute;bottom:18px;z-index:5;}
+  #padL{left:18px;display:flex;gap:13px;}
+  #padR{right:18px;display:grid;grid-template-columns:repeat(2,auto);gap:12px;}
+  .btn{width:70px;height:70px;border-radius:50%;border:none;display:flex;align-items:center;justify-content:center;font-size:27px;color:#1f4d4a;background:rgba(255,247,236,.78);box-shadow:0 5px 0 rgba(0,0,0,.18);cursor:pointer;font-weight:bold;}
+  .btn:active{transform:translateY(3px);box-shadow:0 2px 0 rgba(0,0,0,.18);}
+  #bJump{background:rgba(255,178,122,.9);} #bSand{background:rgba(232,194,122,.92);position:relative;} #bHeal{background:rgba(255,213,74,.92);}
+  #sandCount{position:absolute;top:-4px;right:-4px;background:#fff7ec;color:#7a5a1a;font-size:11px;font-weight:bold;min-width:19px;height:19px;border-radius:10px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 0 rgba(0,0,0,.18);padding:0 2px;}
+  #menu{position:absolute;left:50%;bottom:40px;transform:translateX(-50%);display:flex;flex-direction:column;gap:10px;align-items:center;z-index:7;}
+  .play{border:none;background:#ffb27a;color:#5a2c12;font-weight:bold;font-size:19px;padding:13px 42px;border-radius:18px;cursor:pointer;box-shadow:0 6px 0 #d98a52;}
+  .play:active{transform:translateY(3px);box-shadow:0 3px 0 #d98a52;}
+  .ghost{border:none;background:rgba(255,247,236,.85);color:#1f4d4a;font-weight:bold;font-size:14px;padding:9px 22px;border-radius:14px;cursor:pointer;box-shadow:0 4px 0 rgba(0,0,0,.13);}
+  .ghost:active{transform:translateY(2px);box-shadow:0 2px 0 rgba(0,0,0,.13);}
+  .lock{opacity:.5;pointer-events:none;}
+  .col{display:flex;flex-direction:column;gap:10px;align-items:center;}
+  #ov{position:absolute;inset:0;z-index:8;display:flex;align-items:center;justify-content:center;background:rgba(15,43,41,.55);backdrop-filter:blur(3px);text-align:center;padding:18px;}
+  #ov.hidden{display:none;}
+  .card{background:#fff7ec;border-radius:26px;padding:22px 24px 18px;max-width:480px;box-shadow:0 12px 0 rgba(0,0,0,.18);}
+  .card h1{margin:0 0 6px;color:#1f4d4a;font-size:23px;line-height:1.15;}
+  .card p{margin:6px 0 14px;color:#37635f;font-size:14px;line-height:1.5;}
+  .card .row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;}
+  .eyes{font-size:28px;letter-spacing:3px;margin-bottom:6px;}
+  .hint{font-size:11.5px;color:#7a9a96;margin-top:10px;line-height:1.5;}
+  .pw{display:inline-block;padding:1px 6px;border-radius:7px;color:#fff;font-weight:bold;font-size:12px;}
+  #langRow{position:absolute;top:12px;left:12px;display:flex;gap:6px;z-index:7;}
+  .langBtn{border:none;background:rgba(255,247,236,.78);color:#1f4d4a;font-weight:bold;font-size:12px;padding:7px 10px;border-radius:10px;cursor:pointer;box-shadow:0 3px 0 rgba(0,0,0,.15);}
+  .langBtn.active{background:#ffb27a;color:#5a2c12;}
+  .mapRegion{margin:12px 0;text-align:left;}
+  .mapRegion h2{margin:0 0 4px;color:#1f4d4a;font-size:15px;}
+  .mapPath{display:flex;align-items:center;gap:0;flex-wrap:wrap;}
+  .mapNode{width:38px;height:38px;border-radius:50%;border:none;display:flex;align-items:center;justify-content:center;font-weight:bold;color:#fff;font-size:14px;cursor:pointer;box-shadow:0 3px 0 rgba(0,0,0,.18);flex:none;}
+  .mapNode.locked{background:#bfc9c6;color:#7a8683;cursor:default;box-shadow:none;}
+  .mapNode.done{background:#5fc77f;}
+  .mapNode.next{background:#ffb27a;color:#5a2c12;}
+  .mapLine{width:16px;height:4px;background:#d8cdbf;flex:none;}
+  .mapLine.done{background:#5fc77f;}
+  .mapIcon{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;font-size:12px;margin-right:6px;vertical-align:middle;}
+  .clueBadge{width:128px;height:128px;border-radius:50%;margin:2px auto 16px;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 38% 32%,#ffffff,#eafaf0 55%,#cdeedd);box-shadow:inset 0 0 0 4px rgba(95,199,127,.35),0 6px 14px rgba(31,77,74,.18);}
+  .clueBadge img{width:88px;height:auto;filter:drop-shadow(0 3px 3px rgba(0,0,0,.2));}
+  .treeChoices{display:flex;gap:12px;justify-content:center;margin-top:4px;}
+  .treeChoice{width:118px;border:none;border-radius:18px;padding:12px 8px 10px;cursor:pointer;background:linear-gradient(#ffffff,#f3ead9);box-shadow:0 5px 0 rgba(31,77,74,.16);display:flex;flex-direction:column;align-items:center;gap:6px;transition:transform .08s;}
+  .treeChoice:active{transform:translateY(3px);box-shadow:0 2px 0 rgba(31,77,74,.16);}
+  .treeChoice img{width:58px;height:auto;}
+  .treeChoice .tName{font-weight:bold;font-size:16px;color:#1f4d4a;}
+  .treeChoice .tDesc{font-size:11px;color:#7a9a96;line-height:1.25;}
+  .treeChoice.dim{opacity:.45;filter:grayscale(.6);}
+  .wakeCard .tBig{font-size:30px;color:#1f4d4a;margin:2px 0 2px;}
+  .wakeFact{background:#eafaf0;border-radius:14px;padding:10px 14px;font-size:13px;color:#37635f;margin:10px 0 4px;line-height:1.45;}
+  .sayBtn{border:none;background:#ffd54a;color:#5a4400;width:30px;height:30px;border-radius:50%;font-size:14px;cursor:pointer;box-shadow:0 2px 0 rgba(0,0,0,.18);flex:none;display:inline-flex;align-items:center;justify-content:center;}
+  .sayBtn:active{transform:translateY(1px);box-shadow:0 1px 0 rgba(0,0,0,.18);}
+  .nameRow{display:flex;align-items:center;gap:8px;justify-content:center;}
+</style>
+</head>
+<body>
+<div id="wrap">
+  <canvas id="game" width="960" height="540"></canvas>
+  <div id="langRow"><button class="langBtn" data-l="tr">TR</button><button class="langBtn" data-l="en">EN</button><button class="langBtn" data-l="de">DE</button><button class="langBtn" data-l="ar">AR</button></div>
+  <button id="pauseBtn" class="top" title="Mola">⏸</button>
+  <button id="fsBtn" class="top" title="Tam ekran">⛶</button>
+  <button id="mute" class="top" title="Ses">🔊</button>
+  <button id="restart" class="top" title="Yeniden başla">↻</button>
+  <div class="pad" id="padL"><button class="btn" id="bLeft" aria-label="Sol">◀</button><button class="btn" id="bRight" aria-label="Sağ">▶</button></div>
+  <div class="pad" id="padR">
+    <button class="btn" id="bSand" aria-label="Kum at">🏖️<span id="sandCount">0</span></button><button class="btn" id="bHeal" aria-label="Sevgi ışığı">💛</button>
+    <button class="btn" id="bPow" aria-label="Gücü kullan">✨</button><button class="btn" id="bJump" aria-label="Zıpla">⤴</button>
+  </div>
+  <div id="menu">
+    <button class="play" id="startBtn">▶ Yeni Oyun</button>
+    <button class="ghost" id="continueBtn">Devam Et</button>
+    <button class="ghost" id="levelsBtn">Bölümler</button>
+    <button class="ghost" id="journalBtn">Doğa Günlüğü</button>
+    <button class="ghost" id="howBtn">Nasıl Oynanır?</button>
+  </div>
+  <div id="ov" class="hidden"><div class="card" id="card"></div></div>
+</div>
+<script>
+"use strict";
+/* =====================================================================
+   ÇOK KALPLİ KORUYUCU — v2 (Aşama 2: Bölüm 2+3, WORLD/bölge şeması,
+   yeniden kullanılabilir boss şablonu, harita ekranı, dil altyapısı)
+   Bölümler: 1 CONFIG · 2 ENGINE · 3 ENTITIES · 4 SYSTEMS · 5 LEVELS
+             6 RENDER · 7 UI · 8 BOOT
+   Tüm ayar değerleri v1'den AYNEN taşındı — oyun hissi korunur.
+   ===================================================================== */
+
+/* ============================ 1) CONFIG ============================ */
+const CONFIG={
+  canvas:{W:960,H:540,maxDPR:2},
+  physics:{GRAV:2000,MOVE:275,ACCEL:2800,FRICTION:2600,JUMP_V:720,JUMP_CUT:260,MAX_FALL:1150,BOUNCE:1000,COYOTE:.10,JBUF:.13},
+  player:{w:38,h:44,IFRAME:1.2},
+  heal:{BLIND_TIME:4.5,HEAL_TIME:1.4,BOSS_BLIND:4.2,range:34,vRange:70,decay:2},
+  sand:{SPD:440,vy0:-150,grav:1400,life:1.1,buffer:2,bossBonus:3},
+  monster:{chase:130,aggro:240,patrol:55,happy:35,flipMin:1.4,flipRand:.8},
+  juice:{squashK:210,squashDamp:13,trailVy:440,trailChance:.55},
+  camera:{lerp:6},
+  hearts:3,
+  /* Yeniden kullanılabilir boss şablonu: her boss bu sabitleri paylaşır,
+     kimliği yalnız L.boss verisindeki hp/cageEye/finisher/konum belirler. */
+  boss:{ atkIntervals:[1.8,2.3,2.9] /* idx = hp-1, hp 1→1.8 hp 2→2.3 hp 3→2.9 */,
+    telegraph:.55, shotVx:260, shotVy:-330, shotGrav:1300, shotRadius:13,
+    cageT0:1.1, shrinkFactor:.62, defeatT:2.6, paceSpd:40, meleeRange:74, meleeVRange:82 },
+  /* Bilge Ağaçlar (Aşama 4 v1): isimlendirerek iyileştirme — canavar döngüsüyle
+     aynı duygusal fiil. Tek katman (yaprak ipucu); bark/silüet ustalık katmanları
+     ve kalan 9 ağaç, bu tek-ağaç playtest'inden sonraki adım. */
+  tree:{ wakeRadius:70, wrongShake:6 },
+};
+const W=CONFIG.canvas.W, H=CONFIG.canvas.H;
+const {GRAV,MOVE,ACCEL,FRICTION,JUMP_V,JUMP_CUT,MAX_FALL,BOUNCE,COYOTE,JBUF}=CONFIG.physics;
+const IFRAME=CONFIG.player.IFRAME;
+const {BLIND_TIME,HEAL_TIME}=CONFIG.heal;
+const SAND_SPD=CONFIG.sand.SPD;
+
+const TOOLS={ blue:{col:'#3fa9f5',emoji:'❄️'}, red:{col:'#ff6b4a',emoji:'🔥'}, green:{col:'#54c97a',emoji:'🌿'}, yellow:{col:'#ffcc3a',emoji:'🌀'}, purple:{col:'#b07ad8',emoji:'🟣'} };
+const tool=k=>TOOLS[k];
+
+/* Dil altyapısı: tüm arayüz metni anahtar üzerinden çekilir. Şimdilik yalnız
+   tr doludur — en/de/ar için çeviri Aşama 2'nin ayrı bir alt adımıdır (kalite
+   için gözden geçirilmeden yayınlanmaz). Bölüm-içi ipucu tabelaları ve bölüm
+   adları henüz anahtarlanmadı; bu da aynı çeviri adımında yapılacak. */
+const STR={
+  tr:{
+    'ui.newGame':'▶ Yeni Oyun','ui.continue':'Devam Et','ui.levels':'Bölümler','ui.howto':'Nasıl Oynanır?',
+    'ui.back':'← Geri','ui.menu':'Menü','ui.resume':'Devam Et','ui.restart':'Yeniden Başla','ui.retry':'Tekrar Dene',
+    'ui.playAgain':'Baştan Oyna','ui.nextLevel':'Sonraki Bölüm →',
+    'pause.title':'Mola','pause.body':'Hazır olunca devam edelim.',
+    'over.eyes':'💛 nazik bir mola 💛','over.title':'Tekrar deneyelim mi?','over.body':'Kalplerin tükendi — sorun yok, Koruyucu pes etmez!',
+    'next.eyes':'🌟👁️💚👁️🌟','next.suffix':' tamamlandı!','next.body':'Harikasın, Koruyucu! Yeni bir dünya seni bekliyor.',
+    'win.eyes':'🏆👁️💚👁️🏆','win.title':'Tebrikler! Macera tamam!',
+    'win.body':'Üç dünyayı da dövüşmeden, sadece sevgi ve zekânla dengeye kavuşturdun. Gerçek bir Çok Kalpli Koruyucu!',
+    'boss.title':'Boss · Kötü Canavar',
+    'howto.title':'Nasıl Oynanır?',
+    'howto.body':'← → ile yürü, <b>⤴</b> ile zıpla. Bir bulmacaya yaklaşınca doğru güç <b>kendiliğinden</b> hazırlanır — sadece <b>✨</b> bas!',
+    'howto.tools':'<span class="pw" style="background:#3fa9f5">❄️</span> dondur, <span class="pw" style="background:#ff6b4a">🔥</span> yak/aydınlat, <span class="pw" style="background:#54c97a">🌿</span> büyüt, <span class="pw" style="background:#ffcc3a;color:#5a4400">🌀</span> kes, <span class="pw" style="background:#b07ad8">🟣</span> büyüt/küçült.',
+    'howto.heal':'Kızgın canavara <span class="pw" style="background:#e8c27a;color:#5a4400">🏖️</span> kum at, sonra <span class="pw" style="background:#ffd54a;color:#5a4400">💛</span> sevgi ışığını basılı tut → iyileşir, sana kalp verir.',
+    'howto.controls':'Bilgisayar: ← → • ↑/Boşluk zıpla • F kullan • G kum • H sevgi ışığı • P mola.',
+    'menu.title':'Çok Kalpli Koruyucu','menu.subtitle':'sevgiyle, zekâyla, şiddetsiz bir macera',
+    'map.title':'Bölümler','map.locked':'Önceki bölümü tamamla',
+    'region.cayir':'Çayır Vadisi','region.zirveler':'Zümrüt Zirveler','region.magara':'Kristal Mağaralar','region.kestane':'Kestane Korusu',
+    'ui.journal':'Doğa Günlüğü',
+    'tree.prompt':'✨ Uyuyan Bilge Ağaç — dokun!','tree.question':'Bu yaprak hangi ağacın?',
+    'tree.wake.eyes':'🌳✨','tree.wake.title':' uyandı!','tree.wake.body':'Doğa Günlüğü\'ne eklendi ✓',
+    'journal.title':'Doğa Günlüğü','journal.empty':'Henüz uyandırdığın bir ağaç yok. Bölümlerde parıldayan uyuyan ağaçları ara!',
+    'journal.family':'Aile: ','journal.gift':'Armağanı: ',
+  },
+  en:{}, de:{}, ar:{}, /* aşama 2 çeviri alt-adımı: doldurulacak, tr'ye düşer (fallback) */
+};
+let lang=null; /* boot'ta save.lang'dan atanır */
+function S(key){ const t=lang&&STR[lang]; if(t&&t[key]!==undefined) return t[key]; return STR.tr[key]!==undefined?STR.tr[key]:key; }
+
+/* Biyom paletleri + bölge kayıt defteri (WORLD, bölüm 5'te). Her biyom kendi
+   3-katman paralaks arka planını, platform stilini ve ortam parçacığını taşır —
+   yeni bölge = yeni palet + veri, motor değişmez. */
+const BIOME={
+  meadow:{
+    skyTop:'#daf4e4', skyMid:'#8fdcca', skyBot:'#55c0ba',
+    cloudFar:'rgba(255,255,255,.5)', cloudNear:'rgba(255,255,255,.66)',
+    hillsFar:'#abe0d0', hillsMid:'#7ccfad', bushes:'#5abd8c',
+    soil:'#9a6b43', soilDark:'#85593a', grass:'#5fc77f', grassLight:'#74d692',
+    treeTrunk:'#7d5a3a', treeLeafA:'#63c49b', treeLeafB:'#4fae87',
+    ambientA:'#8fdc9b', ambientB:'#ffd9a6', ambientShape:'leaf',
+  },
+  peaks:{
+    skyTop:'#dff6f0', skyMid:'#a9e6dc', skyBot:'#4fb3ad',
+    cloudFar:'rgba(255,255,255,.55)', cloudNear:'rgba(255,255,255,.7)',
+    hillsFar:'#bfe9e2', hillsMid:'#8fd0c6', bushes:'#3f8c7e',
+    soil:'#6b7a78', soilDark:'#57645f', grass:'#eef7f5', grassLight:'#ffffff',
+    treeTrunk:'#4a3a2e', treeLeafA:'#2f6b52', treeLeafB:'#245a44',
+    ambientA:'#eaf7ff', ambientB:'#cfeeff', ambientShape:'wisp',
+  },
+  cave:{
+    skyTop:'#241d3a', skyMid:'#1c1733', skyBot:'#0e0b1e',
+    cloudFar:'rgba(111,208,255,.4)', cloudNear:'rgba(181,140,240,.4)',
+    hillsFar:'#2a2242', hillsMid:'#201936', bushes:'#160f2a',
+    soil:'#3c365a', soilDark:'#2a2440', grass:'#4a4470', grassLight:'#5d5688',
+    crystalA:'#6fd0ff', crystalB:'#b58cf0',
+    ambientA:'#8fd8ff', ambientB:'#cbb0f5', ambientShape:'mote',
+  },
+  forest:{
+    skyTop:'#fbe8c8', skyMid:'#f0c68a', skyBot:'#d99a5c',
+    cloudFar:'rgba(255,244,222,.55)', cloudNear:'rgba(255,238,205,.7)',
+    hillsFar:'#e0a866', hillsMid:'#c9863f', bushes:'#a5672e',
+    soil:'#6b4a30', soilDark:'#573a25', grass:'#b5772f', grassLight:'#d99a4a',
+    treeTrunk:'#5a3f28', treeLeafA:'#d9863f', treeLeafB:'#b5622a',
+    ambientA:'#e8b25a', ambientB:'#c96b3a', ambientShape:'leaf',
+  },
+};
+
+/* Bilge Ağaçlar içerik kaydı. AD dört dilde (sözlük düzeyi, güvenli); açıklama/
+   aile/fun-fact şimdilik TR — tam çeviri geçişinde dolacak.
+   GERÇEK FOTOĞRAF YUVASI: her ağaca isteğe bağlı `photo` alanı eklenebilir
+   (base64 data-URL). Varsa arayüz fotoğrafı kullanır, yoksa botanik-doğru
+   vektör çizime düşer. Web'den fotoğraf GÖMÜLMEDİ — ticari (Apple Arcade)
+   hedefte lisans riski + tek-dosya/çevrimdışı kısıtında boyut patlaması;
+   kendi çektiğin/lisansladığın fotoğrafları buraya koy. */
+const TREES={
+  'meşe':{ name:{tr:'Meşe',en:'Oak',de:'Eiche',ar:'بلوط'}, family:'Kayıngiller', desc:'Palamut ağacı', gift:'Palamutlarıyla sincapları besler',
+    fact:'Bir meşe 500 yıldan uzun yaşayabilir!', crown:'broad' /*, photo:'data:image/jpeg;base64,...' */ },
+  'çınar':{ name:{tr:'Çınar',en:'Plane Tree',de:'Platane',ar:'دلب'}, family:'Çınargiller', desc:'Gölge devi', gift:'Geniş gölgesiyle serinlik verir',
+    fact:'Gövdesi yama yama soyulur — her çınar kendine özel desen taşır.', crown:'tall' },
+  'ıhlamur':{ name:{tr:'Ihlamur',en:'Linden',de:'Linde',ar:'زيزفون'}, family:'Ihlamurgiller', desc:'Çay çiçeği ağacı', gift:'Çiçekleriyle şifalı bir çay verir',
+    fact:'Kalp biçimli yaprakları arıların en sevdiği ağaçlardan biridir.', crown:'oval' },
+  'çam':{ name:{tr:'Çam',en:'Pine',de:'Kiefer',ar:'صنوبر'}, family:'Çamgiller', desc:'İğne yapraklı ağaç', gift:'Kozalaklarıyla kışın hayvanlara yiyecek verir',
+    fact:'Yaprakları yıl boyu yeşil kalır — kışın bile dökülmez!', crown:'conifer' },
+  'servi':{ name:{tr:'Servi',en:'Cypress',de:'Zypresse',ar:'سرو'}, family:'Servigiller', desc:'Sivri gölge ağacı', gift:'Rüzgardan koruyan sık bir duvar oluşturur',
+    fact:'Bazı serviler binlerce yıl yaşayabilecek kadar uzun ömürlüdür.', crown:'conifer' },
+  'huş':{ name:{tr:'Huş',en:'Birch',de:'Birke',ar:'بتولا'}, family:'Kayıngiller', desc:'Beyaz gövdeli ağaç', gift:'Beyaz kabuğuyla ormanı aydınlatır',
+    fact:'Kabuğu kağıt gibi ince tabakalar halinde soyulur.', crown:'oval' },
+  'akçaağaç':{ name:{tr:'Akçaağaç',en:'Maple',de:'Ahorn',ar:'قيقب'}, family:'Sabunağacıgiller', desc:'Yıldız yapraklı ağaç', gift:'Sonbaharda kızıl yapraklarıyla ormanı renklendirir',
+    fact:'Bazı türlerinin özsuyundan tatlı akçaağaç şurubu yapılır.', crown:'broad' },
+  'söğüt':{ name:{tr:'Söğüt',en:'Willow',de:'Weide',ar:'صفصاف'}, family:'Söğütgiller', desc:'Sarkık dallı ağaç', gift:'Su kenarında toprağı kökleriyle tutar',
+    fact:'Dalları su kenarına doğru zarif bir şekilde sarkar.', crown:'weeping' },
+  'ginkgo':{ name:{tr:'Ginkgo',en:'Ginkgo',de:'Ginkgo',ar:'جنكة'}, family:'Ginkgogiller', desc:'Yelpaze yapraklı ağaç', gift:'Dünyanın en yaşlı ağaç türlerinden biridir',
+    fact:'Dinozorların zamanından beri hiç değişmemiş bir ağaç türü!', crown:'oval' },
+  'zeytin':{ name:{tr:'Zeytin',en:'Olive',de:'Olive',ar:'زيتون'}, family:'Zeytingiller', desc:'Gümüşi yapraklı ağaç', gift:'Meyvesinden besleyici bir yağ verir',
+    fact:'Bazı zeytin ağaçları 1000 yıldan daha uzun yaşayabilir!', crown:'oval' },
+  'kestane':{ name:{tr:'Kestane',en:'Chestnut',de:'Kastanie',ar:'كستناء'}, family:'Kayıngiller', desc:'Dişli yapraklı ağaç', gift:'Kışlık kestaneleriyle karnımızı doyurur',
+    fact:'Meyvesi dikenli yeşil bir kabuğun içinde saklanır.', crown:'broad' },
+  'kayın':{ name:{tr:'Kayın',en:'Beech',de:'Buche',ar:'زان'}, family:'Kayıngiller', desc:'Dalgalı yapraklı ağaç', gift:'Sık gölgesiyle ormanı serinletir',
+    fact:'Yaprakları sonbaharda bile dalından hemen dökülmez.', crown:'oval' },
+  'kavak':{ name:{tr:'Kavak',en:'Poplar',de:'Pappel',ar:'حور'}, family:'Söğütgiller', desc:'Üçgen yapraklı ağaç', gift:'Hızla büyüyerek toprağı hemen yeşillendirir',
+    fact:'Yaprakları en hafif esintide bile hışırdayarak dans eder.', crown:'tall' },
+};
+function treeName(id){ const n=TREES[id]&&TREES[id].name; if(!n) return id; return n[lang]||n.tr||id; }
+/* Resim kaynağı: fotoğraf varsa o, yoksa vektör ikon */
+function getTreeArt(id,size,withBark){ const tr=TREES[id]; if(tr&&tr.photo) return tr.photo; return getTreeIcon(id,size,withBark); }
+
+/* ============================ 2) ENGINE ============================ */
+const cv=document.getElementById('game'), ctx=cv.getContext('2d');
+function sizeCanvas(){ const s=Math.min(window.devicePixelRatio||1,CONFIG.canvas.maxDPR); cv.width=Math.round(W*s); cv.height=Math.round(H*s); ctx.setTransform(s,0,0,s,0,0); }
+sizeCanvas(); addEventListener('resize',sizeCanvas);
+const darkCv=document.createElement('canvas'); darkCv.width=W; darkCv.height=H; const dctx=darkCv.getContext('2d');
+
+let state='menu', t=0, pulse=0, cam=0;
+let flash=0, flashCol='255,80,90', hintT=0, hintMsg='', heartFlash=0;
+let shakeT=0, shakeMag=0, shakeDur=0, hitStopT=0;
+function screenShake(mag,dur){ if(mag>=shakeMag||shakeT<=0){ shakeMag=mag; shakeT=dur; shakeDur=dur; } }
+function hitStop(d){ hitStopT=Math.max(hitStopT,d); }
+function flashScreen(a,col){ flash=a; flashCol=col||'255,80,90'; }
+
+const overlap=(a,b)=>a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;
+
+/* Girdi: klavye + dokunmatik, kenar (edge) + basılı tutma */
+const input={left:false,right:false,jumpEdge:false,jumpHeld:false,useEdge:false,sandEdge:false,healHeld:false};
+function clearEdges(){ input.jumpEdge=false; input.useEdge=false; input.sandEdge=false; }
+function press(a){ if(a==='left')input.left=true; if(a==='right')input.right=true; if(a==='jump'){input.jumpEdge=true;input.jumpHeld=true;} if(a==='use')input.useEdge=true; if(a==='sand')input.sandEdge=true; if(a==='heal')input.healHeld=true; }
+function release(a){ if(a==='left')input.left=false; if(a==='right')input.right=false; if(a==='jump')input.jumpHeld=false; if(a==='heal')input.healHeld=false; }
+const keyMap={ArrowLeft:'left',KeyA:'left',ArrowRight:'right',KeyD:'right',ArrowUp:'jump',KeyW:'jump',Space:'jump',KeyF:'use',KeyG:'sand',KeyH:'heal'};
+addEventListener('keydown',e=>{
+  if(e.code==='KeyP'||e.code==='Escape'){ if(state==='play'||state==='pause'){ e.preventDefault(); togglePause(); } return; }
+  const a=keyMap[e.code]; if(a){ e.preventDefault(); if(!e.repeat) press(a); } });
+addEventListener('keyup',e=>{ const a=keyMap[e.code]; if(a){ e.preventDefault(); release(a); } });
+function bindBtn(id,a){ const el=document.getElementById(id); const dn=e=>{e.preventDefault();press(a);}, up=e=>{e.preventDefault();release(a);};
+  el.addEventListener('pointerdown',dn); el.addEventListener('pointerup',up); el.addEventListener('pointercancel',up); el.addEventListener('pointerleave',up); }
+bindBtn('bLeft','left'); bindBtn('bRight','right'); bindBtn('bJump','jump'); bindBtn('bPow','use'); bindBtn('bSand','sand'); bindBtn('bHeal','heal');
+
+/* Tam ekran (satıcı önekleriyle; iOS Safari kısıtları Apple kaynaklı) */
+function isFullscreen(){ return !!(document.fullscreenElement||document.webkitFullscreenElement); }
+function requestFS(){ const el=document.documentElement;
+  try{ if(el.requestFullscreen) el.requestFullscreen().catch(()=>{});
+    else if(el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+    else if(el.webkitRequestFullScreen) el.webkitRequestFullScreen(); }catch(e){}
+  try{ if(screen.orientation&&screen.orientation.lock) screen.orientation.lock('landscape').catch(()=>{}); }catch(e){} }
+function exitFS(){ try{ if(document.exitFullscreen) document.exitFullscreen().catch(()=>{});
+    else if(document.webkitExitFullscreen) document.webkitExitFullscreen(); }catch(e){} }
+function toggleFS(){ if(isFullscreen()) exitFS(); else requestFS(); }
+function syncFsIcon(){ const b=document.getElementById('fsBtn'); if(b) b.textContent=isFullscreen()?'⤡':'⛶'; }
+document.addEventListener('fullscreenchange',syncFsIcon);
+document.addEventListener('webkitfullscreenchange',syncFsIcon);
+
+/* =========================== 3) ENTITIES =========================== */
+const player={x:90,y:340,w:CONFIG.player.w,h:CONFIG.player.h,vx:0,vy:0,grounded:false,face:1,coyote:0,jbuf:0,iframe:0,squash:1,squashVel:0,blink:0,blinkT:2.2};
+
+/* Canavarlar veri tabanlı tiplerdir: yeni canavar = veri girişi + en fazla küçük bir davranış bayrağı */
+const MONSTER_TYPES={ walker:{flip:false}, flipper:{flip:true} };
+function makeMonster(d){ const T=MONSTER_TYPES[d.type||'walker']||MONSTER_TYPES.walker;
+  return Object.assign({w:40,h:40,state:'angry',vx:0,dir:-1,face:-1,blindT:0,healT:0,flipT:0,
+    spd:CONFIG.monster.chase,aggro:CONFIG.monster.aggro,patrolSpd:CONFIG.monster.patrol,flip:T.flip},d); }
+const mbox=m=>({x:m.x,y:m.ground-m.h,w:m.w,h:m.h});
+
+function healed(m){ m.state='happy'; m.healT=0; m.vx=0; sfx('heal'); hitStop(.07); screenShake(2,.12); gainHeart(); spawnP(m.x+m.w/2,m.ground-m.h,26,'#ffe6a0',200,1); }
+
+function updateMonster(m,dt,pcx,pFeet){
+  if(m===healTarget){ m.healT+=dt; if(m.healT>=HEAL_TIME) healed(m); }
+  else m.healT=Math.max(0,m.healT-dt*CONFIG.heal.decay);
+  if(m.state==='happy'){ if(m.x<=m.gx0)m.dir=1; if(m.x>=m.gx1)m.dir=-1; m.vx=m.dir*CONFIG.monster.happy; m.face=m.dir; m.x+=m.vx*dt; return; }
+  if(m.state==='blind'){ m.blindT-=dt; m.vx=0; if(m.blindT<=0)m.state='angry'; return; }
+  if(m.flip){ m.flipT-=dt; if(m.flipT<=0){ m.dir*=-1; m.flipT=CONFIG.monster.flipMin+Math.random()*CONFIG.monster.flipRand; } }
+  const d=pcx-(m.x+m.w/2);
+  if(Math.abs(d)<m.aggro&&Math.abs(pFeet-m.ground)<70){ m.vx=Math.sign(d)*m.spd; m.face=Math.sign(d)||m.face; }
+  else { if(m.x<=m.gx0)m.dir=1; if(m.x>=m.gx1)m.dir=-1; m.vx=m.dir*m.patrolSpd; m.face=m.dir; }
+  m.x+=m.vx*dt; m.x=Math.max(m.lo,Math.min(m.hi-m.w,m.x));
+  if(player.iframe<=0&&overlap(player,mbox(m))) loseLife(false);
+}
+
+/* =========================== 4) SYSTEMS ============================ */
+/* --- 4a Kayıt --- */
+const SAVE_KEY='ckk2_save_v1';
+function loadSaveData(){ try{ const v=JSON.parse(localStorage.getItem(SAVE_KEY)||'null'); if(v) return v;
+  const old=JSON.parse(localStorage.getItem('ckk_save_v2')||'null'); return old?{muted:!!old.muted}:{}; }catch(e){ return {}; } }
+let save=loadSaveData();
+function writeSave(){ try{ localStorage.setItem(SAVE_KEY,JSON.stringify(save)); }catch(e){} }
+
+/* --- 4b Ses (Web Audio sentezi) — v1 ile birebir --- */
+let audio=null,masterGain=null,muted=!!save.muted;
+function initAudio(){ if(audio) return; try{ audio=new (window.AudioContext||window.webkitAudioContext)(); masterGain=audio.createGain(); masterGain.gain.value=muted?0:.5; masterGain.connect(audio.destination); audio.resume&&audio.resume(); }catch(e){ audio=null; } }
+function beep(f,dur,type,vol,slideTo){ if(!audio||muted) return; const t0=audio.currentTime; const o=audio.createOscillator(),g=audio.createGain(); o.type=type||'sine'; o.frequency.setValueAtTime(f,t0); if(slideTo) o.frequency.exponentialRampToValueAtTime(slideTo,t0+dur); g.gain.setValueAtTime(.0001,t0); g.gain.linearRampToValueAtTime(vol||.3,t0+.012); g.gain.exponentialRampToValueAtTime(.0001,t0+dur); o.connect(g); g.connect(masterGain); o.start(t0); o.stop(t0+dur+.03); }
+function noise(dur,vol,cut){ if(!audio||muted) return; const t0=audio.currentTime; const b=audio.createBuffer(1,Math.floor(audio.sampleRate*dur),audio.sampleRate); const d=b.getChannelData(0); for(let i=0;i<d.length;i++) d[i]=Math.random()*2-1; const src=audio.createBufferSource(); src.buffer=b; const f=audio.createBiquadFilter(); f.type='lowpass'; f.frequency.value=cut||1200; const g=audio.createGain(); g.gain.setValueAtTime(vol||.2,t0); g.gain.exponentialRampToValueAtTime(.0001,t0+dur); src.connect(f); f.connect(g); g.connect(masterGain); src.start(t0); }
+function seq(a,dur,gap,type,vol){ a.forEach((f,i)=>setTimeout(()=>beep(f,dur,type,vol,0), i*gap)); }
+function sfx(n){ if(!audio||muted) return; switch(n){
+  case 'jump': beep(300,.12,'sine',.25,560); break; case 'freeze': beep(950,.28,'sine',.25,420); break;
+  case 'burn': noise(.25,.22,600); beep(160,.2,'sawtooth',.1,90); break; case 'grow': beep(280,.3,'sine',.22,680); break;
+  case 'cut': noise(.14,.22,3200); beep(820,.12,'sawtooth',.1,260); break; case 'sand': noise(.12,.2,1600); break;
+  case 'shrink': beep(720,.26,'sine',.24,170); break; case 'boing': beep(280,.18,'sine',.3,760); break;
+  case 'puff': noise(.16,.18,900); break; case 'ding': beep(880,.14,'sine',.28,0); beep(1320,.18,'sine',.2,0); break;
+  case 'heal': seq([523,659,784],.3,90,'sine',.22); break; case 'thud': beep(120,.18,'triangle',.3,70); noise(.12,.16,500); break;
+  case 'cage': seq([330,494,659],.28,70,'sine',.2); break; case 'bosshurt': beep(300,.25,'square',.18,140); break;
+  case 'hurt': beep(400,.2,'sine',.24,200); break; case 'clear': seq([523,659,784,1047],.3,110,'sine',.24); break;
+  case 'win': seq([523,659,784,1047,1319],.34,120,'sine',.26); break; case 'sad': seq([440,392,330,262],.3,150,'sine',.2); break;
+  case 'wake': seq([392,523,659,880],.28,90,'sine',.24); break; } }
+const MEL=[523.25,587.33,659.25,783.99,659.25,587.33,659.25,880,783.99,659.25,587.33,523.25]; let mi=0;
+function musicTick(){ if(!audio||muted) return; if(state!=='play'&&state!=='menu') return; const t0=audio.currentTime; const o=audio.createOscillator(),g=audio.createGain(); o.type='sine'; o.frequency.value=MEL[mi%MEL.length]/2; g.gain.setValueAtTime(.0001,t0); g.gain.linearRampToValueAtTime(.05,t0+.05); g.gain.exponentialRampToValueAtTime(.0001,t0+.55); o.connect(g); g.connect(masterGain); o.start(t0); o.stop(t0+.6); if(mi%4===0){ const ob=audio.createOscillator(),gb=audio.createGain(); ob.type='triangle'; ob.frequency.value=130.81; gb.gain.setValueAtTime(.045,t0); gb.gain.exponentialRampToValueAtTime(.0001,t0+.85); ob.connect(gb); gb.connect(masterGain); ob.start(t0); ob.stop(t0+.9); } mi++; }
+setInterval(musicTick,360);
+function toggleMute(){ muted=!muted; save.muted=muted; writeSave(); document.getElementById('mute').textContent=muted?'🔇':'🔊'; if(audio&&masterGain) masterGain.gain.setTargetAtTime(muted?0:.5,audio.currentTime,.02); }
+
+/* --- 4c Parçacıklar --- */
+const particles=[];
+function spawnP(x,y,n,col,sp,life){ for(let i=0;i<n;i++) particles.push({x,y,vx:(Math.random()*2-1)*sp,vy:(Math.random()*2-1)*sp-40,life:life||.6,max:life||.6,col,r:2+Math.random()*3}); }
+
+/* --- 4d Ortam parçacıkları (görsel yükseltme, biyoma göre): çayırda süzülen
+   yapraklar, zirvelerde ince sis pusları, mağarada kristal tozu. Motor tek —
+   şekil/renk yalnız BIOME[biome].ambientShape/A/B'den gelir. */
+const ambient=[];
+function ambientBiome(){ return (L&&L.biome)||'meadow'; }
+function makeAmbientP(x,y){ const B=BIOME[ambientBiome()]; const shape=B.ambientShape;
+  const base={x,y,ph:Math.random()*7,rot:Math.random()*7,c:Math.random()<.7?B.ambientA:B.ambientB};
+  if(shape==='wisp') return Object.assign(base,{vx:-(6+Math.random()*10),vy:2+Math.random()*4,sw:.5+Math.random()*.6,vr:0,s:10+Math.random()*14});
+  if(shape==='mote') return Object.assign(base,{vx:-(4+Math.random()*6),vy:-(2+Math.random()*6),sw:1.5+Math.random()*1.5,vr:(Math.random()*2-1)*.6,s:1.5+Math.random()*2});
+  return Object.assign(base,{vx:-(10+Math.random()*18),vy:10+Math.random()*14,sw:1+Math.random()*1.4,vr:(Math.random()*2-1)*1.6,s:3+Math.random()*3});
+}
+function resetAmbient(camX){ ambient.length=0; for(let i=0;i<14;i++) ambient.push(makeAmbientP(camX+Math.random()*W,Math.random()*H*.8)); }
+function updateAmbient(dt,camX){ for(let i=0;i<ambient.length;i++){ const l=ambient[i]; l.x+=(l.vx+Math.sin(t*l.sw+l.ph)*10)*dt; l.y+=l.vy*dt; l.rot+=l.vr*dt;
+  if(l.y>H+30||l.y<-40||l.x<camX-80) ambient[i]=makeAmbientP(camX+40+Math.random()*W, BIOME[ambientBiome()].ambientShape==='mote'?H+10:-20); } }
+
+/* --- 4e Kum bütçesi: canavar sayısı + (boss?3:0) + 2, kontrol noktasında dolar --- */
+const sands=[]; let sandLeft=0, sandMax=0;
+function sandCapacity(lv){ return lv.monsters.length + (lv.boss?CONFIG.sand.bossBonus:0) + CONFIG.sand.buffer; }
+function refillSand(){ sandMax=sandCapacity(L); sandLeft=sandMax; updateSandBadge(); }
+function updateSandBadge(){ const el=document.getElementById('sandCount'); if(el) el.textContent=sandLeft; }
+function throwSand(){ if(!L.hasSand) return;
+  if(sandLeft<=0){ hintMsg='Kum bitti! Bir sonraki kontrol noktasında dolar'; hintT=1.8; return; }
+  sandLeft--; updateSandBadge(); sfx('sand');
+  sands.push({x:player.x+player.w/2+player.face*12,y:player.y+12,vx:player.face*SAND_SPD,vy:CONFIG.sand.vy0,life:CONFIG.sand.life});
+  spawnP(player.x+player.w/2+player.face*12,player.y+12,6,'#e8c27a',120,.3); }
+function updateSands(dt){ for(let i=sands.length-1;i>=0;i--){ const s=sands[i]; s.life-=dt; s.vy+=CONFIG.sand.grav*dt; s.x+=s.vx*dt; s.y+=s.vy*dt; let hit=false;
+  for(const m of L.monsters){ if(m.state==='happy')continue; const b=mbox(m); if(s.x>b.x&&s.x<b.x+b.w&&s.y>b.y&&s.y<b.y+b.h){ m.state='blind'; m.blindT=BLIND_TIME; m.healT=0; sfx('puff'); hitStop(.05); screenShake(2,.1); spawnP(s.x,s.y,16,'#e8c27a',180,.6); hit=true; break; } }
+  if(!hit&&L.boss&&bossActive&&L.boss.state==='idle'){ const b=bossBox(); if(s.x>b.x&&s.x<b.x+b.w&&s.y>b.y&&s.y<b.y+b.h){
+    L.boss.state='blind'; L.boss.blindT=CONFIG.heal.BOSS_BLIND; L.boss.tel=0; L.boss.shake=.3; sfx('thud'); hitStop(.08); screenShake(4,.16);
+    spawnP(s.x,s.y,18,'#e8c27a',200,.7); hintMsg='Şimdi '+bossFinishEye()+' ile '+bossFinishVerb()+'!'; hintT=CONFIG.heal.BOSS_BLIND; hit=true; } }
+  if(hit||s.life<=0||s.y>L.deathY) sands.splice(i,1); } }
+
+/* --- 4f Sevgi ışığı (iyileştirme) --- */
+let healTarget=null;
+function findHealTarget(pcx,pFeet){ healTarget=null; if(!L.hasHeal||!input.healHeld) return;
+  let best=null,bd=1e9; for(const m of L.monsters){ if(m.state!=='blind')continue; const b=mbox(m);
+    if(player.x<b.x+b.w+CONFIG.heal.range&&player.x+player.w>b.x-CONFIG.heal.range&&Math.abs(pFeet-m.ground)<CONFIG.heal.vRange){ const d=Math.abs(pcx-(m.x+m.w/2)); if(d<bd){bd=d;best=m;} } }
+  healTarget=best; }
+function gainHeart(){ if(hearts<CONFIG.hearts){ hearts++; heartFlash=.6; sfx('ding'); } }
+
+/* --- 4g Etkileşimliler: kayıt tabanlı — yeni tip = yeni kayıt, motor değişmez --- */
+const INTERACT_TYPES={
+  freeze:{
+    solids:it=> it.done?[it.ice]:[],
+    fx(it){ sfx('freeze'); spawnP(it.ice.x+it.ice.w/2,it.ice.y,30,'#bfe9ff',240,.9); },
+    draw(it){ if(it.done){ const x=it.ice.x-cam,I=it.ice; ctx.fillStyle='rgba(200,238,255,.92)'; rrect(x,I.y,I.w,I.h,12); ctx.fill(); ctx.fillStyle='rgba(255,255,255,.85)'; rrect(x+6,I.y+4,I.w-12,8,6); ctx.fill(); ctx.strokeStyle='rgba(120,200,235,.9)'; ctx.lineWidth=2; for(let i=20;i<I.w;i+=46){ ctx.beginPath(); ctx.moveTo(x+i,I.y+6); ctx.lineTo(x+i-10,I.y+I.h-4); ctx.stroke(); } } else drawEyeMark({x:it.ice.x+it.ice.w/2,y:it.zone.y+30},'blue'); } },
+  thorn:{
+    solids:it=> it.done?[]:[it.wall],
+    fx(it){ sfx('burn'); spawnP(it.wall.x+14,it.wall.y+60,26,'#ff8a4a',200,.8); },
+    draw(it){ if(it.done) return; const w=it.wall,x=w.x-cam; ctx.fillStyle='#5b7d3a'; rrect(x,w.y,w.w,w.h,6); ctx.fill(); ctx.fillStyle='#3f5a28';
+      for(let yy=w.y+8;yy<w.y+w.h;yy+=16){ ctx.beginPath(); ctx.moveTo(x-6,yy); ctx.lineTo(x+6,yy-5); ctx.lineTo(x+4,yy+4); ctx.fill();
+        ctx.beginPath(); ctx.moveTo(x+w.w+6,yy+6); ctx.lineTo(x+w.w-6,yy+1); ctx.lineTo(x+w.w-4,yy+10); ctx.fill(); }
+      drawEyeMark(it.em,'red'); } },
+  grow:{
+    solids:it=> it.done?it.leaves.slice():[],
+    fx(it){ sfx('grow'); it.leaves.forEach(l=>spawnP(l.x+l.w/2,l.y,14,'#7fe0a0',150,.8)); },
+    draw(it){ if(it.done){ for(const l of it.leaves){ const x=l.x-cam; ctx.fillStyle='#3f8c52'; rrect(x,l.y,l.w,l.h,9); ctx.fill();
+        ctx.fillStyle='#5fc77f'; rrect(x,l.y-3,l.w,10,8); ctx.fill(); ctx.strokeStyle='#3f8c52'; ctx.lineWidth=2;
+        ctx.beginPath(); ctx.moveTo(x+l.w/2,l.y+2); ctx.lineTo(x+l.w/2,l.y+l.h-2); ctx.stroke(); } }
+      else { const x=it.sprout.x-cam,y=it.sprout.y; ctx.strokeStyle='#3f8c52'; ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x,y-14); ctx.stroke();
+        ctx.fillStyle='#5fc77f'; ctx.beginPath(); ctx.ellipse(x-6,y-12,7,4,-.5,0,7); ctx.ellipse(x+6,y-15,7,4,.5,0,7); ctx.fill(); drawEyeMark(it.em,'green'); } } },
+  bridge:{
+    solids:it=> it.done?[it.bridge]:[],
+    fx(it){ sfx('cut'); spawnP(it.bridge.x+it.bridge.w/2,it.bridge.y,22,'#d9b98a',200,.8); },
+    draw(it){ const b=it.bridge; if(it.done){ const x=b.x-cam; ctx.fillStyle='#b5874f'; rrect(x,b.y,b.w,b.h,5); ctx.fill();
+        ctx.strokeStyle='#8a6336'; ctx.lineWidth=2; for(let i=14;i<b.w;i+=26){ ctx.beginPath(); ctx.moveTo(x+i,b.y); ctx.lineTo(x+i,b.y+b.h); ctx.stroke(); } }
+      else { const rx=it.ropeX-cam; ctx.strokeStyle='#c8a24a'; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(rx,it.anchorY); ctx.lineTo(rx,it.anchorY+26); ctx.stroke();
+        ctx.save(); ctx.translate(rx,it.anchorY+26+44+Math.sin(t*2)*2); ctx.rotate(Math.sin(t*2)*.04); ctx.fillStyle='#b5874f'; rrect(-9,-44,18,90,5); ctx.fill();
+        ctx.strokeStyle='#8a6336'; ctx.lineWidth=2; for(let i=-30;i<46;i+=22){ ctx.beginPath(); ctx.moveTo(-9,i); ctx.lineTo(9,i); ctx.stroke(); } ctx.restore();
+        ctx.fillStyle='#7a5a33'; ctx.beginPath(); ctx.arc(rx,it.anchorY,5,0,7); ctx.fill(); drawEyeMark(it.em,'yellow'); } } },
+  rock:{
+    solids:it=> it.done?[]:[it.block],
+    fx(it){ sfx('shrink'); spawnP(it.block.x+it.block.w/2,it.block.y+50,24,'#b07ad8',180,.8); },
+    draw(it){ const b=it.block,x=b.x-cam; if(!it.done){ ctx.fillStyle='#6b6480'; rrect(x,b.y,b.w,b.h,10); ctx.fill();
+        ctx.fillStyle='#534d68'; rrect(x+6,b.y+8,b.w-12,b.h-14,8); ctx.fill(); ctx.fillStyle='#8fd6ff';
+        ctx.beginPath(); ctx.moveTo(x+b.w/2,b.y+20); ctx.lineTo(x+b.w/2+7,b.y+36); ctx.lineTo(x+b.w/2,b.y+52); ctx.lineTo(x+b.w/2-7,b.y+36); ctx.fill();
+        drawEyeMark(it.em,'purple'); } else { ctx.fillStyle='#6b6480'; ctx.beginPath(); ctx.arc(x+b.w/2,b.y+b.h-6,7,0,7); ctx.fill(); } } },
+  mush:{
+    solids:it=> it.done?[it.pad]:[],
+    fx(it){ sfx('grow'); spawnP(it.pad.x+it.pad.w/2,it.pad.y,18,'#7fe0a0',160,.8); },
+    draw(it){ if(!it.done){ const x=it.sprout.x-cam,y=it.sprout.y; ctx.fillStyle='#d8cdbf'; ctx.fillRect(x-3,y-12,6,12);
+        ctx.fillStyle='#d86a8a'; ctx.beginPath(); ctx.ellipse(x,y-13,12,8,0,Math.PI,0); ctx.fill();
+        ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(x-4,y-15,2,0,7); ctx.arc(x+4,y-16,1.6,0,7); ctx.fill(); drawEyeMark(it.em,'purple'); }
+      else { const p=it.pad,x=p.x-cam, bob=Math.sin(t*6)*2; ctx.fillStyle='#d8cdbf'; ctx.fillRect(x+p.w/2-7,p.y+8,14,20);
+        ctx.fillStyle='#e0738f'; ctx.beginPath(); ctx.ellipse(x+p.w/2,p.y+8+bob,p.w/2,16,0,Math.PI,0); ctx.fill();
+        ctx.fillStyle='#fff'; for(let i=0;i<4;i++){ ctx.beginPath(); ctx.arc(x+18+i*22,p.y-1+bob,3,0,7); ctx.fill(); } } } },
+  torch:{
+    solids:()=>[],
+    fx(it){ sfx('burn'); spawnP(it.x,it.y-30,18,'#ffcf7a',150,.8); },
+    draw(it){ const x=it.x-cam,y=it.y; ctx.strokeStyle='#7a5a33'; ctx.lineWidth=5; ctx.lineCap='round'; ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x,y-34); ctx.stroke();
+      if(it.done){ const fy=y-42+Math.sin(t*10)*2; ctx.fillStyle='#ffd24a'; ctx.beginPath(); ctx.moveTo(x,fy-15); ctx.quadraticCurveTo(x+9,fy,x,fy+8); ctx.quadraticCurveTo(x-9,fy,x,fy-15); ctx.fill();
+        ctx.fillStyle='#ff8a3a'; ctx.beginPath(); ctx.moveTo(x,fy-7); ctx.quadraticCurveTo(x+5,fy+1,x,fy+6); ctx.quadraticCurveTo(x-5,fy+1,x,fy-7); ctx.fill(); }
+      else { ctx.fillStyle='#46405f'; ctx.beginPath(); ctx.arc(x,y-38,5,0,7); ctx.fill(); drawEyeMark(it.em,'red'); } } },
+};
+function solids(){ const arr=L.platforms.slice(); for(const it of L.interact){ const T=INTERACT_TYPES[it.type]; if(T&&T.solids) arr.push(...T.solids(it)); }
+  if(L.arena&&bossActive&&L.boss.state!=='defeated') arr.push(L.arena.wall); return arr; }
+let equipped=null;
+function activate(it){ it.done=true; flashScreen(.18,'190,240,220'); const T=INTERACT_TYPES[it.type]; if(T&&T.fx) T.fx(it); }
+function computeEquip(){ const px=player.x+player.w/2, py=player.y+player.h/2;
+  for(const it of L.interact){ if(it.done)continue; const z=it.zone; if(px>z.x&&px<z.x+z.w&&py>z.y&&py<z.y+z.h) return it.eye; }
+  if(L.boss&&bossActive&&L.boss.state==='blind'&&nearBoss()) return L.boss.cageEye;
+  return equipped; }
+function doUse(){
+  if(L.boss&&bossActive&&L.boss.state==='blind'&&equipped===L.boss.cageEye&&nearBoss()){ startFinish(); return; }
+  if(nearTree){ openTreeEncounter(nearTree); return; }
+  const px=player.x+player.w/2, py=player.y+player.h/2;
+  for(const it of L.interact){ if(it.done)continue; const z=it.zone; if(px>z.x&&px<z.x+z.w&&py>z.y&&py<z.y+z.h&&it.eye===equipped){ activate(it); return; } } }
+
+/* --- 4g2 Boss şablonu: her boss aynı davranışı paylaşır; kimliği yalnız
+   L.boss verisi (hp, cageEye, kafes/küçültme, konum) belirler — yeni boss =
+   yeni veri girişi. --- */
+let bossActive=false;
+const bossShots=[];
+const bossBox=()=>({x:L.boss.x,y:L.boss.ground-L.boss.h,w:L.boss.w,h:L.boss.h});
+const bossAtkInterval=()=>{ const a=CONFIG.boss.atkIntervals; return a[Math.max(0,Math.min(a.length-1,L.boss.hp-1))]; };
+const bossFinishEye=()=>tool(L.boss.cageEye).emoji;
+const bossFinishVerb=()=>L.boss.finisher==='shrink'?'küçült':'kafesle';
+function nearBoss(){ const b=L.boss; return b&&Math.abs((player.x+player.w/2)-(b.x+b.w/2))<b.w/2+CONFIG.boss.meleeRange && Math.abs((player.y+player.h)-b.ground)<CONFIG.boss.meleeVRange; }
+function bossThrow(){ const b=L.boss, C=CONFIG.boss, sx=b.x+b.w/2+b.face*34, sy=b.ground-b.h+28, dir=Math.sign((player.x+player.w/2)-sx)||-1;
+  bossShots.push({x:sx,y:sy,vx:dir*C.shotVx,vy:C.shotVy}); spawnP(sx,sy,5,'#b9a0c4',120,.3); }
+function startFinish(){ const b=L.boss; b.state='caged'; b.cageT=CONFIG.boss.cageT0; b.shake=.4; hitStop(.09); screenShake(5,.18);
+  if(b.finisher==='shrink'){ sfx('shrink'); spawnP(b.x+b.w/2,b.ground-b.h/2,24,'#b07ad8',200,.9); }
+  else { sfx('cage'); spawnP(b.x+b.w/2,b.ground-b.h/2,28,'#5fc77f',200,.9); } }
+function updateBoss(dt,pcx){ if(!L.boss) return; const b=L.boss, C=CONFIG.boss;
+  if(!bossActive&&pcx>L.arena.trig){ bossActive=true; b.state='idle'; hintMsg='Önce 🏖️ kum at, sonra '+bossFinishEye()+' ile '+bossFinishVerb()+'!'; hintT=3.5; }
+  if(!bossActive) return; if(b.shake>0)b.shake-=dt;
+  if(b.state==='idle'){ if(b.x<=b.px0)b.paceDir=1; if(b.x>=b.px1)b.paceDir=-1; b.x+=b.paceDir*C.paceSpd*dt; b.face=(pcx<b.x+b.w/2)?-1:1;
+    if(b.tel>0){ b.tel-=dt; if(b.tel<=0) bossThrow(); } else { b.atkT-=dt; if(b.atkT<=0){ b.tel=C.telegraph; b.atkT=bossAtkInterval(); } }
+    if(player.iframe<=0&&overlap(player,bossBox())) loseLife(false);
+  } else if(b.state==='blind'){ b.blindT-=dt; if(b.blindT<=0) b.state='idle';
+  } else if(b.state==='caged'){ b.cageT-=dt; if(b.cageT<=0){ b.hp--;
+      if(b.hp<=0){ b.state='defeated'; b.defT=C.defeatT; hitStop(.14); screenShake(6,.24); spawnP(b.x+b.w/2,b.ground-b.h/2,30,'#c2a6ff',200,1.2); }
+      else { b.state='idle'; b.atkT=bossAtkInterval()*.85; b.tel=0; sfx('bosshurt');
+        if(b.finisher==='shrink'){ b.scale=(b.scale||1)*C.shrinkFactor; spawnP(b.x+b.w/2,b.ground-b.h/2,18,'#b07ad8',160,.8); }
+        else spawnP(b.x+b.w/2,b.ground-b.h/2,18,'#5fc77f',160,.8); } }
+  } else if(b.state==='defeated'){ b.defT-=dt; if(b.defT<=0) levelComplete(); }
+  for(let i=bossShots.length-1;i>=0;i--){ const s=bossShots[i]; s.vy+=C.shotGrav*dt; s.x+=s.vx*dt; s.y+=s.vy*dt;
+    if(player.iframe<=0&&overlap(player,{x:s.x-C.shotRadius,y:s.y-C.shotRadius,w:C.shotRadius*2,h:C.shotRadius*2})){ loseLife(false); spawnP(s.x,s.y,10,'#c9b3d6',150,.5); bossShots.splice(i,1); continue; }
+    if(s.y>b.ground+10||s.x<L.arena.wall.x-40||s.x>L.w){ spawnP(s.x,Math.min(s.y,b.ground),6,'#b9a0c4',120,.4); bossShots.splice(i,1); } } }
+
+/* --- 4h Bilge Ağaçlar (Aşama 4 v1): "isimlendirerek iyileştirme" — canavar
+   döngüsüyle aynı duygusal fiil, ama güç kuşanma yok, yalnız bilmek. Yanlış
+   seçim cezasız (tekrar dener); doğru seçim ağacı uyandırır, adını Web Speech
+   ile söyler ve Doğa Günlüğü'ne kart ekler. Asla ilerlemeyi kilitlemez. */
+let nearTree=null;
+function findNearTree(pcx,pFeet){ nearTree=null; if(!L.trees)return; let bd=1e9;
+  for(const tr of L.trees){ if(tr.awake)continue; const d=Math.hypot(pcx-tr.x,pFeet-tr.y); if(d<CONFIG.tree.wakeRadius&&d<bd){ bd=d; nearTree=tr; } } }
+function pick3(correctId,pool){ const others=pool.filter(id=>id!==correctId);
+  for(let i=others.length-1;i>0;i--){ const j=(Math.random()*(i+1))|0; [others[i],others[j]]=[others[j],others[i]]; }
+  const all=[correctId,...others.slice(0,2)];
+  for(let i=all.length-1;i>0;i--){ const j=(Math.random()*(i+1))|0; [all[i],all[j]]=[all[j],all[i]]; }
+  return all; }
+/* Dil-duyarlı seslendirme: aktif arayüz diline göre konuşur (tr→tr-TR,
+   en→en-US, de→de-DE, ar→ar-SA). Ses paketi cihazda yoksa tarayıcı sessizce
+   varsayılana düşer — özellik algılama try/catch ile korunuyor. */
+const SPEECH_LOCALE={tr:'tr-TR',en:'en-US',de:'de-DE',ar:'ar-SA'};
+function speak(text){ try{ if(!('speechSynthesis' in window)) return;
+  const u=new SpeechSynthesisUtterance(text); u.lang=SPEECH_LOCALE[lang]||'tr-TR'; u.rate=.85;
+  speechSynthesis.cancel(); speechSynthesis.speak(u); }catch(e){} }
+/* Bir kart kökündeki tüm 🔊 butonlarını bağlar: dokununca adı okur,
+   seçimi TETİKLEMEZ (stopPropagation) — okuma bilmeyenler için. */
+function wireSayButtons(root){ root.querySelectorAll('.sayBtn').forEach(sb=>{
+  sb.addEventListener('pointerdown',e=>{ e.stopPropagation(); });
+  sb.addEventListener('click',e=>{ e.stopPropagation(); e.preventDefault(); speak(sb.dataset.say||''); }); }); }
+function openTreeEncounter(treeInst){ state='tree'; clearEdges();
+  const region=WORLD[L.regionIdx]||{treeSet:[treeInst.id]};
+  const choices=pick3(treeInst.id,region.treeSet);
+  card.innerHTML='<h1>'+S('tree.question')+'</h1>'
+    +'<div class="clueBadge"><img src="'+getTreeArt(treeInst.id,120,false)+'" alt=""></div>'
+    +'<div class="treeChoices" id="treeChoices">'+choices.map(id=>{ const info=TREES[id]||{desc:''};
+      return '<button class="treeChoice" data-id="'+id+'"><img src="'+getTreeArt(id,72,true)+'" alt="">'
+        +'<span class="nameRow"><span class="tName">'+treeName(id)+'</span><span class="sayBtn" data-say="'+treeName(id)+'" role="button" aria-label="dinle">🔊</span></span>'
+        +'<span class="tDesc">'+(info.desc||'')+'</span></button>'; }).join('')+'</div>';
+  ov.classList.remove('hidden'); setUI('tree');
+  card.querySelectorAll('#treeChoices button').forEach(btn=>{ btn.onclick=()=>{
+    if(btn.dataset.id===treeInst.id) wakeTree(treeInst);
+    else { screenShake(CONFIG.tree.wrongShake,.15); sfx('puff'); btn.classList.add('dim'); } }; });
+  wireSayButtons(card); }
+function wakeTree(treeInst){ treeInst.awake=true; sfx('wake');
+  const info=TREES[treeInst.id]||{family:'',gift:'',fact:''}, nm=treeName(treeInst.id);
+  speak(nm);
+  if(!save.journal) save.journal=[]; if(!save.journal.includes(treeInst.id)){ save.journal.push(treeInst.id); writeSave(); }
+  spawnP(treeInst.x,treeInst.y-70,26,'#ffe6a0',180,1.1); screenShake(2,.2); hitStop(.06);
+  card.innerHTML='<div class="wakeCard"><div class="eyes">'+S('tree.wake.eyes')+'</div>'
+    +'<div class="clueBadge"><img src="'+getTreeArt(treeInst.id,120,false)+'" alt=""></div>'
+    +'<div class="tBig nameRow"><span><b>'+nm+'</b>'+S('tree.wake.title')+'</span><span class="sayBtn" data-say="'+nm+'" role="button" aria-label="dinle">🔊</span></div>'
+    +'<p style="margin:2px 0 0">'+S('journal.family')+info.family+' · '+(info.desc||'')+'</p>'
+    +'<div class="wakeFact">🌱 '+(info.fact||info.gift)+'</div>'
+    +'<p class="hint">'+S('tree.wake.body')+'</p>'
+    +'<div class="row"><button class="play" id="treeDoneBtn">'+S('ui.resume')+'</button></div></div>';
+  const b=document.getElementById('treeDoneBtn'); if(b) b.onclick=resumeGame;
+  wireSayButtons(card); }
+
+/* --- 4i Canlar, kontrol noktaları, bölüm sonu --- */
+let hearts=CONFIG.hearts, respawn={x:90,y:340};
+function softRespawn(){ player.x=respawn.x; player.y=respawn.y; player.vx=0; player.vy=0; player.iframe=.6; player.squashVel=0; }
+function loseLife(doRespawn){ if(player.iframe>0&&!doRespawn) return; hearts--; flashScreen(.45,'255,80,90'); sfx('hurt'); screenShake(3,.15);
+  spawnP(player.x+player.w/2,player.y+player.h/2,14,'#ff8aa6',200,.7);
+  if(hearts<=0){ hearts=0; showCard('over'); return; }
+  if(doRespawn) softRespawn(); else { player.iframe=IFRAME; player.vy=-340; player.vx=-player.face*260; } }
+function levelComplete(){ save.furthest=Math.max(save.furthest||0,cur+1); writeSave();
+  if(cur+1<LEVELS.length) showCard('next'); else showCard('win'); }
+
+/* --- 4j Ana güncelleme hattı (sıra v1 ile birebir) --- */
+function update(dt){ t+=dt; pulse+=dt;
+  if(flash>0)flash=Math.max(0,flash-dt); if(hintT>0)hintT-=dt; if(heartFlash>0)heartFlash-=dt;
+  if(shakeT>0){ shakeT-=dt; if(shakeT<=0) shakeMag=0; }
+  updateAmbient(dt, state==="play"?cam:0);
+  if(state!=='play') return;
+  let dir=(input.right?1:0)-(input.left?1:0);
+  if(dir!==0){ player.vx+=dir*ACCEL*dt; player.face=dir; } else { const s=Math.sign(player.vx); player.vx-=s*FRICTION*dt; if(Math.sign(player.vx)!==s)player.vx=0; }
+  player.vx=Math.max(-MOVE,Math.min(MOVE,player.vx));
+  if(input.jumpEdge){ player.jbuf=JBUF; input.jumpEdge=false; } else player.jbuf=Math.max(0,player.jbuf-dt);
+  player.coyote=player.grounded?COYOTE:Math.max(0,player.coyote-dt);
+  if(player.jbuf>0&&player.coyote>0){ player.vy=-JUMP_V; player.grounded=false; player.coyote=0; player.jbuf=0; player.squash=1.3; player.squashVel=0; sfx('jump'); spawnP(player.x+player.w/2,player.y+player.h,6,'#eafff2',120,.4); }
+  if(!input.jumpHeld&&player.vy<-JUMP_CUT) player.vy=-JUMP_CUT;
+  player.vy=Math.min(MAX_FALL,player.vy+GRAV*dt);
+  equipped=computeEquip();
+  const bp=document.getElementById('bPow'); if(equipped){ const e=tool(equipped); bp.style.background=e.col; bp.textContent=e.emoji; } else { bp.style.background='rgba(255,247,236,.78)'; bp.textContent='✨'; }
+  if(input.useEdge){ doUse(); input.useEdge=false; }
+  if(input.sandEdge){ throwSand(); input.sandEdge=false; }
+  player.x+=player.vx*dt;
+  for(const s of solids()){ if(overlap(player,s)){ if(player.vx>0)player.x=s.x-player.w; else if(player.vx<0)player.x=s.x+s.w; player.vx=0; } }
+  player.x=Math.max(0,Math.min(L.w-player.w,player.x));
+  const wasG=player.grounded; player.grounded=false; player.y+=player.vy*dt;
+  for(const s of solids()){ if(overlap(player,s)){ if(player.vy>0){ player.y=s.y-player.h;
+      if(s.bounce){ player.vy=-BOUNCE; player.squash=1.4; player.squashVel=0; sfx('boing'); screenShake(3,.12); spawnP(player.x+player.w/2,player.y+player.h,8,'#d9b0f0',170,.5); }
+      else { player.grounded=true; if(!wasG&&player.vy>300){ const fall=Math.min(1,player.vy/MAX_FALL); player.squash=.72-fall*.1; player.squashVel=0; beep(190-fall*70,.09,'triangle',.22,140); noise(.08,.1+fall*.08,400); screenShake(1+fall*4,.08+fall*.08); spawnP(player.x+player.w/2,player.y+player.h,5+Math.round(fall*4),'#eafff2',100+fall*60,.35); } player.vy=0; } }
+    else if(player.vy<0){ player.y=s.y+s.h; player.vy=0; } } }
+  { const SPK=CONFIG.juice.squashK, SPD=CONFIG.juice.squashDamp; player.squashVel+=(1-player.squash)*SPK*dt; player.squashVel*=Math.max(0,1-SPD*dt); player.squash+=player.squashVel*dt; }
+  if(Math.abs(player.vy)>CONFIG.juice.trailVy&&Math.random()<CONFIG.juice.trailChance){ particles.push({x:player.x+player.w/2+(Math.random()*8-4),y:player.y+player.h*.35,vx:-player.vx*.12,vy:-player.vy*.08,life:.22,max:.22,col:'rgba(190,240,255,.5)',r:2.5+Math.random()*2}); }
+  const pcx=player.x+player.w/2, pFeet=player.y+player.h;
+  findHealTarget(pcx,pFeet); findNearTree(pcx,pFeet);
+  for(const m of L.monsters) updateMonster(m,dt,pcx,pFeet);
+  updateSands(dt); updateBoss(dt,pcx);
+  for(const cp of L.checkpoints){ if(pcx>cp.x&&respawn.x<cp.x){ respawn={x:cp.x,y:cp.y-player.h-2}; spawnP(cp.x,cp.y-30,12,'#9fe6c4',120,.7); if(sandLeft<sandMax){ sandLeft=sandMax; updateSandBadge(); } } }
+  if(player.y>L.deathY){ if(L.gentle) softRespawn(); else loseLife(true); }
+  if(L.goal){ const dx=pcx-L.goal.x, dy=(player.y+player.h/2)-L.goal.y; if(Math.hypot(dx,dy)<L.goal.r+18){ sfx('clear'); levelComplete(); } }
+  if(player.iframe>0)player.iframe-=dt;
+  player.blinkT-=dt; if(player.blinkT<=0){player.blink=.12;player.blinkT=1.8+Math.random()*2.6;} if(player.blink>0)player.blink-=dt;
+  for(let i=particles.length-1;i>=0;i--){ const p=particles[i]; p.life-=dt; if(p.life<=0){particles.splice(i,1);continue;} p.vy+=380*dt; p.x+=p.vx*dt; p.y+=p.vy*dt; }
+  const target=Math.max(0,Math.min(L.w-W,pcx-W/2)); cam+=(target-cam)*Math.min(1,dt*CONFIG.camera.lerp); }
+
+/* ============================ 5) LEVELS ============================ */
+/* Bölüm verileri bildirimseldir: platformlar, su, bulmacalar, canavarlar,
+   kontrol noktaları, hedef, ipucu tabelaları. Yeni bölüm = yeni veri. */
+function level1(){ return { name:'Bölüm 1 · İlk Adımlar', biome:'meadow', w:3040, deathY:700, gentle:true, spawn:{x:90,y:300},
+  platforms:[
+    {x:20,  y:380,w:380,h:240},{x:520,y:370,w:300,h:240},{x:1080,y:370,w:460,h:240},
+    {x:1618,y:360,w:160,h:242},{x:1860,y:355,w:160,h:245},{x:2100,y:352,w:940,h:252},
+  ],
+  water:{x:760,top:470,w:320},
+  interact:[ {type:'freeze',eye:'blue',done:false,zone:{x:660,y:300,w:200,h:150},ice:{x:760,y:370,w:320,h:40}} ],
+  /* Bilge Ağaçlar = kontrol noktası bekçileri: her bayrağın hemen arkasında
+     bir uyuyan ağaç durur — mola anında (kum da burada dolar) karşına çıkar. */
+  trees:[ {id:'meşe', x:585, y:370}, {id:'çınar', x:1190, y:370}, {id:'ıhlamur', x:2180, y:352} ],
+  monsters:[
+    {x:685, gx0:530, gx1:778, ground:370, lo:524,  hi:815,  spd:78,  aggro:168, patrolSpd:34},
+    {x:1210,gx0:1092,gx1:1420,ground:370, lo:1085, hi:1534, spd:92,  aggro:192, patrolSpd:42},
+    {x:1680,gx0:1626,gx1:1770,ground:360, lo:1622, hi:1775, spd:70,  aggro:136, patrolSpd:30},
+    {type:'flipper', x:2290,gx0:2110,gx1:2560,ground:352, lo:2104, hi:3035, spd:118, aggro:248, patrolSpd:52},
+    {x:2760,gx0:2602,gx1:2960,ground:352, lo:2104, hi:3035, spd:132, aggro:268, patrolSpd:58},
+  ],
+  boss:null, arena:null,
+  checkpoints:[{x:560,y:370},{x:1125,y:370},{x:2112,y:352}],
+  goal:{x:2982,y:300,r:34}, hasSand:true, hasHeal:true,
+  intros:[
+    {x:170, text:'← → ile yürü, ⤴ ile zıpla'},
+    {x:695, text:'Canavar yakın! 🏖️ at → suyu dondur ✨'},
+    {x:1200,text:'İyileştir: 🏖️ → yanına git → 💛 basılı tut'},
+    {x:1630,text:'Küçük adacık — dikkatli atla!'},
+    {x:1918,text:'İkinci ada — hız al ve atla!'},
+    {x:2290,text:'Bu canavar aklı karışmış — iyileştir!'},
+    {x:2762,text:'Son engel! Hedefe az kaldı 🏖️'},
+  ] }; }
+function level2(){ return { name:'Bölüm 2 · Zümrüt Zirveler', w:4400, deathY:700, gentle:false, spawn:{x:120,y:300},
+  platforms:[
+    {x:20,  y:380,w:340,h:240},{x:440,y:360,w:200,h:240},{x:960,y:360,w:460,h:240},
+    {x:1560,y:350,w:200,h:250},{x:2000,y:350,w:180,h:250},
+    {x:2248,y:342,w:202,h:258},{x:2520,y:348,w:218,h:255},
+    {x:2800,y:345,w:244,h:260},{x:3112,y:342,w:244,h:261},
+    {x:3420,y:345,w:980,h:260},
+  ],
+  water:{x:640,top:470,w:320},
+  interact:[
+    {type:'freeze', eye:'blue',  done:false,zone:{x:560,y:300,w:180,h:140},ice:{x:640,y:360,w:320,h:40}},
+    {type:'thorn',  eye:'red',   done:false,zone:{x:1090,y:250,w:170,h:120},wall:{x:1170,y:236,w:28,h:124},em:{x:1184,y:215}},
+    {type:'grow',   eye:'green', done:false,zone:{x:1240,y:300,w:130,h:100},sprout:{x:1300,y:360},leaves:[{x:1360,y:350,w:80,h:18},{x:1470,y:350,w:80,h:18}],em:{x:1300,y:318}},
+    {type:'bridge', eye:'yellow',done:false,zone:{x:1660,y:300,w:140,h:110},bridge:{x:1760,y:352,w:240,h:18},ropeX:1880,anchorY:250,em:{x:1880,y:300}},
+    {type:'grow',   eye:'green', done:false,zone:{x:2258,y:248,w:148,h:108},sprout:{x:2330,y:342},leaves:[{x:2444,y:342,w:82,h:18},{x:2534,y:348,w:82,h:18}],em:{x:2330,y:270}},
+    {type:'thorn',  eye:'red',   done:false,zone:{x:2808,y:240,w:148,h:120},wall:{x:2888,y:228,w:28,h:117},em:{x:2902,y:210}},
+  ],
+  monsters:[
+    {x:1060,gx0:1010,gx1:1200,ground:360,lo:980, hi:1280},
+    {x:1668,gx0:1568,gx1:1728,ground:350,lo:1564,hi:1756},
+    {x:2580,gx0:2530,gx1:2710,ground:348,lo:2524,hi:2734,spd:148,aggro:295,patrolSpd:66},
+    {x:2856,gx0:2806,gx1:3016,ground:345,lo:2804,hi:3040,spd:152,aggro:305,patrolSpd:68},
+    {type:'flipper',x:3174,gx0:3118,gx1:3330,ground:342,lo:3116,hi:3350,spd:158,aggro:312,patrolSpd:70},
+    {x:3380,gx0:3322,gx1:3412,ground:345,lo:3320,hi:3415,spd:144,aggro:278,patrolSpd:62},
+  ],
+  boss:{x:3840,w:88,h:88,ground:345,hp:3,state:'sleep',face:-1,atkT:1.8,tel:0,blindT:0,cageT:0,defT:0,paceDir:-1,px0:3640,px1:3960,shake:0,cageEye:'green',finisher:'cage',scale:1},
+  arena:{trig:3474,wall:{x:3422,y:120,w:14,h:490}},
+  checkpoints:[{x:1000,y:360},{x:1600,y:350},{x:2540,y:348},{x:2804,y:345}],
+  goal:null, hasSand:true, hasHeal:true,
+  trees:[ {id:'çam', x:990, y:360}, {id:'servi', x:1575, y:350}, {id:'huş', x:2560, y:348}, {id:'akçaağaç', x:3140, y:342} ],
+  intros:[
+    {x:2332,text:'🌿 yine sarmaşık — yeni köprü yap!'},
+    {x:2582,text:'Hızlı canavar! 🏖️ hazır ol'},
+    {x:2858,text:'Diken + canavar aynı anda — sırayla!'},
+    {x:3180,text:'Bu canavar kafası karışmış — yön değiştiriyor!'},
+    {x:3384,text:'Son geçit öncesi — 🏖️ hazır!'},
+  ] }; }
+function level3(){ return { name:'Bölüm 3 · Kristal Mağaralar', w:4100, deathY:760, gentle:false, cave:true, dark:true, spawn:{x:90,y:340},
+  platforms:[
+    {x:20,  y:400,w:560,h:240},{x:700,y:300,w:360,h:340},{x:1060,y:340,w:360,h:300},
+    {x:1560,y:340,w:200,h:300},{x:1858,y:338,w:322,h:322},
+    {x:2258,y:330,w:262,h:330},{x:2598,y:336,w:202,h:324},
+    {x:2878,y:332,w:262,h:328},{x:3320,y:334,w:220,h:326},
+    {x:3600,y:334,w:500,h:326},
+  ],
+  water:null,
+  interact:[
+    {type:'rock', eye:'purple',done:false,zone:{x:330,y:300,w:160,h:110},block:{x:430,y:300,w:52,h:100},em:{x:456,y:282}},
+    {type:'mush', eye:'purple',done:false,zone:{x:480,y:320,w:150,h:100},sprout:{x:540,y:400},pad:{x:560,y:392,w:120,h:20,bounce:true},em:{x:540,y:362}},
+    {type:'torch',eye:'red',   done:false,zone:{x:1630,y:250,w:140,h:130},x:1700,y:300,em:{x:1700,y:250}},
+    {type:'rock', eye:'purple',done:false,zone:{x:2268,y:222,w:142,h:122},block:{x:2342,y:222,w:54,h:108},em:{x:2369,y:204}},
+    {type:'torch',eye:'red',   done:false,zone:{x:2608,y:238,w:132,h:130},x:2678,y:292,em:{x:2678,y:242}},
+    {type:'mush', eye:'purple',done:false,zone:{x:2886,y:228,w:150,h:118},sprout:{x:2960,y:332},pad:{x:2980,y:322,w:120,h:20,bounce:true},em:{x:2960,y:278}},
+  ],
+  monsters:[
+    {x:1862,gx0:1862,gx1:2070,ground:338,lo:1862,hi:2175,spd:118,aggro:230,patrolSpd:55},
+    {x:2310,gx0:2265,gx1:2445,ground:330,lo:2262,hi:2516,spd:105,aggro:215,patrolSpd:48},
+    {x:2658,gx0:2608,gx1:2776,ground:336,lo:2602,hi:2794,spd:132,aggro:262,patrolSpd:58},
+    {type:'flipper',x:2940,gx0:2882,gx1:3100,ground:332,lo:2880,hi:3135,spd:150,aggro:305,patrolSpd:66},
+    {x:3376,gx0:3324,gx1:3512,ground:334,lo:3322,hi:3514,spd:158,aggro:315,patrolSpd:72},
+  ],
+  boss:{x:3790,w:88,h:88,ground:334,hp:3,state:'sleep',face:-1,atkT:1.8,tel:0,blindT:0,cageT:0,defT:0,paceDir:-1,px0:3648,px1:3860,shake:0,cageEye:'purple',finisher:'shrink',scale:1},
+  arena:{trig:3656,wall:{x:3604,y:120,w:14,h:540}},
+  checkpoints:[{x:740,y:300},{x:1620,y:340},{x:2296,y:330},{x:2882,y:332}],
+  goal:null, hasSand:true, hasHeal:true,
+  trees:[ {id:'söğüt', x:770, y:300}, {id:'ginkgo', x:1870, y:338}, {id:'zeytin', x:2100, y:338} ],
+  intros:[
+    {x:160, text:'🟣 yeni güç! Kayaya yaklaş, ✨ ile küçült'},
+    {x:520, text:'Mantarı ✨ ile büyüt → üstünde zıpla'},
+    {x:1680,text:'Karanlık! 🔥 ile meşaleyi yak'},
+    {x:2314,text:'Bir kaya daha + canavar — önce 🏖️!'},
+    {x:2660,text:'Karanlık meşale 🔥 — ve canavar! 🏖️'},
+    {x:2944,text:'Yeni mantar 🟣 → büyüt ve uçarak atla!'},
+    {x:3380,text:'Son canavar — 🏖️ hızlı!'},
+  ] }; }
+
+/* ===================== BÖLÜM ÜRETİCİ (Slice B) =====================
+   Bir "tarif" nesnesinden eksiksiz, oynanabilir bir bölüm üretir. Kanıtlanmış
+   B1 platform genişlikleri + sabit GAP (MOVE/JUMP_V ile her zaman adil geçilebilir
+   — rastgele/riskli zıplama mesafesi üretilmez) temel alınır. Sakin platformlar
+   (ağaç+kontrol noktası) ve bulmaca platformları ayrı tutulur; aralarında GAP
+   payı bırakıldığından ağaç ile bulmaca ASLA çakışmaz (konum bazında sonradan
+   kontrol etmeye gerek yok — tasarımla garanti). Yeni bölüm eklemek artık
+   ~10 satırlık bir tarif objesi yazmaktan ibaret. */
+const SECTION_RHYTHM=[ {w:380,h:240},{w:300,h:240},{w:460,h:240},{w:220,h:245},{w:240,h:248},{w:260,h:252} ];
+const GAP=140; /* B1'den kanıtlanmış boşluk */
+const PUZZLE_FACTORY={
+  freeze:(x,gy)=>({type:'freeze',eye:'blue',done:false, zone:{x:x-20,y:gy-90,w:200,h:150}, ice:{x:x+20,y:gy,w:280,h:40}}),
+  thorn: (x,gy)=>({type:'thorn',eye:'red',done:false, zone:{x,y:gy-134,w:170,h:120}, wall:{x:x+80,y:gy-124,w:28,h:124}, em:{x:x+94,y:gy-145}}),
+  grow:  (x,gy)=>({type:'grow',eye:'green',done:false, zone:{x,y:gy-90,w:130,h:100}, sprout:{x:x+60,y:gy}, leaves:[{x:x+120,y:gy-10,w:80,h:18},{x:x+220,y:gy-10,w:80,h:18}], em:{x:x+60,y:gy-42}}),
+  bridge:(x,gy)=>({type:'bridge',eye:'yellow',done:false, zone:{x,y:gy-90,w:140,h:110}, bridge:{x:x+100,y:gy-8,w:220,h:18}, ropeX:x+210, anchorY:gy-100, em:{x:x+210,y:gy-50}}),
+  rock:  (x,gy)=>({type:'rock',eye:'purple',done:false, zone:{x,y:gy-90,w:160,h:110}, block:{x:x+100,y:gy-100,w:52,h:100}, em:{x:x+126,y:gy-118}}),
+  mush:  (x,gy)=>({type:'mush',eye:'purple',done:false, zone:{x,y:gy-70,w:150,h:100}, sprout:{x:x+60,y:gy}, pad:{x:x+80,y:gy-8,w:120,h:20,bounce:true}, em:{x:x+60,y:gy-38}}),
+  torch: (x,gy)=>({type:'torch',eye:'red',done:false, zone:{x,y:gy-140,w:140,h:130}, x:x+70, y:gy-90, em:{x:x+70,y:gy-140}}),
+};
+function makeSection(recipe){
+  const { name, biome, treeIds, tier=1, puzzleTypes, cageEye, finisher, hint } = recipe;
+  const pairCount=Math.max(treeIds.length,puzzleTypes.length,3); /* kural: en az 3 ağaç/bulmaca çifti */
+  const segCount=pairCount*2+2; /* her ağaç için [sakin+bulmaca] + son 2 boss alanı */
+  const platforms=[]; let x=20;
+  for(let i=0;i<segCount;i++){ const r=SECTION_RHYTHM[i%SECTION_RHYTHM.length], y=370-((Math.floor(i/2)%3)*6);
+    platforms.push({x,y,w:r.w,h:r.h}); x+=r.w+GAP+Math.min(30,tier*6); }
+  const w=x+420;
+  const calmP=[], puzzleP=[];
+  for(let i=0;i<segCount-2;i++) (i%2===0?calmP:puzzleP).push(platforms[i]);
+  const checkpoints=[], trees=[];
+  treeIds.forEach((tid,i)=>{ const p=calmP[Math.min(i,calmP.length-1)];
+    checkpoints.push({x:p.x+22,y:p.y}); trees.push({id:tid,x:p.x+p.w-46,y:p.y}); });
+  const interact=puzzleP.map((p,i)=>PUZZLE_FACTORY[puzzleTypes[i%puzzleTypes.length]](p.x+p.w*.22,p.y));
+  const monsters=puzzleP.map((p,i)=>{ const gx0=p.x+16, gx1=p.x+p.w-16;
+    return {x:(gx0+gx1)/2, gx0, gx1, ground:p.y, lo:gx0-30, hi:gx1+30,
+      spd:82+tier*10, aggro:165+tier*12, patrolSpd:34+tier*3, flip:(i%3===2)}; });
+  const lastCalm=platforms[segCount-2], lastPlat=platforms[segCount-1];
+  const boss={x:lastPlat.x+lastPlat.w*.35,w:88,h:88,ground:lastPlat.y,hp:3,state:'sleep',face:-1,atkT:1.8,tel:0,blindT:0,cageT:0,defT:0,paceDir:-1,
+    px0:lastPlat.x+40,px1:lastPlat.x+lastPlat.w-120,shake:0,cageEye,finisher,scale:1};
+  const arena={trig:lastCalm.x+30, wall:{x:lastCalm.x-8,y:120,w:14,h:500}};
+  return { name, w, deathY:760, gentle:false, spawn:{x:90,y:300}, platforms, water:null,
+    interact, monsters, boss, arena, checkpoints, goal:null, hasSand:true, hasHeal:true, trees,
+    intros:[{x:60,text:hint||'Yeni bir bölge — ağaçları bul, bulmacaları çöz!'}] };
+}
+/* Bölüm 4 · Kestane Korusu: üreticinin ilk kanıt-kavramı. Tarif ~10 satır;
+   platform/canavar/bulmaca/kontrol noktası/ağaç/boss hepsi otomatik türetilir. */
+function level4(){ return makeSection({
+  name:'Bölüm 4 · Kestane Korusu', biome:'forest', tier:2,
+  treeIds:['kestane','kayın','kavak'], puzzleTypes:['grow','bridge','thorn'],
+  cageEye:'green', finisher:'cage', hint:'Kestane Korusu — üç yeni ağaç seni bekliyor!',
+}); }
+
+/* WORLD: harita bu bölge listesinden üretilir. Her bölge kendi biyomunu ve
+   (Aşama 4'te) yerli ağaç setini taşır — coğrafya burada tek kaynaktır.
+   Yeni bölge eklemek = yeni obje; motor/harita/kaydetme kodu değişmez. */
+const WORLD=[
+  { id:'cayir',    nameKey:'region.cayir',    biome:'meadow', treeSet:['meşe','çınar','ıhlamur'],       levels:[level1] },
+  { id:'zirveler', nameKey:'region.zirveler', biome:'peaks',  treeSet:['çam','servi','huş','akçaağaç'], levels:[level2] },
+  { id:'magara',   nameKey:'region.magara',   biome:'cave',   treeSet:['söğüt','ginkgo','zeytin'],      levels:[level3] },
+  { id:'kestane',  nameKey:'region.kestane',  biome:'forest', treeSet:['kestane','kayın','kavak'],      levels:[level4] },
+];
+const LEVELS=[], LEVEL_META=[];
+(function flattenWorld(){ WORLD.forEach((r,ri)=>{ r.levels.forEach((fn,li)=>{ LEVELS.push(fn); LEVEL_META.push({regionIdx:ri,regionId:r.id,biome:r.biome,indexInRegion:li}); }); }); })();
+function prepLevel(lv,idx){ lv.monsters=lv.monsters.map(makeMonster); lv.biome=LEVEL_META[idx].biome; lv.regionIdx=LEVEL_META[idx].regionIdx;
+  lv.trees=(lv.trees||[]).map(tr=>Object.assign({},tr,{awake:(save.journal||[]).includes(tr.id)}));
+  return lv; }
+let cur=0, L=prepLevel(LEVELS[0](),0);
+
+/* ============================ 6) RENDER ============================ */
+function rrect(x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
+const hsh=(i,m)=>(((i)%m)+m)%m; /* negatifler için güvenli mod */
+
+/* Vinyet: bir kez çizilir, her karede kopyalanır (ucuz) */
+const vig=document.createElement('canvas'); vig.width=W; vig.height=H;
+{ const vg=vig.getContext('2d'); const g=vg.createRadialGradient(W/2,H*.44,H*.36,W/2,H*.52,H*.9);
+  g.addColorStop(0,'rgba(10,48,44,0)'); g.addColorStop(1,'rgba(10,48,44,.20)'); vg.fillStyle=g; vg.fillRect(0,0,W,H); }
+
+function drawTree(x,baseY,s,biomeKey){ const B=BIOME[biomeKey||'meadow']; ctx.save(); ctx.translate(x,baseY); ctx.scale(s,s);
+  ctx.fillStyle=B.treeTrunk; ctx.fillRect(-4,-24,8,26);
+  ctx.fillStyle=B.treeLeafA; ctx.beginPath(); ctx.arc(-11,-30,15,0,7); ctx.arc(11,-30,15,0,7); ctx.arc(0,-43,17,0,7); ctx.fill();
+  ctx.fillStyle=B.treeLeafB; ctx.beginPath(); ctx.arc(6,-28,10,0,7); ctx.fill(); ctx.restore(); }
+
+/* 3 katman paralaks çayır: uzak bulut+tepe (0.15/0.25), orta tepe+ağaç+bulut (0.35–0.45), yakın çalı (0.68) */
+function drawMeadowBg(bgCam){ const B=BIOME.meadow;
+  const g=ctx.createLinearGradient(0,0,0,H); g.addColorStop(0,B.skyTop); g.addColorStop(.55,B.skyMid); g.addColorStop(1,B.skyBot);
+  ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+  const sx=W*.78-bgCam*.05, sy=86;
+  const rg=ctx.createRadialGradient(sx,sy,6,sx,sy,120); rg.addColorStop(0,'rgba(255,246,210,.9)'); rg.addColorStop(.35,'rgba(255,243,196,.32)'); rg.addColorStop(1,'rgba(255,243,196,0)');
+  ctx.fillStyle=rg; ctx.beginPath(); ctx.arc(sx,sy,120,0,7); ctx.fill();
+  ctx.fillStyle='#fff6d2'; ctx.beginPath(); ctx.arc(sx,sy,30,0,7); ctx.fill();
+  const layer=(f,step,fn)=>{ const off=bgCam*f, i0=Math.floor((off-260)/step), i1=Math.ceil((off+W+260)/step); for(let i=i0;i<=i1;i++) fn(i,i*step-off); };
+  ctx.fillStyle=B.cloudFar;
+  layer(.15,340,(i,x)=>{ const by=52+hsh(i*53,64), br=40+hsh(i*37,26);
+    ctx.beginPath(); ctx.arc(x,by,br,0,7); ctx.arc(x+br,by+8,br*.78,0,7); ctx.arc(x-br*.8,by+10,br*.66,0,7); ctx.fill(); });
+  ctx.fillStyle=B.hillsFar;
+  layer(.25,430,(i,x)=>{ const hh=96+hsh(i*61,50); ctx.beginPath(); ctx.ellipse(x,H*.8+40,300,hh,0,Math.PI,0); ctx.fill(); });
+  ctx.fillStyle=B.hillsMid;
+  layer(.45,360,(i,x)=>{ const hh=110+hsh(i*47,56); ctx.beginPath(); ctx.ellipse(x,H*.92+30,250,hh,0,Math.PI,0); ctx.fill(); });
+  layer(.45,300,(i,x)=>{ if(hsh(i,2)===0) drawTree(x+hsh(i*31,120)-60, H*.84-hsh(i*23,26), .7+hsh(i*13,40)/100); });
+  ctx.fillStyle=B.cloudNear;
+  layer(.35,520,(i,x)=>{ const by=118+hsh(i*71,64), br=28+hsh(i*29,20); ctx.beginPath(); ctx.arc(x,by,br,0,7); ctx.arc(x+br*.9,by+6,br*.7,0,7); ctx.fill(); });
+  ctx.fillStyle=B.bushes;
+  layer(.68,240,(i,x)=>{ const hh=60+hsh(i*41,44); ctx.beginPath(); ctx.ellipse(x,H+30,150,hh,0,Math.PI,0); ctx.fill(); }); }
+
+function drawPineSilhouette(x,baseY,s){ ctx.save(); ctx.translate(x,baseY); ctx.scale(s,s);
+  ctx.fillStyle=BIOME.peaks.treeLeafB; ctx.beginPath(); ctx.moveTo(0,-58); ctx.lineTo(16,-24); ctx.lineTo(-16,-24); ctx.fill();
+  ctx.fillStyle=BIOME.peaks.treeLeafA; ctx.beginPath(); ctx.moveTo(0,-42); ctx.lineTo(19,-4); ctx.lineTo(-19,-4); ctx.fill();
+  ctx.fillStyle=BIOME.peaks.treeTrunk; ctx.fillRect(-3,-6,6,8); ctx.restore(); }
+/* 3 katman paralaks zirveler: uzak karlı doruklar, orta çam sırtı+bulut, yakın kayalık */
+function drawPeaksBg(bgCam){ const B=BIOME.peaks;
+  const g=ctx.createLinearGradient(0,0,0,H); g.addColorStop(0,B.skyTop); g.addColorStop(.55,B.skyMid); g.addColorStop(1,B.skyBot);
+  ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+  const sx=W*.24-bgCam*.04, sy=76; const rg=ctx.createRadialGradient(sx,sy,4,sx,sy,100); rg.addColorStop(0,'rgba(255,255,255,.85)'); rg.addColorStop(1,'rgba(255,255,255,0)');
+  ctx.fillStyle=rg; ctx.beginPath(); ctx.arc(sx,sy,100,0,7); ctx.fill(); ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(sx,sy,22,0,7); ctx.fill();
+  const layer=(f,step,fn)=>{ const off=bgCam*f, i0=Math.floor((off-260)/step), i1=Math.ceil((off+W+260)/step); for(let i=i0;i<=i1;i++) fn(i,i*step-off); };
+  ctx.fillStyle=B.hillsFar;
+  layer(.2,300,(i,x)=>{ const hh=150+hsh(i*53,90); ctx.beginPath(); ctx.moveTo(x-160,H*.72); ctx.lineTo(x,H*.72-hh); ctx.lineTo(x+160,H*.72); ctx.fill();
+    ctx.fillStyle='#fff'; ctx.globalAlpha=.85; ctx.beginPath(); ctx.moveTo(x-38,H*.72-hh+38); ctx.lineTo(x,H*.72-hh); ctx.lineTo(x+38,H*.72-hh+38); ctx.lineTo(x,H*.72-hh+58); ctx.fill(); ctx.globalAlpha=1; ctx.fillStyle=B.hillsFar; });
+  ctx.fillStyle=B.cloudFar; layer(.3,420,(i,x)=>{ const by=100+hsh(i*61,50), br=34+hsh(i*29,20); ctx.beginPath(); ctx.arc(x,by,br,0,7); ctx.arc(x+br,by+6,br*.7,0,7); ctx.fill(); });
+  ctx.fillStyle=B.hillsMid; layer(.42,340,(i,x)=>{ const hh=120+hsh(i*47,60); ctx.beginPath(); ctx.ellipse(x,H*.92+20,220,hh,0,Math.PI,0); ctx.fill(); });
+  layer(.42,150,(i,x)=>{ if(hsh(i,2)===0) drawPineSilhouette(x+hsh(i*31,80)-40, H*.86-hsh(i*17,20), .8+hsh(i*13,40)/100); });
+  ctx.fillStyle=B.bushes; layer(.68,220,(i,x)=>{ const hh=50+hsh(i*41,40); ctx.beginPath(); ctx.ellipse(x,H+20,140,hh,0,Math.PI,0); ctx.fill(); }); }
+
+/* 3 katman paralaks mağara: uzak kristal ışıltıları, orta sarkıt sırtı, yakın taş yığınları */
+function drawCaveBg(bgCam){ const B=BIOME.cave;
+  const g=ctx.createLinearGradient(0,0,0,H); g.addColorStop(0,B.skyTop); g.addColorStop(.6,B.skyMid); g.addColorStop(1,B.skyBot);
+  ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+  const layer=(f,step,fn)=>{ const off=bgCam*f, i0=Math.floor((off-260)/step), i1=Math.ceil((off+W+260)/step); for(let i=i0;i<=i1;i++) fn(i,i*step-off); };
+  layer(.18,220,(i,x)=>{ const by=110+hsh(i*61,280), col=(i%2)?B.crystalA:B.crystalB; ctx.save(); ctx.globalAlpha=.28+Math.sin(t*2+i)*.1; ctx.fillStyle=col;
+    ctx.beginPath(); ctx.moveTo(x,by-10); ctx.lineTo(x+5,by); ctx.lineTo(x,by+10); ctx.lineTo(x-5,by); ctx.fill(); ctx.restore(); });
+  ctx.fillStyle=B.hillsFar; layer(.32,180,(i,x)=>{ const hh=26+hsh(i*53,38); ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x+22,0); ctx.lineTo(x+11,hh); ctx.fill(); });
+  layer(.5,260,(i,x)=>{ const by=90+hsh(i*67,300), col=(i%2)?B.crystalA:B.crystalB; ctx.save(); ctx.globalAlpha=.5+Math.sin(t*3+i*1.3)*.18; ctx.fillStyle=col;
+    ctx.beginPath(); ctx.moveTo(x,by-15); ctx.lineTo(x+7,by); ctx.lineTo(x,by+15); ctx.lineTo(x-7,by); ctx.fill(); ctx.restore(); });
+  ctx.fillStyle=B.hillsMid; layer(.65,150,(i,x)=>{ const hh=24+hsh(i*53,42); ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x+24,0); ctx.lineTo(x+12,hh); ctx.fill(); }); }
+
+const BG_FNS={ meadow:drawMeadowBg, peaks:drawPeaksBg, cave:drawCaveBg, forest:drawForestBg };
+
+/* 3 katman paralaks orman: uzak sonbahar tepeleri, orta ağaç silüetleri, yakın çalılık */
+function drawForestBg(bgCam){ const B=BIOME.forest;
+  const g=ctx.createLinearGradient(0,0,0,H); g.addColorStop(0,B.skyTop); g.addColorStop(.55,B.skyMid); g.addColorStop(1,B.skyBot);
+  ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+  const sx=W*.7-bgCam*.05, sy=90; const rg=ctx.createRadialGradient(sx,sy,6,sx,sy,110); rg.addColorStop(0,'rgba(255,240,210,.9)'); rg.addColorStop(1,'rgba(255,240,210,0)');
+  ctx.fillStyle=rg; ctx.beginPath(); ctx.arc(sx,sy,110,0,7); ctx.fill(); ctx.fillStyle='#fff6df'; ctx.beginPath(); ctx.arc(sx,sy,26,0,7); ctx.fill();
+  const layer=(f,step,fn)=>{ const off=bgCam*f, i0=Math.floor((off-260)/step), i1=Math.ceil((off+W+260)/step); for(let i=i0;i<=i1;i++) fn(i,i*step-off); };
+  ctx.fillStyle=B.hillsFar; layer(.22,360,(i,x)=>{ const hh=110+hsh(i*53,60); ctx.beginPath(); ctx.ellipse(x,H*.82+30,300,hh,0,Math.PI,0); ctx.fill(); });
+  ctx.fillStyle=B.cloudFar; layer(.3,420,(i,x)=>{ const by=100+hsh(i*61,50), br=32+hsh(i*29,20); ctx.beginPath(); ctx.arc(x,by,br,0,7); ctx.arc(x+br,by+6,br*.7,0,7); ctx.fill(); });
+  ctx.fillStyle=B.hillsMid; layer(.42,300,(i,x)=>{ const hh=130+hsh(i*47,60); ctx.beginPath(); ctx.ellipse(x,H*.9+20,240,hh,0,Math.PI,0); ctx.fill(); });
+  layer(.42,150,(i,x)=>{ if(hsh(i,2)===0) drawTree(x+hsh(i*31,80)-40, H*.84-hsh(i*17,20), .7+hsh(i*13,40)/100, 'forest'); });
+  ctx.fillStyle=B.bushes; layer(.68,220,(i,x)=>{ const hh=54+hsh(i*41,40); ctx.beginPath(); ctx.ellipse(x,H+20,140,hh,0,Math.PI,0); ctx.fill(); }); }
+
+/* Platform stilleri biyoma göre — çayır (çim+çiçek), zirveler (kaya+kar), mağara (taş+kristal). */
+function drawIslandMeadow(s){ const x=s.x-cam; if(x+s.w<-40||x>W+40) return; const B=BIOME.meadow;
+  ctx.fillStyle=B.soil; rrect(x,s.y+14,s.w,s.h,26); ctx.fill();
+  ctx.fillStyle=B.soilDark; rrect(x+10,s.y+40,s.w-20,s.h,22); ctx.fill();
+  ctx.fillStyle=B.grass; rrect(x,s.y,s.w,30,16); ctx.fill();
+  ctx.fillStyle=B.grassLight; rrect(x,s.y,s.w,14,12); ctx.fill();
+  ctx.lineWidth=2; ctx.lineCap='round';
+  for(let i=22;i<s.w-10;i+=54){ const gx=x+i, sway=Math.sin(t*2+(s.x+i)*.05)*2;
+    ctx.strokeStyle='#8fe6a8'; ctx.beginPath();
+    ctx.moveTo(gx,s.y+2); ctx.lineTo(gx-3+sway,s.y-7);
+    ctx.moveTo(gx+4,s.y+2); ctx.lineTo(gx+6+sway,s.y-8);
+    ctx.moveTo(gx+8,s.y+2); ctx.lineTo(gx+11+sway,s.y-6); ctx.stroke();
+    const k=((s.x+i)/54)|0;
+    if(k%3===0){ const fx=gx+18, fy=s.y-8+Math.sin(t*2+k)*1.5;
+      ctx.strokeStyle='#6fcf8f'; ctx.beginPath(); ctx.moveTo(fx,s.y+2); ctx.lineTo(fx,fy+3); ctx.stroke();
+      ctx.fillStyle=(k%2)?'#ffb3c9':'#fff3f6'; ctx.beginPath(); ctx.arc(fx,fy,3.4,0,7); ctx.fill();
+      ctx.fillStyle='#ffd54a'; ctx.beginPath(); ctx.arc(fx,fy,1.4,0,7); ctx.fill(); } } }
+
+function drawIslandPeaks(s){ const x=s.x-cam; if(x+s.w<-40||x>W+40) return; const B=BIOME.peaks;
+  ctx.fillStyle=B.soil; rrect(x,s.y+14,s.w,s.h,22); ctx.fill();
+  ctx.fillStyle=B.soilDark; rrect(x+10,s.y+40,s.w-20,s.h,18); ctx.fill();
+  ctx.fillStyle=B.grass; rrect(x,s.y,s.w,26,14); ctx.fill();
+  ctx.fillStyle=B.grassLight; rrect(x,s.y,s.w,10,10); ctx.fill();
+  ctx.fillStyle='rgba(255,255,255,.9)';
+  for(let i=16;i<s.w-8;i+=64){ const gx=x+i; ctx.beginPath(); ctx.moveTo(gx,s.y+2); ctx.lineTo(gx+9,s.y+2); ctx.lineTo(gx+4.5,s.y-9); ctx.fill(); }
+  ctx.strokeStyle='rgba(255,255,255,.5)'; ctx.lineWidth=2;
+  for(let i=0;i<s.w;i+=70){ const gx=x+30+i; ctx.beginPath(); ctx.arc(gx,s.y+s.h*.55,3,0,7); ctx.stroke(); } }
+
+function drawIslandCave(s){ const x=s.x-cam; if(x+s.w<-40||x>W+40) return; const B=BIOME.cave;
+  ctx.fillStyle=B.soil; rrect(x,s.y+12,s.w,s.h,20); ctx.fill();
+  ctx.fillStyle=B.soilDark; rrect(x+8,s.y+34,s.w-16,s.h,16); ctx.fill();
+  ctx.fillStyle=B.grass; rrect(x,s.y,s.w,24,12); ctx.fill();
+  ctx.fillStyle=B.grassLight; rrect(x,s.y,s.w,10,8); ctx.fill();
+  for(let i=24;i<s.w;i+=96){ ctx.fillStyle=((i/24|0)%2)?B.crystalA:B.crystalB; ctx.save(); ctx.globalAlpha=.85+Math.sin(t*3+i)*.12;
+    ctx.beginPath(); ctx.moveTo(x+i,s.y-3); ctx.lineTo(x+i+4,s.y+6); ctx.lineTo(x+i,s.y+14); ctx.lineTo(x+i-4,s.y+6); ctx.fill(); ctx.restore(); } }
+
+const PLATFORM_STYLES={ meadow:drawIslandMeadow, peaks:drawIslandPeaks, cave:drawIslandCave, forest:drawIslandForest };
+function drawIslandForest(s){ const x=s.x-cam; if(x+s.w<-40||x>W+40) return; const B=BIOME.forest;
+  ctx.fillStyle=B.soil; rrect(x,s.y+14,s.w,s.h,24); ctx.fill();
+  ctx.fillStyle=B.soilDark; rrect(x+10,s.y+40,s.w-20,s.h,20); ctx.fill();
+  ctx.fillStyle=B.grass; rrect(x,s.y,s.w,28,14); ctx.fill();
+  ctx.fillStyle=B.grassLight; rrect(x,s.y,s.w,12,10); ctx.fill();
+  const pal=['#d9863f','#c2542a','#e0a84a'];
+  for(let i=18;i<s.w-8;i+=46){ const gx=x+i, k=((s.x+i)/46)|0, rot=Math.sin(t+k)*.3;
+    ctx.save(); ctx.translate(gx,s.y-2); ctx.rotate(rot); ctx.fillStyle=pal[k%pal.length];
+    ctx.beginPath(); ctx.ellipse(0,0,5,3,0,0,7); ctx.fill(); ctx.restore(); } }
+function drawIsland(s){ (PLATFORM_STYLES[(L&&L.biome)||'meadow']||drawIslandMeadow)(s); }
+
+function drawWater(){ if(!L.water) return; const x=L.water.x-cam; ctx.save(); ctx.beginPath(); ctx.rect(x,L.water.top,L.water.w,200); ctx.clip();
+  const g=ctx.createLinearGradient(0,L.water.top,0,L.water.top+160); g.addColorStop(0,'#86d7ea'); g.addColorStop(1,'#3579ad'); ctx.fillStyle=g; ctx.fillRect(x,L.water.top,L.water.w,200);
+  ctx.strokeStyle='rgba(255,255,255,.6)'; ctx.lineWidth=3;
+  for(let r=0;r<3;r++){ ctx.beginPath(); for(let i=0;i<=L.water.w;i+=8){ const yy=L.water.top+18+r*26+Math.sin(i*.06+t*3+r)*5; i===0?ctx.moveTo(x+i,yy):ctx.lineTo(x+i,yy); } ctx.stroke(); }
+  ctx.fillStyle='rgba(255,255,255,.8)';
+  for(let i=0;i<6;i++){ const gx=x+18+hsh(i*97,L.water.w-36), gy=L.water.top+34+hsh(i*53,80); ctx.globalAlpha=.2+.5*Math.abs(Math.sin(t*2+i*1.7)); ctx.fillRect(gx,gy,10,2); }
+  ctx.globalAlpha=1; ctx.restore(); }
+
+/* Bulmaca göz işareti: yumuşak parlamalı (görsel yükseltme) */
+function drawEyeMark(em,key){ const e=tool(key); const x=em.x-cam, y=em.y+Math.sin(pulse*4)*4;
+  ctx.save(); ctx.fillStyle=e.col;
+  ctx.globalAlpha=.16+Math.sin(pulse*4)*.06; ctx.beginPath(); ctx.arc(x,y,28,0,7); ctx.fill();
+  ctx.globalAlpha=.92; ctx.beginPath(); ctx.arc(x,y,14,0,7); ctx.fill();
+  ctx.globalAlpha=1; ctx.font='16px Trebuchet MS'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(e.emoji,x,y+1); ctx.textBaseline='alphabetic'; ctx.restore(); }
+
+function drawInteract(){ for(const it of L.interact){ const T=INTERACT_TYPES[it.type]; if(T&&T.draw) T.draw(it); } }
+
+/* --- Bilge Ağaçlar: gerçek yaprak/gövde ikonları ---
+   Metin isim yerine GERÇEK ayırt edici siluetler: meşe'nin yuvarlak tekrarlı
+   lobları, çınar'ın sivri yıldız lobları, ıhlamur'un asimetrik kalp tabanı —
+   botanik olarak doğru, tek dosya + çevrimdışı kısıtına uygun (canvas'tan
+   üretilir, dış görsel/ağ bağımlılığı yok, telif riski yok). */
+function pathOakLeaf(c,cx,cy,s){ const lobes=3;
+  c.beginPath(); c.moveTo(cx,cy-.44*s);
+  for(let i=0;i<lobes;i++){ const y1=cy-.44*s+((i+.5)/lobes)*.80*s, y2=cy-.44*s+((i+1)/lobes)*.80*s, bulge=.40*s-i*.03*s;
+    c.quadraticCurveTo(cx+bulge,y1-.02*s,cx+.13*s,y2); }
+  c.lineTo(cx+.06*s,cy+.42*s); c.lineTo(cx,cy+.5*s); c.lineTo(cx-.06*s,cy+.42*s);
+  for(let i=lobes-1;i>=0;i--){ const y2=cy-.44*s+(i/lobes)*.80*s, y1=cy-.44*s+((i+.5)/lobes)*.80*s, bulge=.40*s-i*.03*s;
+    c.quadraticCurveTo(cx-bulge,y1-.02*s,cx-.13*s,y2); }
+  c.closePath(); }
+function pathPlaneLeaf(c,cx,cy,s){
+  c.beginPath(); c.moveTo(cx,cy-.54*s);
+  c.quadraticCurveTo(cx+.09*s,cy-.28*s,cx+.09*s,cy-.16*s); c.lineTo(cx+.40*s,cy-.38*s);
+  c.quadraticCurveTo(cx+.32*s,cy-.06*s,cx+.22*s,cy+.02*s); c.lineTo(cx+.46*s,cy+.16*s);
+  c.quadraticCurveTo(cx+.26*s,cy+.18*s,cx+.11*s,cy+.32*s); c.lineTo(cx,cy+.48*s); c.lineTo(cx-.11*s,cy+.32*s);
+  c.quadraticCurveTo(cx-.26*s,cy+.18*s,cx-.46*s,cy+.16*s); c.lineTo(cx-.22*s,cy+.02*s);
+  c.quadraticCurveTo(cx-.32*s,cy-.06*s,cx-.40*s,cy-.38*s); c.lineTo(cx-.09*s,cy-.16*s);
+  c.quadraticCurveTo(cx-.09*s,cy-.28*s,cx,cy-.54*s); c.closePath(); }
+function pathLindenLeaf(c,cx,cy,s){
+  c.beginPath(); c.moveTo(cx+.02*s,cy-.48*s);
+  c.quadraticCurveTo(cx+.32*s,cy-.22*s,cx+.32*s,cy+.04*s); c.quadraticCurveTo(cx+.32*s,cy+.30*s,cx+.05*s,cy+.30*s);
+  c.quadraticCurveTo(cx-.06*s,cy+.35*s,cx-.16*s,cy+.25*s); c.quadraticCurveTo(cx-.38*s,cy+.20*s,cx-.36*s,cy-.04*s);
+  c.quadraticCurveTo(cx-.33*s,cy-.26*s,cx-.10*s,cy-.40*s); c.quadraticCurveTo(cx-.04*s,cy-.45*s,cx+.02*s,cy-.48*s);
+  c.closePath(); }
+/* --- Slice A genişleme seti: Çam/Servi/Huş/Akçaağaç (B2), Söğüt/Ginkgo/Zeytin
+   (B3). Her biri PIL ile piksel-doğru önizlemede 58px kart boyutunda ayırt
+   edilebilirlik doğrulandı (bkz. Fundamentals) — özellikle servi/huş/söğüt/
+   zeytin birbirine benzemesin diye kenar dokusu + oran farklılaştırıldı. */
+function pathPineLeaf(c,cx,cy,s){ c.beginPath(); const n=9;
+  for(let i=0;i<n;i++){ const a=-Math.PI/2+(i-(n-1)/2)*(Math.PI*0.95/n);
+    const tx=cx+Math.cos(a)*.52*s, ty=cy+Math.sin(a)*.52*s;
+    const blx=cx+Math.cos(a-.045)*.07*s, bly=cy+Math.sin(a-.045)*.07*s+.28*s;
+    const brx=cx+Math.cos(a+.045)*.07*s, bry=cy+Math.sin(a+.045)*.07*s+.28*s;
+    c.moveTo(blx,bly); c.lineTo(tx,ty); c.lineTo(brx,bry); c.closePath(); } }
+function pathCypressLeaf(c,cx,cy,s){ c.beginPath(); const segs=10;
+  c.moveTo(cx,cy-.48*s);
+  for(let i=1;i<=segs;i++){ const yy=cy-.48*s+(i/segs)*.94*s, width=.16*s*Math.pow(Math.sin((i/segs)*Math.PI),0.6), jag=.03*s*(i%2===0?1:-1);
+    c.lineTo(cx+width+jag,yy); }
+  for(let i=segs;i>=0;i--){ const yy=cy-.48*s+(i/segs)*.94*s, width=.16*s*Math.pow(Math.sin((i/segs)*Math.PI),0.6), jag=.03*s*(i%2===0?1:-1);
+    c.lineTo(cx-width+jag,yy); }
+  c.closePath(); }
+function pathBirchLeaf(c,cx,cy,s){
+  const base=[]; const pushQ=(p0,cp,p1,n)=>{ for(let i=1;i<=n;i++){ const tt=i/n, x=(1-tt)*(1-tt)*p0[0]+2*(1-tt)*tt*cp[0]+tt*tt*p1[0], y=(1-tt)*(1-tt)*p0[1]+2*(1-tt)*tt*cp[1]+tt*tt*p1[1]; base.push([x,y]); } };
+  let cur=[cx,cy-.44*s]; base.push(cur);
+  const steps=[[[cx+.26*s,cy-.22*s],[cx+.28*s,cy+.04*s]],[[cx+.26*s,cy+.26*s],[cx+.08*s,cy+.36*s]],[[cx,cy+.4*s],[cx,cy+.42*s]],
+    [[cx,cy+.4*s],[cx-.08*s,cy+.36*s]],[[cx-.26*s,cy+.26*s],[cx-.28*s,cy+.04*s]],[[cx-.26*s,cy-.22*s],[cx,cy-.44*s]]];
+  for(const st of steps){ pushQ(cur,st[0],st[1],10); cur=st[1]; }
+  c.beginPath();
+  base.forEach((p,i)=>{ const dx=p[0]-cx, dy=p[1]-cy, d=Math.hypot(dx,dy)||1, tooth=1+((i%3===0)?.045:0);
+    const x=cx+dx/d*d*tooth, y=cy+dy/d*d*tooth; if(i===0) c.moveTo(x,y); else c.lineTo(x,y); });
+  c.closePath(); }
+function pathMapleLeaf(c,cx,cy,s){ const n=5, tipR=.5, valleyR=.2;
+  c.beginPath();
+  for(let i=0;i<n;i++){ const aTip=-Math.PI/2+i*(2*Math.PI/n), aPrevV=aTip-Math.PI/n, aNextV=aTip+Math.PI/n;
+    const pv=[cx+Math.cos(aPrevV)*valleyR*s,cy+Math.sin(aPrevV)*valleyR*s];
+    const tip=[cx+Math.cos(aTip)*tipR*s,cy+Math.sin(aTip)*tipR*s];
+    const nv=[cx+Math.cos(aNextV)*valleyR*s,cy+Math.sin(aNextV)*valleyR*s];
+    const cp1=[cx+Math.cos((aPrevV+aTip)/2)*tipR*s*.7,cy+Math.sin((aPrevV+aTip)/2)*tipR*s*.7];
+    const cp2=[cx+Math.cos((aTip+aNextV)/2)*tipR*s*.7,cy+Math.sin((aTip+aNextV)/2)*tipR*s*.7];
+    if(i===0) c.moveTo(pv[0],pv[1]);
+    c.quadraticCurveTo(cp1[0],cp1[1],tip[0],tip[1]); c.quadraticCurveTo(cp2[0],cp2[1],nv[0],nv[1]); }
+  c.closePath(); }
+function pathWillowLeaf(c,cx,cy,s){ c.beginPath(); c.moveTo(cx,cy-.5*s);
+  c.quadraticCurveTo(cx+.07*s,cy-.3*s,cx+.07*s,cy-.05*s); c.quadraticCurveTo(cx+.07*s,cy+.25*s,cx+.03*s,cy+.42*s);
+  c.quadraticCurveTo(cx+.01*s,cy+.48*s,cx,cy+.5*s);
+  c.quadraticCurveTo(cx-.01*s,cy+.48*s,cx-.03*s,cy+.42*s); c.quadraticCurveTo(cx-.07*s,cy+.25*s,cx-.07*s,cy-.05*s);
+  c.quadraticCurveTo(cx-.07*s,cy-.3*s,cx,cy-.5*s); c.closePath(); }
+function pathGinkgoLeaf(c,cx,cy,s){ c.beginPath(); c.moveTo(cx,cy+.42*s);
+  c.quadraticCurveTo(cx-.36*s,cy+.32*s,cx-.42*s,cy-.02*s); c.quadraticCurveTo(cx-.44*s,cy-.3*s,cx-.18*s,cy-.42*s);
+  c.quadraticCurveTo(cx-.06*s,cy-.46*s,cx,cy-.34*s); c.quadraticCurveTo(cx+.06*s,cy-.46*s,cx+.18*s,cy-.42*s);
+  c.quadraticCurveTo(cx+.44*s,cy-.3*s,cx+.42*s,cy-.02*s); c.quadraticCurveTo(cx+.36*s,cy+.32*s,cx,cy+.42*s); c.closePath(); }
+function pathOliveLeaf(c,cx,cy,s){ c.beginPath(); c.moveTo(cx,cy-.32*s);
+  c.quadraticCurveTo(cx+.26*s,cy-.16*s,cx+.28*s,cy+.02*s); c.quadraticCurveTo(cx+.24*s,cy+.24*s,cx,cy+.34*s);
+  c.quadraticCurveTo(cx-.24*s,cy+.24*s,cx-.28*s,cy+.02*s); c.quadraticCurveTo(cx-.26*s,cy-.16*s,cx,cy-.32*s); c.closePath(); }
+/* --- Slice B kanıt-kavramı (Bölüm 4 · Kestane Korusu): Kestane/Kayın/Kavak --- */
+function pathChestnutLeaf(c,cx,cy,s){
+  const base=[]; const pushQ=(p0,cp,p1,n)=>{ for(let i=1;i<=n;i++){ const tt=i/n, x=(1-tt)*(1-tt)*p0[0]+2*(1-tt)*tt*cp[0]+tt*tt*p1[0], y=(1-tt)*(1-tt)*p0[1]+2*(1-tt)*tt*cp[1]+tt*tt*p1[1]; base.push([x,y]); } };
+  let cur=[cx,cy-.5*s]; base.push(cur);
+  const steps=[[[cx+.14*s,cy-.3*s],[cx+.15*s,cy-.05*s]],[[cx+.15*s,cy+.22*s],[cx+.06*s,cy+.4*s]],[[cx+.02*s,cy+.47*s],[cx,cy+.5*s]],
+    [[cx-.02*s,cy+.47*s],[cx-.06*s,cy+.4*s]],[[cx-.15*s,cy+.22*s],[cx-.15*s,cy-.05*s]],[[cx-.14*s,cy-.3*s],[cx,cy-.5*s]]];
+  for(const st of steps){ pushQ(cur,st[0],st[1],10); cur=st[1]; }
+  c.beginPath();
+  base.forEach((p,i)=>{ const dx=p[0]-cx, dy=p[1]-cy, d=Math.hypot(dx,dy)||1, tooth=1+((i%2===0)?.09:-.02);
+    const x=cx+dx/d*d*tooth, y=cy+dy/d*d*tooth; if(i===0) c.moveTo(x,y); else c.lineTo(x,y); });
+  c.closePath(); }
+function pathBeechLeaf(c,cx,cy,s){
+  const base=[]; const pushQ=(p0,cp,p1,n)=>{ for(let i=1;i<=n;i++){ const tt=i/n, x=(1-tt)*(1-tt)*p0[0]+2*(1-tt)*tt*cp[0]+tt*tt*p1[0], y=(1-tt)*(1-tt)*p0[1]+2*(1-tt)*tt*cp[1]+tt*tt*p1[1]; base.push([x,y]); } };
+  let cur=[cx,cy-.46*s]; base.push(cur);
+  const steps=[[[cx+.28*s,cy-.24*s],[cx+.3*s,cy+.02*s]],[[cx+.28*s,cy+.26*s],[cx+.1*s,cy+.38*s]],[[cx+.02*s,cy+.43*s],[cx,cy+.46*s]],
+    [[cx-.02*s,cy+.43*s],[cx-.1*s,cy+.38*s]],[[cx-.28*s,cy+.26*s],[cx-.3*s,cy+.02*s]],[[cx-.28*s,cy-.24*s],[cx,cy-.46*s]]];
+  for(const st of steps){ pushQ(cur,st[0],st[1],10); cur=st[1]; }
+  c.beginPath();
+  base.forEach((p,i)=>{ const dx=p[0]-cx, dy=p[1]-cy, d=Math.hypot(dx,dy)||1, wob=1+.035*Math.sin(i*1.3);
+    const x=cx+dx/d*d*wob, y=cy+dy/d*d*wob; if(i===0) c.moveTo(x,y); else c.lineTo(x,y); });
+  c.closePath(); }
+function pathPoplarLeaf(c,cx,cy,s){ c.beginPath(); c.moveTo(cx,cy-.48*s);
+  c.quadraticCurveTo(cx+.34*s,cy-.06*s,cx+.38*s,cy+.06*s); c.quadraticCurveTo(cx+.2*s,cy+.3*s,cx,cy+.44*s);
+  c.quadraticCurveTo(cx-.2*s,cy+.3*s,cx-.38*s,cy+.06*s); c.quadraticCurveTo(cx-.34*s,cy-.06*s,cx,cy-.48*s); c.closePath(); }
+const LEAF_PATH={ 'meşe':pathOakLeaf, 'çınar':pathPlaneLeaf, 'ıhlamur':pathLindenLeaf,
+  'çam':pathPineLeaf, 'servi':pathCypressLeaf, 'huş':pathBirchLeaf, 'akçaağaç':pathMapleLeaf,
+  'söğüt':pathWillowLeaf, 'ginkgo':pathGinkgoLeaf, 'zeytin':pathOliveLeaf,
+  'kestane':pathChestnutLeaf, 'kayın':pathBeechLeaf, 'kavak':pathPoplarLeaf };
+const LEAF_COLOR={ 'meşe':['#4f9e63','#356e45'], 'çınar':['#7cc257','#4f8a38'], 'ıhlamur':['#93dc9e','#5ba368'],
+  'çam':['#4a8a5c','#2f6b41'], 'servi':['#4a9a78','#2f7858'], 'huş':['#a3d178','#7cae55'], 'akçaağaç':['#8ec24e','#699934'],
+  'söğüt':['#9fc47a','#7aa354'], 'ginkgo':['#cec257','#a8a13e'], 'zeytin':['#9aab6e','#7c8f52'],
+  'kestane':['#8bb04e','#5e8a36'], 'kayın':['#8fc45e','#679c3e'], 'kavak':['#a6d074','#7cab4e'] };
+function drawBarkSwatch(c,x,y,w,h,species){
+  if(species==='meşe'){ c.fillStyle='#4a3f36'; c.fillRect(x,y,w,h); c.strokeStyle='#2e2620'; c.lineWidth=1.3;
+    for(let i=2;i<w;i+=5){ c.beginPath(); const jx=x+i+Math.sin(i*.7)*1.4; c.moveTo(jx,y); c.lineTo(jx+Math.sin(i*1.3)*2,y+h); c.stroke(); } }
+  else if(species==='çınar'){ c.fillStyle='#cdbd90'; c.fillRect(x,y,w,h);
+    const pal=['#8a9a5b','#a9895c','#e8dcc0','#8a9a5b','#c9b98a']; let seed=7;
+    for(let i=0;i<9;i++){ seed=(seed*9301+49297)%233280; const rx=x+(seed/233280)*w;
+      seed=(seed*9301+49297)%233280; const ry=y+(seed/233280)*h;
+      seed=(seed*9301+49297)%233280; const rr=2.6+(seed/233280)*4;
+      c.fillStyle=pal[i%pal.length]; c.beginPath(); c.ellipse(rx,ry,rr,rr*.72,0,0,7); c.fill(); } }
+  else if(species==='huş'){ c.fillStyle='#e8e2d4'; c.fillRect(x,y,w,h); c.strokeStyle='#3a352c'; c.lineWidth=1.4;
+    let seed=13; for(let i=0;i<6;i++){ seed=(seed*9301+49297)%233280; const ry=y+(seed/233280)*h;
+      seed=(seed*9301+49297)%233280; const rx=x+(seed/233280)*w*.8; const rw=4+((seed>>3)%6);
+      c.beginPath(); c.moveTo(rx,ry); c.lineTo(rx+rw,ry+1); c.stroke(); } }
+  else if(species==='çam'||species==='servi'){ c.fillStyle='#6b4a35'; c.fillRect(x,y,w,h); c.strokeStyle='#48301f'; c.lineWidth=1.2;
+    for(let i=2;i<w;i+=4){ c.beginPath(); const jx=x+i+Math.sin(i*.9)*1; c.moveTo(jx,y); c.lineTo(jx+1,y+h); c.stroke(); } }
+  else if(species==='kayın'){ c.fillStyle='#9a9184'; c.fillRect(x,y,w,h); c.strokeStyle='#7d7568'; c.lineWidth=1;
+    for(let i=4;i<w;i+=10){ c.beginPath(); c.moveTo(x+i,y+2); c.lineTo(x+i,y+h-2); c.stroke(); } }
+  else { c.fillStyle='#8a8478'; c.fillRect(x,y,w,h); c.strokeStyle='#6f6a5f'; c.lineWidth=1;
+    for(let i=3;i<w;i+=8){ c.beginPath(); c.moveTo(x+i,y); c.lineTo(x+i,y+h); c.stroke(); } } }
+const treeIconCache={};
+/* İllüstrasyon kalitesi: gradyan dolgu + orta damar + yan damarlar + sap.
+   withBark=true (varsayılan) altta tür-özel kabuk şeridi de çizer. */
+function getTreeIcon(species,size,withBark){ if(withBark===undefined) withBark=true;
+  const key=species+':'+size+':'+withBark; if(treeIconCache[key]) return treeIconCache[key];
+  const cv=document.createElement('canvas'); cv.width=size; cv.height=Math.round(withBark?size*1.32:size*1.08); const c=cv.getContext('2d');
+  const cx=size/2, cy=size*.46, s=size*.86, pathFn=LEAF_PATH[species]||LEAF_PATH['meşe'];
+  const cols=LEAF_COLOR[species]||LEAF_COLOR['meşe'];
+  /* sap */
+  c.strokeStyle='#6b5a3a'; c.lineWidth=Math.max(1.6,size*.03); c.lineCap='round';
+  c.beginPath(); c.moveTo(cx,cy+.42*s); c.quadraticCurveTo(cx+.03*s,cy+.5*s,cx-.02*s,cy+.56*s); c.stroke();
+  /* gövde: gradyan dolgu */
+  pathFn(c,cx,cy,s);
+  const lg=c.createLinearGradient(cx-.4*s,cy-.4*s,cx+.4*s,cy+.4*s); lg.addColorStop(0,cols[0]); lg.addColorStop(1,cols[1]);
+  c.fillStyle=lg; c.fill();
+  c.strokeStyle='rgba(20,50,35,.45)'; c.lineWidth=Math.max(1.1,size*.018); c.stroke();
+  /* damar sistemi: orta + yan damarlar (kırpılmış) */
+  c.save(); pathFn(c,cx,cy,s); c.clip();
+  c.strokeStyle='rgba(255,255,255,.5)'; c.lineWidth=Math.max(1,size*.016); c.lineCap='round';
+  c.beginPath(); c.moveTo(cx,cy-.42*s); c.lineTo(cx,cy+.42*s); c.stroke();
+  c.lineWidth=Math.max(.8,size*.011);
+  for(let i=0;i<4;i++){ const vy=cy-.30*s+i*.19*s;
+    c.beginPath(); c.moveTo(cx,vy); c.quadraticCurveTo(cx+.16*s,vy+.02*s,cx+.30*s,vy-.07*s); c.stroke();
+    c.beginPath(); c.moveTo(cx,vy); c.quadraticCurveTo(cx-.16*s,vy+.02*s,cx-.30*s,vy-.07*s); c.stroke(); }
+  c.restore();
+  if(withBark) drawBarkSwatch(c,size*.14,size*1.12,size*.72,size*.14,species);
+  const url=cv.toDataURL(); treeIconCache[key]=url; return url; }
+
+/* Bilge Ağaçlar görseli — kontrol noktası bekçisi ölçeğinde (canavarlardan
+   büyük, uzaktan görünür). Uyurken: gri tonlar + kapalı gözler + GÖKYÜZÜNE
+   uzanan altın ışık sütunu + yükselen ışıltılar ("buraya gel" feneri).
+   Uyanınca: tür-özel taç biçimi canlı renklerde (meşe geniş-yuvarlak, çınar
+   uzun boylu + yama yama gövde, ıhlamur düzgün oval), kuşlar, açık gözler. */
+function drawTreeSprite(tr){ const x=tr.x-cam, y=tr.y; if(x<-120||x>W+120) return;
+  const info=TREES[tr.id]||{crown:'broad'}, crown=info.crown||'broad';
+  const bob=tr.awake?Math.sin(t*1.6)*3:0, isNear=nearTree===tr;
+  /* uyuyan ağaç feneri: ışık sütunu + yükselen ışıltılar (her zaman, sadece yakınken değil) */
+  if(!tr.awake){ ctx.save();
+    const bw=isNear?46:30, ba=(isNear?.34:.2)+Math.sin(t*2.4)*.06;
+    const bg=ctx.createLinearGradient(0,60,0,y); bg.addColorStop(0,'rgba(255,232,150,0)'); bg.addColorStop(1,'rgba(255,232,150,'+ba+')');
+    ctx.fillStyle=bg; ctx.beginPath(); ctx.moveTo(x-bw*.4,60); ctx.lineTo(x+bw*.4,60); ctx.lineTo(x+bw,y); ctx.lineTo(x-bw,y); ctx.closePath(); ctx.fill();
+    ctx.fillStyle='#fff3c4'; for(let k=0;k<4;k++){ const ph=(t*.35+k*.25)%1; ctx.globalAlpha=(1-ph)*.8;
+      ctx.beginPath(); ctx.arc(x+Math.sin(t*1.3+k*2.2)*18, y-20-ph*150, 2.4,0,7); ctx.fill(); }
+    ctx.restore(); }
+  ctx.save(); ctx.translate(x,y+bob);
+  ctx.fillStyle='rgba(0,0,0,.15)'; ctx.beginPath(); ctx.ellipse(0,4,40,8,0,0,7); ctx.fill();
+  /* gövde — çınar uyanıkken yama yama benekli */
+  const trunkH=crown==='tall'?72:56, trunkW=crown==='tall'?16:18;
+  ctx.fillStyle=tr.awake?(crown==='tall'?'#cdbd90':'#7d5a3a'):'#6b6560';
+  ctx.beginPath(); ctx.moveTo(-trunkW/2-3,2); ctx.lineTo(-trunkW/2,-trunkH); ctx.lineTo(trunkW/2,-trunkH); ctx.lineTo(trunkW/2+3,2); ctx.closePath(); ctx.fill();
+  if(tr.awake&&crown==='tall'){ const pal=['#8a9a5b','#a9895c','#e8dcc0']; for(let i=0;i<5;i++){ ctx.fillStyle=pal[i%3];
+    ctx.beginPath(); ctx.ellipse(((i*13)%trunkW)-trunkW/2+4,-8-i*12,4,6,0,0,7); ctx.fill(); } }
+  /* taç — tür biçimi */
+  const leafA=tr.awake?(LEAF_COLOR[tr.id]?LEAF_COLOR[tr.id][0]:'#63c49b'):'#8b9490';
+  const leafB=tr.awake?(LEAF_COLOR[tr.id]?LEAF_COLOR[tr.id][1]:'#4fae87'):'#767f7b';
+  let eyeY;
+  if(crown==='tall'){ eyeY=-trunkH-30;
+    ctx.fillStyle=leafA; ctx.beginPath(); ctx.arc(-16,-trunkH-18,20,0,7); ctx.arc(16,-trunkH-18,20,0,7); ctx.arc(0,-trunkH-44,24,0,7); ctx.arc(0,-trunkH-14,22,0,7); ctx.fill();
+    ctx.fillStyle=leafB; ctx.beginPath(); ctx.arc(10,-trunkH-34,13,0,7); ctx.fill(); }
+  else if(crown==='oval'){ eyeY=-trunkH-26;
+    ctx.fillStyle=leafA; ctx.beginPath(); ctx.ellipse(0,-trunkH-24,30,38,0,0,7); ctx.fill();
+    ctx.fillStyle=leafB; ctx.beginPath(); ctx.ellipse(9,-trunkH-14,14,20,0,0,7); ctx.fill(); }
+  else if(crown==='conifer'){ eyeY=-trunkH-22;
+    ctx.fillStyle=leafA;
+    ctx.beginPath(); ctx.moveTo(0,-trunkH-52); ctx.lineTo(24,-trunkH-20); ctx.lineTo(-24,-trunkH-20); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(0,-trunkH-38); ctx.lineTo(29,-trunkH-6); ctx.lineTo(-29,-trunkH-6); ctx.closePath(); ctx.fill();
+    ctx.fillStyle=leafB;
+    ctx.beginPath(); ctx.moveTo(0,-trunkH-24); ctx.lineTo(22,-trunkH+2); ctx.lineTo(-22,-trunkH+2); ctx.closePath(); ctx.fill(); }
+  else if(crown==='weeping'){ eyeY=-trunkH-30;
+    ctx.fillStyle=leafA; ctx.beginPath(); ctx.ellipse(0,-trunkH-30,32,26,0,0,7); ctx.fill();
+    ctx.strokeStyle=leafB; ctx.lineWidth=2.4; ctx.lineCap='round';
+    for(let i=-3;i<=3;i++){ const dx=i*9; ctx.beginPath(); ctx.moveTo(dx,-trunkH-14); ctx.quadraticCurveTo(dx*1.3,-trunkH+10,dx*1.1,-trunkH+26+Math.sin(t+i)*3); ctx.stroke(); } }
+  else { eyeY=-trunkH-22; /* broad: meşe, akçaağaç */
+    ctx.fillStyle=leafA; ctx.beginPath(); ctx.arc(-26,-trunkH-12,24,0,7); ctx.arc(26,-trunkH-12,24,0,7); ctx.arc(0,-trunkH-34,28,0,7); ctx.arc(0,-trunkH-8,26,0,7); ctx.fill();
+    ctx.fillStyle=leafB; ctx.beginPath(); ctx.arc(12,-trunkH-20,15,0,7); ctx.fill(); }
+  if(tr.awake){ ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(-11,eyeY,7,0,7); ctx.arc(11,eyeY,7,0,7); ctx.fill();
+    ctx.fillStyle='#3a2a1a'; ctx.beginPath(); ctx.arc(-11,eyeY,3,0,7); ctx.arc(11,eyeY,3,0,7); ctx.fill();
+    ctx.strokeStyle='#3a2a1a'; ctx.lineWidth=1.6; ctx.beginPath(); ctx.arc(0,eyeY+9,4,.15*Math.PI,.85*Math.PI); ctx.stroke();
+    for(let k=0;k<3;k++){ const a=t*1.4+k*2.1, bx=Math.cos(a)*44, by=eyeY-14+Math.sin(a*1.6)*10;
+      ctx.save(); ctx.translate(bx,by); ctx.fillStyle='#e8834a'; ctx.beginPath(); ctx.ellipse(0,0,4,2.6,0,0,7); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(-4,0); ctx.lineTo(-8,-2+Math.sin(t*10+k)*2); ctx.lineTo(-4,1); ctx.fill(); ctx.restore(); } }
+  else { ctx.strokeStyle='#4a453f'; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(-15,eyeY); ctx.lineTo(-7,eyeY); ctx.moveTo(7,eyeY); ctx.lineTo(15,eyeY); ctx.stroke();
+    /* uyku baloncukları */ ctx.fillStyle='rgba(255,255,255,.7)'; const zp=(t*.6)%1;
+    ctx.font='bold '+(10+zp*6)+'px Trebuchet MS'; ctx.textAlign='center'; ctx.globalAlpha=1-zp; ctx.fillText('z',22+zp*10,eyeY-16-zp*18); ctx.globalAlpha=1; }
+  ctx.restore(); }
+
+function drawCP(cp){ const x=cp.x-cam,y=cp.y,active=respawn.x>=cp.x;
+  ctx.fillStyle='#caa46a'; ctx.fillRect(x-3,y-58,6,58);
+  ctx.fillStyle=active?'#ff7a9c':'#bfc9c6'; ctx.beginPath(); ctx.moveTo(x+3,y-58); ctx.lineTo(x+40,y-48); ctx.lineTo(x+3,y-38); ctx.fill();
+  if(active){ ctx.fillStyle='#fff'; ctx.font='bold 15px Trebuchet MS'; ctx.textAlign='center'; ctx.fillText('♥',x+18,y-43); } }
+
+function drawGoal(g){ const x=g.x-cam,y=g.y,p=1+Math.sin(t*3)*.07; ctx.save(); ctx.translate(x,y); ctx.scale(p,p);
+  ctx.shadowColor='rgba(255,140,170,.9)'; ctx.shadowBlur=24; ctx.fillStyle='#ff5d86';
+  ctx.beginPath(); ctx.moveTo(0,12); ctx.bezierCurveTo(-30,-14,-14,-34,0,-16); ctx.bezierCurveTo(14,-34,30,-14,0,12); ctx.fill();
+  ctx.shadowBlur=0; ctx.fillStyle='rgba(255,255,255,.6)'; ctx.beginPath(); ctx.ellipse(-7,-12,4,6,-.4,0,7); ctx.fill(); ctx.restore(); }
+
+function drawMonster(m){ const bx=m.x-cam; if(bx+m.w<-60||bx>W+60) return; const cx=bx+m.w/2,by=m.ground-m.h;
+  /* iyileştirilebilir (kör) canavarda sıcak parlama — "beni iyileştir" işareti */
+  if(m.state==='blind'){ ctx.save(); ctx.globalAlpha=.20+Math.sin(t*6)*.08; ctx.fillStyle='#ffd98c'; ctx.beginPath(); ctx.arc(cx,by+m.h/2,m.w*.95,0,7); ctx.fill(); ctx.restore(); }
+  ctx.fillStyle='rgba(0,0,0,.12)'; ctx.beginPath(); ctx.ellipse(cx,m.ground,m.w*.45,5,0,0,7); ctx.fill();
+  ctx.fillStyle='#e08a4a'; const fw=Math.sin(t*12)*(Math.abs(m.vx)>10?2:0); ctx.beginPath(); ctx.ellipse(cx-8,m.ground-3+fw,7,5,0,0,7); ctx.ellipse(cx+8,m.ground-3-fw,7,5,0,0,7); ctx.fill();
+  ctx.fillStyle=m.state==='happy'?'#ffd39a':'#ffb27a'; ctx.beginPath(); ctx.ellipse(cx,by+m.h/2,m.w/2,m.h/2,0,0,7); ctx.fill();
+  if(m.state==='blind'){ ctx.strokeStyle='#7a4a22'; ctx.lineWidth=2; for(const ex of [-7,7]){ ctx.beginPath(); ctx.moveTo(cx+ex-3,by+14-3); ctx.lineTo(cx+ex+3,by+14+3); ctx.moveTo(cx+ex+3,by+14-3); ctx.lineTo(cx+ex-3,by+14+3); ctx.stroke(); }
+    ctx.fillStyle='#fff1b8'; for(let k=0;k<3;k++){ const a=t*4+k*2.1; ctx.beginPath(); ctx.arc(cx+Math.cos(a)*14,by+2+Math.sin(a)*4,2,0,7); ctx.fill(); }
+    ctx.fillStyle='rgba(232,194,122,.45)'; ctx.beginPath(); ctx.arc(cx,by+12,m.w*.5,0,7); ctx.fill(); }
+  else { ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(cx-7,by+14,5,0,7); ctx.arc(cx+7,by+14,5,0,7); ctx.fill();
+    if(m.state==='happy'){ ctx.strokeStyle='#3a2a1a'; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(cx-7,by+15,3,Math.PI,0); ctx.arc(cx+7,by+15,3,Math.PI,0); ctx.stroke(); ctx.beginPath(); ctx.arc(cx,by+22,5,.1*Math.PI,.9*Math.PI); ctx.stroke(); }
+    else { const look=m.face*1.5; ctx.fillStyle='#3a2a1a'; ctx.beginPath(); ctx.arc(cx-7+look,by+14,2.3,0,7); ctx.arc(cx+7+look,by+14,2.3,0,7); ctx.fill();
+      ctx.strokeStyle='#3a2a1a'; ctx.lineWidth=2; ctx.lineCap='round'; ctx.beginPath(); ctx.moveTo(cx-12,by+8); ctx.lineTo(cx-3,by+11); ctx.moveTo(cx+12,by+8); ctx.lineTo(cx+3,by+11); ctx.stroke();
+      ctx.beginPath(); ctx.arc(cx,by+26,5,1.1*Math.PI,1.9*Math.PI); ctx.stroke(); } }
+  if(m.state==='happy'){ ctx.fillStyle='#ffd54a'; ctx.beginPath(); ctx.arc(cx,by-16,6,0,7); ctx.fill();
+    ctx.fillStyle='#ffe14d'; for(let k=0;k<6;k++){ const a=k/6*7+t; ctx.beginPath(); ctx.arc(cx+Math.cos(a)*11,by-16+Math.sin(a)*5,1.8,0,7); ctx.fill(); } }
+  else { const yy=by-16+Math.sin(t*3)*2; ctx.fillStyle='#8c95a0'; ctx.beginPath(); ctx.arc(cx-8,yy,8,0,7); ctx.arc(cx+8,yy,8,0,7); ctx.arc(cx,yy-5,9,0,7); ctx.fill();
+    if(m.state==='angry'){ if(m.flip){ ctx.fillStyle='#ffe14d'; ctx.font='bold 13px Trebuchet MS'; ctx.textAlign='center'; ctx.fillText('?',cx,yy+13); }
+      else { ctx.fillStyle='#ffe14d'; ctx.beginPath(); ctx.moveTo(cx-1,yy+6); ctx.lineTo(cx+3,yy+6); ctx.lineTo(cx,yy+13); ctx.closePath(); ctx.fill(); } } }
+  if(m.healT>0){ ctx.strokeStyle='#ffd54a'; ctx.lineWidth=3; ctx.beginPath(); ctx.arc(cx,by+m.h/2,m.w*.72,-Math.PI/2,-Math.PI/2+(m.healT/HEAL_TIME)*2*Math.PI); ctx.stroke(); } }
+
+function drawHealBeam(m){ const px=player.x-cam+player.w/2,py=player.y+12,mx=m.x-cam+m.w/2,my=m.ground-m.h/2;
+  const g=ctx.createLinearGradient(px,py,mx,my); g.addColorStop(0,'rgba(255,225,120,.95)'); g.addColorStop(1,'rgba(255,225,120,.25)');
+  ctx.strokeStyle=g; ctx.lineWidth=6; ctx.lineCap='round'; ctx.beginPath(); ctx.moveTo(px,py); ctx.lineTo(mx,my); ctx.stroke();
+  ctx.fillStyle='#fff7c8'; for(let k=0;k<4;k++){ const u=(k/4+(t*1.5)%1)%1; ctx.beginPath(); ctx.arc(px+(mx-px)*u,py+(my-py)*u,2.5,0,7); ctx.fill(); } }
+
+function drawSands(){ for(const s of sands){ ctx.fillStyle='#e3bd7a'; ctx.beginPath(); ctx.arc(s.x-cam,s.y,4,0,7); ctx.fill();
+  ctx.fillStyle='rgba(227,189,122,.4)'; ctx.beginPath(); ctx.arc(s.x-cam-s.vx*.01,s.y-s.vy*.01,3,0,7); ctx.fill(); } }
+
+/* Yeniden kullanılabilir boss çizimi: kafes (yeşil sarmaşık) ve küçültme (mor
+   halka) final vuruşları b.finisher'a göre dallanır; motor tek, kimlik veri. */
+function drawBoss(){ const b=L.boss; if(!b||!bossActive) return; const C=CONFIG.boss;
+  if(b.state!=='defeated'){ const wx=L.arena.wall.x-cam; ctx.save(); ctx.globalAlpha=.18+Math.sin(t*5)*.06; ctx.fillStyle='#aef'; ctx.fillRect(wx,140,L.arena.wall.w,470); ctx.restore(); }
+  const sh=b.shake>0?Math.sin(t*40)*4*b.shake:0; const bx=b.x-cam+sh, cx=bx+b.w/2, by=b.ground-b.h, defeated=b.state==='defeated', sink=defeated?(C.defeatT-b.defT)*18:0;
+  ctx.save(); ctx.translate(0,sink); ctx.globalAlpha=defeated?Math.max(0,b.defT/C.defeatT):1;
+  const sc=(b.scale||1)*((defeated&&b.finisher==='shrink')?Math.max(.08,b.defT/C.defeatT):1);
+  if(sc!==1){ ctx.translate(cx,by+b.h/2); ctx.scale(sc,sc); ctx.translate(-cx,-(by+b.h/2)); }
+  ctx.fillStyle='rgba(0,0,0,.15)'; ctx.beginPath(); ctx.ellipse(cx,b.ground,b.w*.5,8,0,0,7); ctx.fill();
+  ctx.fillStyle='#4a3263'; ctx.beginPath(); ctx.ellipse(cx-22,b.ground-4,14,8,0,0,7); ctx.ellipse(cx+22,b.ground-4,14,8,0,0,7); ctx.fill();
+  const g=ctx.createLinearGradient(0,by,0,by+b.h); g.addColorStop(0,'#7d569e'); g.addColorStop(1,'#5b3d7a'); ctx.fillStyle=g; rrect(bx,by,b.w,b.h,30); ctx.fill();
+  ctx.fillStyle='#ffd54a'; ctx.beginPath(); ctx.moveTo(cx-22,by+4); ctx.lineTo(cx-22,by-16); ctx.lineTo(cx-11,by-4); ctx.lineTo(cx,by-18); ctx.lineTo(cx+11,by-4); ctx.lineTo(cx+22,by-16); ctx.lineTo(cx+22,by+4); ctx.closePath(); ctx.fill();
+  if(b.state==='blind'){ ctx.strokeStyle='#2e1f40'; ctx.lineWidth=3; for(const ex of [-16,16]){ ctx.beginPath(); ctx.moveTo(cx+ex-6,by+25); ctx.lineTo(cx+ex+6,by+35); ctx.moveTo(cx+ex+6,by+25); ctx.lineTo(cx+ex-6,by+35); ctx.stroke(); }
+    ctx.fillStyle='rgba(232,194,122,.5)'; ctx.beginPath(); ctx.arc(cx,by+34,b.w*.45,0,7); ctx.fill();
+    ctx.fillStyle='#fff1b8'; for(let k=0;k<4;k++){ const a=t*4+k*1.6; ctx.beginPath(); ctx.arc(cx+Math.cos(a)*26,by+14+Math.sin(a)*6,2.5,0,7); ctx.fill(); } }
+  else if(defeated){ ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(cx-16,by+30,9,0,7); ctx.arc(cx+16,by+30,9,0,7); ctx.fill();
+    ctx.fillStyle='#3a2a4a'; ctx.beginPath(); ctx.arc(cx-16,by+32,3.5,0,7); ctx.arc(cx+16,by+32,3.5,0,7); ctx.fill();
+    ctx.strokeStyle='#2e1f40'; ctx.lineWidth=3; ctx.beginPath(); ctx.arc(cx,by+52,8,1.15*Math.PI,1.85*Math.PI); ctx.stroke();
+    ctx.fillStyle='#7fd3e8'; for(const ex of [-16,16]){ ctx.beginPath(); ctx.ellipse(cx+ex,by+42+(t*30%18),3,5,0,0,7); ctx.fill(); } }
+  else { ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(cx-16,by+30,10,0,7); ctx.arc(cx+16,by+30,10,0,7); ctx.fill(); const look=b.face*2;
+    ctx.fillStyle='#2e1f40'; ctx.beginPath(); ctx.arc(cx-16+look,by+32,4,0,7); ctx.arc(cx+16+look,by+32,4,0,7); ctx.fill();
+    ctx.strokeStyle='#2e1f40'; ctx.lineWidth=3; ctx.lineCap='round'; ctx.beginPath(); ctx.moveTo(cx-26,by+18); ctx.lineTo(cx-8,by+24); ctx.moveTo(cx+26,by+18); ctx.lineTo(cx+8,by+24); ctx.stroke();
+    ctx.beginPath(); ctx.arc(cx,by+54,9,1.15*Math.PI,1.85*Math.PI); ctx.stroke(); }
+  ctx.restore();
+  if(b.state==='caged'&&b.finisher!=='shrink'){ const a=Math.min(1,(C.cageT0-b.cageT)/.4); ctx.save(); ctx.globalAlpha=.95; ctx.strokeStyle='#3f8c52'; ctx.lineWidth=5; ctx.lineCap='round';
+    for(let i=0;i<=4;i++){ const lx=bx-6+i*(b.w+12)/4; ctx.beginPath(); for(let yy=by-18;yy<=Math.min(b.ground,by-18+(b.h+18)*a);yy+=10){ const wob=Math.sin(yy*.2+i)*3*a; (yy===by-18?ctx.moveTo:ctx.lineTo).call(ctx,lx+wob,yy); } ctx.stroke(); }
+    ctx.fillStyle='#5fc77f'; for(let i=0;i<6;i++){ const lx=bx+8+i*12, ly=by-10+i*12*a; ctx.beginPath(); ctx.ellipse(lx,ly,6,3,i,0,7); ctx.fill(); } ctx.restore(); }
+  if(b.state==='caged'&&b.finisher==='shrink'){ ctx.save(); ctx.strokeStyle='#b07ad8'; ctx.lineWidth=4; ctx.globalAlpha=.8; const rr=44*(b.cageT/C.cageT0)+10;
+    ctx.beginPath(); ctx.arc(bx+b.w/2,by+b.h/2,rr,0,7); ctx.stroke(); ctx.globalAlpha=.5;
+    for(let k=0;k<5;k++){ const a=t*5+k*1.3; ctx.beginPath(); ctx.arc(bx+b.w/2+Math.cos(a)*rr,by+b.h/2+Math.sin(a)*rr,2.5,0,7); ctx.fillStyle='#d9b0f0'; ctx.fill(); } ctx.restore(); }
+  for(let i=0;i<3;i++){ const hx=cx-30+i*30, hy=by-30, full=i<b.hp; ctx.save(); ctx.translate(hx,hy); ctx.scale(.8,.8);
+    ctx.fillStyle=full?'#6b4a8a':'rgba(255,255,255,.4)'; ctx.beginPath(); ctx.moveTo(0,8); ctx.bezierCurveTo(-15,-7,-7,-17,0,-8); ctx.bezierCurveTo(7,-17,15,-7,0,8); ctx.fill();
+    if(full){ ctx.strokeStyle='#3a2a4a'; ctx.lineWidth=1.4; ctx.stroke(); } ctx.restore(); } }
+function drawBossShots(){ for(const s of bossShots){ const x=s.x-cam,y=s.y; ctx.fillStyle='#ffb27a'; ctx.beginPath(); ctx.arc(x,y,11,0,7); ctx.fill();
+  ctx.fillStyle='#8c95a0'; ctx.beginPath(); ctx.arc(x-3,y-9,5,0,7); ctx.arc(x+4,y-9,5,0,7); ctx.fill();
+  ctx.fillStyle='#3a2a1a'; ctx.beginPath(); ctx.arc(x-3,y,1.6,0,7); ctx.arc(x+3,y,1.6,0,7); ctx.fill(); } }
+
+function drawPlayer(){ const x=player.x-cam+player.w/2,y=player.y+player.h; if(player.iframe>0&&Math.floor(t*16)%2===0) return;
+  const sq=player.squash,st=2-sq,bw=player.w*.95*sq,bh=player.h*1.02*st; const ec=equipped?tool(equipped).col:'#9fe6d6';
+  ctx.save(); ctx.translate(x,y-bh/2);
+  ctx.fillStyle='rgba(0,0,0,.12)'; ctx.beginPath(); ctx.ellipse(0,bh/2+4,bw*.5,6,0,0,7); ctx.fill();
+  ctx.strokeStyle=ec; ctx.globalAlpha=.5+Math.sin(t*4)*.2; ctx.lineWidth=2; ctx.beginPath(); ctx.ellipse(0,0,bw/2+4,bh/2+4,0,0,7); ctx.stroke(); ctx.globalAlpha=1;
+  const fw=Math.sin(t*12)*(Math.abs(player.vx)>30?3:0); ctx.fillStyle='#2f9e8f'; ctx.beginPath(); ctx.ellipse(-9,bh/2-2+fw,9,6,0,0,7); ctx.fill(); ctx.beginPath(); ctx.ellipse(9,bh/2-2-fw,9,6,0,0,7); ctx.fill();
+  const bg=ctx.createLinearGradient(0,-bh/2,0,bh/2); bg.addColorStop(0,'#5fe3c9'); bg.addColorStop(1,'#34bfa6'); ctx.fillStyle=bg; ctx.beginPath(); ctx.ellipse(0,0,bw/2,bh/2,0,0,7); ctx.fill();
+  const healing=input.healHeld; ctx.fillStyle=healing?'#ffd54a':'rgba(255,255,255,.35)'; if(healing){ ctx.shadowColor='rgba(255,213,74,.9)'; ctx.shadowBlur=10; }
+  ctx.beginPath(); ctx.moveTo(0,8); ctx.bezierCurveTo(-12,-4,-6,-12,0,-5); ctx.bezierCurveTo(6,-12,12,-4,0,8); ctx.fill(); ctx.shadowBlur=0;
+  const eyes=[[-13,-6],[-6.5,-11],[0,-13],[6.5,-11],[13,-6]], look=Math.max(-1.4,Math.min(1.4,player.vx/MOVE*1.4));
+  for(let i=0;i<5;i++){ const ex=eyes[i][0], ey=eyes[i][1]; ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(ex,ey,4.4,0,7); ctx.fill();
+    if(i===2&&equipped){ ctx.strokeStyle=ec; ctx.lineWidth=1.8; ctx.beginPath(); ctx.arc(ex,ey,5.7,0,7); ctx.stroke(); }
+    if(player.blink>0){ ctx.strokeStyle='#1f6b60'; ctx.lineWidth=1.4; ctx.beginPath(); ctx.moveTo(ex-3,ey); ctx.lineTo(ex+3,ey); ctx.stroke(); }
+    else { ctx.fillStyle=(i===2&&equipped)?ec:'#1f4d4a'; ctx.beginPath(); ctx.arc(ex+look,ey,2.1,0,7); ctx.fill(); } }
+  ctx.strokeStyle='#1f6b60'; ctx.lineWidth=2; ctx.lineCap='round'; ctx.beginPath(); ctx.arc(0,1,5,.15*Math.PI,.85*Math.PI); ctx.stroke(); ctx.restore(); }
+
+function drawParticles(){ for(const p of particles){ ctx.globalAlpha=Math.max(0,p.life/p.max); ctx.fillStyle=p.col; ctx.beginPath(); ctx.arc(p.x-cam,p.y,p.r,0,7); ctx.fill(); } ctx.globalAlpha=1; }
+
+function drawAmbient(camX){ const shape=BIOME[ambientBiome()].ambientShape;
+  for(const l of ambient){ ctx.save(); ctx.translate(l.x-camX,l.y);
+    if(shape==='wisp'){ ctx.globalAlpha=.22; ctx.fillStyle=l.c; ctx.beginPath(); ctx.ellipse(0,0,l.s,l.s*.32,0,0,7); ctx.fill(); }
+    else if(shape==='mote'){ ctx.globalAlpha=.55+Math.sin(t*3+l.ph)*.25; ctx.fillStyle=l.c; ctx.shadowColor=l.c; ctx.shadowBlur=6; ctx.beginPath(); ctx.arc(0,0,l.s,0,7); ctx.fill(); }
+    else { ctx.rotate(l.rot+Math.sin(t*l.sw+l.ph)*.5); ctx.globalAlpha=.72; ctx.fillStyle=l.c; ctx.beginPath(); ctx.ellipse(0,0,l.s,l.s*.45,0,0,7); ctx.fill(); }
+    ctx.restore(); } ctx.globalAlpha=1; ctx.shadowBlur=0; }
+
+/* Karanlık sistemi — Bölüm 3 (aşama 2) için hazır; L.dark yoksa hiç çalışmaz */
+function drawDarkness(){ if(!L.dark) return; dctx.clearRect(0,0,W,H); dctx.fillStyle='rgba(10,8,26,0.9)'; dctx.fillRect(0,0,W,H); dctx.globalCompositeOperation='destination-out';
+  const punch=(sx,sy,r)=>{ const g=dctx.createRadialGradient(sx,sy,0,sx,sy,r); g.addColorStop(0,'rgba(0,0,0,1)'); g.addColorStop(.6,'rgba(0,0,0,.85)'); g.addColorStop(1,'rgba(0,0,0,0)'); dctx.fillStyle=g; dctx.beginPath(); dctx.arc(sx,sy,r,0,7); dctx.fill(); };
+  punch(player.x-cam+player.w/2, player.y+player.h/2, 150+(equipped==='red'?70:0));
+  for(const it of L.interact){ if(it.type==='torch'&&it.done) punch(it.x-cam,it.y-30,190); }
+  dctx.globalCompositeOperation='source-over'; ctx.drawImage(darkCv,0,0); }
+
+function drawHUD(){ for(let i=0;i<3;i++){ const x=24+i*38,y=58,filled=i<hearts,pp=(filled&&heartFlash>0)?1+heartFlash*.5:1;
+    ctx.save(); ctx.translate(x,y); ctx.scale(pp,pp); ctx.shadowColor='rgba(0,0,0,.2)'; ctx.shadowBlur=4;
+    ctx.fillStyle=filled?'#ff5d86':'rgba(255,255,255,.5)'; ctx.beginPath(); ctx.moveTo(0,8); ctx.bezierCurveTo(-15,-7,-7,-17,0,-8); ctx.bezierCurveTo(7,-17,15,-7,0,8); ctx.fill(); ctx.restore(); }
+  ctx.fillStyle='rgba(255,247,236,.92)'; rrect(W-238,72,160,30,12); ctx.fill();
+  ctx.fillStyle='#1f4d4a'; ctx.font='bold 13px Trebuchet MS'; ctx.textAlign='center';
+  ctx.fillText((bossActive&&L.boss&&L.boss.state!=='defeated')?S('boss.title'):L.name,W-158,91);
+  let msg=hintMsg, alpha=hintT>0?Math.min(1,hintT*2):0;
+  if(L.intros&&L.intros.length){ for(const it of L.intros){ if(Math.abs((player.x+player.w/2)-it.x)<130){ msg=it.text; alpha=1; break; } } }
+  if(nearTree){ msg=S('tree.prompt'); alpha=1; }
+  if(msg&&alpha>0){ ctx.fillStyle='rgba(255,247,236,'+alpha+')'; ctx.font='bold 17px Trebuchet MS'; ctx.textAlign='center';
+    ctx.strokeStyle='rgba(20,30,30,'+(alpha*.8)+')'; ctx.lineWidth=4; ctx.strokeText(msg,W/2,H-94); ctx.fillText(msg,W/2,H-94); } }
+
+function drawMenuMonster(cx,groundY){ const bob=Math.sin(t*2)*5, y=groundY-32+bob, bw=72,bh=80; ctx.save(); ctx.translate(cx,y);
+  ctx.fillStyle='rgba(0,0,0,.12)'; ctx.beginPath(); ctx.ellipse(0,(groundY-y)+2,36,7,0,0,7); ctx.fill();
+  ctx.fillStyle='#2f9e8f'; ctx.beginPath(); ctx.ellipse(-16,bh/2-4,14,9,0,0,7); ctx.ellipse(16,bh/2-4,14,9,0,0,7); ctx.fill();
+  const bg=ctx.createLinearGradient(0,-bh/2,0,bh/2); bg.addColorStop(0,'#5fe3c9'); bg.addColorStop(1,'#34bfa6'); ctx.fillStyle=bg; ctx.beginPath(); ctx.ellipse(0,0,bw/2,bh/2,0,0,7); ctx.fill();
+  ctx.fillStyle='rgba(255,255,255,.35)'; ctx.beginPath(); ctx.moveTo(0,14); ctx.bezierCurveTo(-20,-6,-10,-20,0,-8); ctx.bezierCurveTo(10,-20,20,-6,0,14); ctx.fill();
+  const blink=(Math.sin(t*1.7)>.96)?1:0, eyes=[[-22,-10],[-11,-19],[0,-22],[11,-19],[22,-10]];
+  for(let i=0;i<5;i++){ const ex=eyes[i][0], ey=eyes[i][1]; ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(ex,ey,7.5,0,7); ctx.fill();
+    if(blink){ ctx.strokeStyle='#1f6b60'; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(ex-5,ey); ctx.lineTo(ex+5,ey); ctx.stroke(); }
+    else { ctx.fillStyle='#1f4d4a'; ctx.beginPath(); ctx.arc(ex,ey,3.4,0,7); ctx.fill(); } }
+  ctx.strokeStyle='#1f6b60'; ctx.lineWidth=3; ctx.lineCap='round'; ctx.beginPath(); ctx.arc(0,2,9,.15*Math.PI,.85*Math.PI); ctx.stroke(); ctx.restore(); }
+
+function drawMenuScene(){ cam=0; drawMeadowBg(t*12);
+  drawIsland({x:W/2-250,y:392,w:200,h:170}); drawIsland({x:W/2+70,y:418,w:210,h:150});
+  drawMenuMonster(W/2-150,392); drawAmbient(0); ctx.drawImage(vig,0,0);
+  ctx.textAlign='center'; ctx.fillStyle='#1f4d4a'; ctx.font='bold 46px Trebuchet MS';
+  ctx.save(); ctx.shadowColor='rgba(0,0,0,.18)'; ctx.shadowOffsetY=4; ctx.fillText(S('menu.title'),W/2,150); ctx.restore();
+  ctx.fillStyle='#37635f'; ctx.font='bold 19px Trebuchet MS'; ctx.fillText(S('menu.subtitle'),W/2,184);
+  if(save.furthest>0){ const nxt=Math.min(save.furthest,LEVELS.length-1), meta=LEVEL_META[nxt];
+    const msg=save.furthest>=LEVELS.length ? 'Tüm bölümler tamamlandı ✓' : ('İlerleme kaydedildi — '+S(WORLD[meta.regionIdx].nameKey)+' seni bekliyor');
+    ctx.fillStyle='#2f9e8f'; ctx.font='bold 15px Trebuchet MS'; ctx.fillText(msg,W/2,210); } }
+
+function render(){ if(state==='menu'){ drawMenuScene(); return; }
+  ctx.save();
+  if(shakeT>0){ const amt=shakeMag*(shakeT/Math.max(shakeDur,.001)); ctx.translate((Math.random()*2-1)*amt,(Math.random()*2-1)*amt); }
+  (BG_FNS[L.biome]||drawMeadowBg)(cam);
+  drawWater(); for(const s of L.platforms) drawIsland(s); drawInteract();
+  if(L.trees) for(const tr of L.trees) drawTreeSprite(tr);
+  for(const cp of L.checkpoints) drawCP(cp); if(L.goal) drawGoal(L.goal);
+  for(const m of L.monsters) drawMonster(m); if(healTarget) drawHealBeam(healTarget);
+  drawSands(); drawBoss(); drawBossShots(); drawParticles(); drawPlayer(); drawAmbient(cam); drawDarkness();
+  ctx.drawImage(vig,0,0); drawHUD();
+  if(flash>0){ ctx.fillStyle='rgba('+flashCol+','+(flash*.5)+')'; ctx.fillRect(0,0,W,H); }
+  ctx.restore(); }
+
+/* ============================== 7) UI ============================== */
+const ov=document.getElementById('ov'), card=document.getElementById('card');
+function setUI(mode){ const playing=mode==='play';
+  document.getElementById('padL').style.display=playing?'flex':'none';
+  document.getElementById('padR').style.display=playing?'grid':'none';
+  document.getElementById('restart').style.display=playing?'block':'none';
+  document.getElementById('pauseBtn').style.display=playing?'block':'none';
+  document.getElementById('menu').style.display=(mode==='menu')?'flex':'none';
+  document.getElementById('langRow').style.display=(mode==='menu')?'flex':'none';
+  if(mode==='menu') document.getElementById('continueBtn').style.display=(save.furthest>0)?'block':'none'; }
+function updateActionButtons(){ document.getElementById('bSand').style.display=L.hasSand?'flex':'none'; document.getElementById('bHeal').style.display=L.hasHeal?'flex':'none'; }
+
+function loadLevel(i){ cur=i; L=prepLevel(LEVELS[i](),i);
+  hearts=CONFIG.hearts; respawn={x:L.spawn.x,y:L.spawn.y};
+  player.x=L.spawn.x; player.y=L.spawn.y; player.vx=0; player.vy=0; player.iframe=0; player.squash=1; player.squashVel=0; player.face=1;
+  sands.length=0; particles.length=0; healTarget=null; equipped=null; cam=0; resetAmbient(0);
+  bossActive=false; bossShots.length=0;
+  hintMsg=''; hintT=0; shakeT=0; shakeMag=0; hitStopT=0; clearEdges();
+  refillSand(); save.furthest=Math.max(save.furthest||0,i); writeSave();
+  state='play'; ov.classList.add('hidden'); updateActionButtons(); setUI('play'); }
+
+function togglePause(){ if(state==='play') showCard('pause'); else if(state==='pause') resumeGame(); }
+function resumeGame(){ ov.classList.add('hidden'); state='play'; setUI('play'); clearEdges(); }
+function toMenu(){ state='menu'; cam=0; ov.classList.add('hidden'); setUI('menu'); clearEdges(); }
+
+function howtoHTML(){ return '<div class="eyes">👁️👁️👁️👁️👁️</div><h1>'+S('howto.title')+'</h1><p>'+S('howto.body')+'<br>'+S('howto.tools')+'</p>'
+ +'<p>'+S('howto.heal')+'</p><div class="hint">'+S('howto.controls')+'</div><div class="row" style="margin-top:14px"><button class="ghost" id="backBtn">'+S('ui.back')+'</button></div>'; }
+
+/* Harita/Bölümler: bölgeye göre gruplanmış düğüm-yol görünümü. Kilit mantığı
+   tek kural — bir bölüm ancak öncekini tamamlayınca açılır (save.furthest).
+   Her bölge başlığında biyomunu yansıtan küçük bir renk/simge rozeti var. */
+const BIOME_ICON={meadow:'🌿',peaks:'⛰️',cave:'💎'};
+function buildMapHTML(){ const furthest=save.furthest||0; let html='<h1>'+S('map.title')+'</h1>';
+  let flat=0;
+  WORLD.forEach((region,ri)=>{ const B=BIOME[region.biome];
+    html+='<div class="mapRegion"><h2><span class="mapIcon" style="background:'+B.skyMid+'">'+(BIOME_ICON[region.biome]||'')+'</span>'+S(region.nameKey)+'</h2><div class="mapPath">';
+    region.levels.forEach((_,li)=>{ const idx=flat, unlocked=idx<=furthest, done=idx<furthest, isNext=idx===furthest;
+      if(li>0) html+='<div class="mapLine'+(done?' done':'')+'"></div>';
+      const cls=!unlocked?'locked':(done?'done':(isNext?'next':''));
+      html+='<button class="mapNode '+cls+'" data-lv="'+idx+'" '+(unlocked?'':'disabled')+'>'+(done?'✓':(idx+1))+'</button>';
+      flat++; }); html+='</div></div>'; });
+  html+='<div class="row" style="margin-top:12px"><button class="ghost" id="backBtn">'+S('ui.back')+'</button></div>';
+  return html; }
+
+/* Doğa Günlüğü: yalnız uyandırılan ağaçları listeler — hearts sisteminden
+   ayrı, cezasız bir koleksiyon. */
+function journalHTML(){ const learned=save.journal||[]; let html='<h1>'+S('journal.title')+'</h1>';
+  if(!learned.length){ html+='<p class="hint">'+S('journal.empty')+'</p>'; }
+  else { html+='<div class="col" style="margin-top:8px">'+learned.map(id=>{ const info=TREES[id]||{family:'',gift:''}, nm=treeName(id);
+      return '<div style="border-radius:16px;padding:10px 16px;background:#f3ead9;text-align:left;width:100%;display:flex;gap:12px;align-items:center">'
+        +'<img src="'+getTreeArt(id,60,true)+'" alt="" style="width:46px;height:auto;flex:none">'
+        +'<div style="flex:1"><b>'+nm+'</b><br><span class="hint">'+S('journal.family')+info.family+'<br>'+S('journal.gift')+info.gift+'</span></div>'
+        +'<span class="sayBtn" data-say="'+nm+'" role="button" aria-label="dinle">🔊</span></div>'; }).join('')+'</div>'; }
+  html+='<div class="row" style="margin-top:12px"><button class="ghost" id="backBtn">'+S('ui.back')+'</button></div>';
+  return html; }
+
+function showCard(kind){ state=kind;
+  if(kind==='next'){ sfx('clear'); card.innerHTML='<div class="eyes">'+S('next.eyes')+'</div><h1>'+L.name+S('next.suffix')+'</h1><p>'+S('next.body')+'</p><div class="row"><button class="play" id="nextBtn">'+S('ui.nextLevel')+'</button><button class="ghost" id="menuBtn">'+S('ui.menu')+'</button></div>'; }
+  else if(kind==='win'){ sfx('win'); card.innerHTML='<div class="eyes">'+S('win.eyes')+'</div><h1>'+S('win.title')+'</h1><p>'+S('win.body')+'</p><div class="row"><button class="play" id="againBtn">'+S('ui.playAgain')+'</button><button class="ghost" id="menuBtn">'+S('ui.menu')+'</button></div>'; }
+  else if(kind==='over'){ sfx('sad'); card.innerHTML='<div class="eyes">'+S('over.eyes')+'</div><h1>'+S('over.title')+'</h1><p>'+S('over.body')+'</p><div class="row"><button class="play" id="retryBtn">'+S('ui.retry')+'</button><button class="ghost" id="menuBtn">'+S('ui.menu')+'</button></div>'; }
+  else if(kind==='pause'){ card.innerHTML='<div class="eyes">⏸</div><h1>'+S('pause.title')+'</h1><p>'+S('pause.body')+'</p><div class="row"><button class="play" id="resumeBtn">'+S('ui.resume')+'</button><button class="ghost" id="retryBtn">'+S('ui.restart')+'</button><button class="ghost" id="menuBtn">'+S('ui.menu')+'</button></div>'; }
+  else if(kind==='levels'){ card.innerHTML=buildMapHTML(); }
+  else if(kind==='journal'){ card.innerHTML=journalHTML(); }
+  else { card.innerHTML=howtoHTML(); }
+  ov.classList.remove('hidden'); setUI(kind);
+  const q=id=>document.getElementById(id);
+  if(q('backBtn')) q('backBtn').onclick=toMenu;
+  if(q('nextBtn')) q('nextBtn').onclick=()=>loadLevel(cur+1);
+  if(q('againBtn')) q('againBtn').onclick=()=>loadLevel(0);
+  if(q('retryBtn')) q('retryBtn').onclick=()=>loadLevel(cur);
+  if(q('menuBtn')) q('menuBtn').onclick=toMenu;
+  if(q('resumeBtn')) q('resumeBtn').onclick=resumeGame;
+  wireSayButtons(card);
+  card.querySelectorAll('.mapNode:not(.locked)').forEach(btn=>{ btn.onclick=()=>{ initAudio(); requestFS(); loadLevel(parseInt(btn.dataset.lv,10)); }; }); }
+
+/* --- Dil seçimi: menüdeki metinleri yeniden çizer; tr dışı tablolar boşsa
+   otomatik tr'ye düşer (fallback), böylece hiçbir metin boş kalmaz. --- */
+function refreshStaticUI(){
+  document.getElementById('startBtn').textContent=S('ui.newGame');
+  document.getElementById('continueBtn').textContent=S('ui.continue');
+  document.getElementById('levelsBtn').textContent=S('ui.levels');
+  document.getElementById('journalBtn').textContent=S('ui.journal');
+  document.getElementById('howBtn').textContent=S('ui.howto');
+  document.querySelectorAll('.langBtn').forEach(b=>b.classList.toggle('active',b.dataset.l===lang));
+  if(state!=='play'&&state!=='tree') { /* kartlar açıksa yeniden çiz */ if(!ov.classList.contains('hidden')) showCard(state); } }
+function setLang(l){ lang=l; save.lang=l; writeSave(); document.documentElement.setAttribute('lang',l); document.documentElement.setAttribute('dir',l==='ar'?'rtl':'ltr'); refreshStaticUI(); }
+document.querySelectorAll('.langBtn').forEach(b=> b.addEventListener('click',()=>setLang(b.dataset.l)) );
+setLang(save.lang||'tr');
+
+document.getElementById('startBtn').addEventListener('click',()=>{ initAudio(); requestFS(); loadLevel(0); });
+document.getElementById('continueBtn').addEventListener('click',()=>{ initAudio(); requestFS(); loadLevel(Math.min(save.furthest||0,LEVELS.length-1)); });
+document.getElementById('levelsBtn').addEventListener('click',()=>{ initAudio(); showCard('levels'); });
+document.getElementById('journalBtn').addEventListener('click',()=>{ initAudio(); showCard('journal'); });
+document.getElementById('howBtn').addEventListener('click',()=>{ initAudio(); showCard('howto'); });
+document.getElementById('fsBtn').addEventListener('click',toggleFS); syncFsIcon();
+document.getElementById('restart').addEventListener('click',()=>loadLevel(cur));
+document.getElementById('pauseBtn').addEventListener('click',togglePause);
+document.getElementById('mute').addEventListener('click',()=>{ initAudio(); toggleMute(); });
+document.getElementById('mute').textContent=muted?'🔇':'🔊';
+setUI('menu'); resetAmbient(0);
+
+/* ============================= 8) BOOT ============================= */
+let last=performance.now();
+function loop(now){ let dt=(now-last)/1000; last=now; dt=Math.min(dt,1/30);
+  if(hitStopT>0){ hitStopT-=dt; render(); requestAnimationFrame(loop); return; }
+  update(dt); render(); requestAnimationFrame(loop); }
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>

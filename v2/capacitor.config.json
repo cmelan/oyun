@@ -1,0 +1,12 @@
+{
+  "appId": "com.cagatay.cokkalplikoruyucu",
+  "appName": "Çok Kalpli Koruyucu",
+  "webDir": "dist",
+  "ios": {
+    "contentInset": "never",
+    "backgroundColor": "#0f2b29"
+  },
+  "android": {
+    "backgroundColor": "#0f2b29"
+  }
+}

@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<title>Çok Kalpli Koruyucu</title>
+<style>
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;}
+  html,body{margin:0;height:100%;background:#0f2b29;overflow:hidden;font-family:"Trebuchet MS","Segoe UI","Noto Sans Arabic","Geeza Pro",system-ui,sans-serif;}
+  html[dir="rtl"] .card{text-align:right;}
+  #wrap{position:relative;width:100%;height:100%;}
+  #game{position:absolute;inset:0;}
+  #game canvas{width:100%!important;height:100%!important;object-fit:contain;}
+  .top{position:absolute;top:12px;width:42px;height:42px;border:none;border-radius:13px;background:rgba(255,247,236,.85);color:#1f4d4a;font-size:20px;cursor:pointer;box-shadow:0 4px 0 rgba(0,0,0,.15);z-index:7;}
+  .top:active{transform:translateY(2px);box-shadow:0 2px 0 rgba(0,0,0,.15);}
+  #restart{right:12px;} #mute{right:60px;} #fsBtn{right:108px;} #pauseBtn{right:156px;}
+  .pad{position:absolute;bottom:18px;z-index:5;}
+  #padL{left:18px;display:flex;gap:13px;}
+  #padR{right:18px;display:grid;grid-template-columns:repeat(2,auto);gap:12px;}
+  .btn{width:70px;height:70px;border-radius:50%;border:none;display:flex;align-items:center;justify-content:center;font-size:27px;color:#1f4d4a;background:rgba(255,247,236,.78);box-shadow:0 5px 0 rgba(0,0,0,.18);cursor:pointer;font-weight:bold;}
+  .btn:active{transform:translateY(3px);box-shadow:0 2px 0 rgba(0,0,0,.18);}
+  #bJump{background:rgba(255,178,122,.9);} #bSand{background:rgba(232,194,122,.92);position:relative;} #bHeal{background:rgba(255,213,74,.92);}
+  #sandCount{position:absolute;top:-4px;right:-4px;background:#fff7ec;color:#7a5a1a;font-size:11px;font-weight:bold;min-width:19px;height:19px;border-radius:10px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 0 rgba(0,0,0,.18);padding:0 2px;}
+  #menu{position:absolute;left:50%;bottom:40px;transform:translateX(-50%);display:flex;flex-direction:column;gap:10px;align-items:center;z-index:7;}
+  .play{border:none;background:#ffb27a;color:#5a2c12;font-weight:bold;font-size:19px;padding:13px 42px;border-radius:18px;cursor:pointer;box-shadow:0 6px 0 #d98a52;}
+  .play:active{transform:translateY(3px);box-shadow:0 3px 0 #d98a52;}
+  .ghost{border:none;background:rgba(255,247,236,.85);color:#1f4d4a;font-weight:bold;font-size:14px;padding:9px 22px;border-radius:14px;cursor:pointer;box-shadow:0 4px 0 rgba(0,0,0,.13);}
+  .ghost:active{transform:translateY(2px);box-shadow:0 2px 0 rgba(0,0,0,.13);}
+  #ov{position:absolute;inset:0;z-index:8;display:flex;align-items:center;justify-content:center;background:rgba(15,43,41,.55);backdrop-filter:blur(3px);text-align:center;padding:18px;}
+  #ov.hidden{display:none;}
+  .card{background:#fff7ec;border-radius:26px;padding:22px 24px 18px;max-width:520px;max-height:92vh;overflow-y:auto;box-shadow:0 12px 0 rgba(0,0,0,.18);}
+  .card h1{margin:0 0 6px;color:#1f4d4a;font-size:23px;line-height:1.15;}
+  .card p{margin:6px 0 14px;color:#37635f;font-size:14px;line-height:1.5;}
+  .card .row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;}
+  .eyes{font-size:28px;letter-spacing:3px;margin-bottom:6px;}
+  .hint{font-size:11.5px;color:#7a9a96;margin-top:10px;line-height:1.5;}
+  .pw{display:inline-block;padding:1px 6px;border-radius:7px;color:#fff;font-weight:bold;font-size:12px;}
+  #langRow{position:absolute;top:12px;left:12px;display:flex;gap:6px;z-index:7;}
+  .langBtn{border:none;background:rgba(255,247,236,.78);color:#1f4d4a;font-weight:bold;font-size:12px;padding:7px 10px;border-radius:10px;cursor:pointer;box-shadow:0 3px 0 rgba(0,0,0,.15);}
+  .langBtn.active{background:#ffb27a;color:#5a2c12;}
+  .mapRegion{margin:12px 0;text-align:left;}
+  .mapRegion h2{margin:0 0 4px;color:#1f4d4a;font-size:15px;}
+  .mapNode{width:38px;height:38px;border-radius:50%;border:none;display:flex;align-items:center;justify-content:center;font-weight:bold;color:#fff;font-size:14px;cursor:pointer;box-shadow:0 3px 0 rgba(0,0,0,.18);flex:none;}
+  .mapNode.locked{background:#bfc9c6;color:#7a8683;cursor:default;box-shadow:none;}
+  .mapNode.done{background:#5fc77f;}
+  .mapNode.next{background:#ffb27a;color:#5a2c12;}
+  .clueBadge{width:128px;height:128px;border-radius:50%;margin:2px auto 16px;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 38% 32%,#ffffff,#eafaf0 55%,#cdeedd);box-shadow:inset 0 0 0 4px rgba(95,199,127,.35),0 6px 14px rgba(31,77,74,.18);overflow:hidden;}
+  .clueBadge img{width:88px;height:auto;filter:drop-shadow(0 3px 3px rgba(0,0,0,.2));}
+  .clueBadge img.photo{width:128px;height:128px;object-fit:cover;filter:none;}
+  .treeChoices{display:flex;gap:12px;justify-content:center;margin-top:4px;flex-wrap:wrap;}
+  .treeChoice{width:118px;border:none;border-radius:18px;padding:12px 8px 10px;cursor:pointer;background:linear-gradient(#ffffff,#f3ead9);box-shadow:0 5px 0 rgba(31,77,74,.16);display:flex;flex-direction:column;align-items:center;gap:6px;transition:transform .08s;}
+  .treeChoice:active{transform:translateY(3px);box-shadow:0 2px 0 rgba(31,77,74,.16);}
+  .treeChoice img{width:58px;height:auto;}
+  .treeChoice .tName{font-weight:bold;font-size:16px;color:#1f4d4a;}
+  .treeChoice .tDesc{font-size:11px;color:#7a9a96;line-height:1.25;}
+  .treeChoice.dim{opacity:.45;filter:grayscale(.6);}
+  .wakeCard .tBig{font-size:30px;color:#1f4d4a;margin:2px 0 2px;}
+  .wakeFact{background:#eafaf0;border-radius:14px;padding:10px 14px;font-size:13px;color:#37635f;margin:10px 0 4px;line-height:1.45;}
+  .sayBtn{border:none;background:#ffd54a;color:#5a4400;width:30px;height:30px;border-radius:50%;font-size:14px;cursor:pointer;box-shadow:0 2px 0 rgba(0,0,0,.18);flex:none;display:inline-flex;align-items:center;justify-content:center;}
+  .sayBtn:active{transform:translateY(1px);box-shadow:0 1px 0 rgba(0,0,0,.18);}
+  .nameRow{display:flex;align-items:center;gap:8px;justify-content:center;}
+  .famRow{display:flex;align-items:center;gap:8px;font-size:13px;color:#37635f;margin:4px 0;text-align:left;}
+  .famRow .star{font-size:17px;}
+  #hud{position:absolute;top:14px;left:50%;transform:translateX(-50%);z-index:6;display:flex;gap:6px;font-size:24px;pointer-events:none;text-shadow:0 2px 3px rgba(0,0,0,.25);}
+  #hintBar{position:absolute;top:64px;left:50%;transform:translateX(-50%);z-index:6;background:rgba(255,247,236,.92);color:#1f4d4a;font-weight:bold;font-size:14px;padding:8px 18px;border-radius:14px;box-shadow:0 4px 0 rgba(0,0,0,.15);opacity:0;transition:opacity .25s;pointer-events:none;max-width:80%;text-align:center;}
+</style>
+</head>
+<body>
+<div id="wrap">
+  <div id="game"></div>
+  <div id="langRow"></div>
+  <div id="hud"></div>
+  <div id="hintBar"></div>
+  <button id="pauseBtn" class="top" title="Mola">⏸</button>
+  <button id="fsBtn" class="top" title="Tam ekran">⛶</button>
+  <button id="mute" class="top" title="Ses">🔊</button>
+  <button id="restart" class="top" title="Yeniden başla">↻</button>
+  <div class="pad" id="padL"><button class="btn" id="bLeft">◀</button><button class="btn" id="bRight">▶</button></div>
+  <div class="pad" id="padR">
+    <button class="btn" id="bSand">🏖️<span id="sandCount">0</span></button><button class="btn" id="bHeal">💛</button>
+    <button class="btn" id="bPow">✨</button><button class="btn" id="bJump">⤴</button>
+  </div>
+  <div id="menu"></div>
+  <div id="ov" class="hidden"><div class="card" id="card"></div></div>
+</div>
+<script type="module" src="/src/main.ts"></script>
+</body>
+</html>

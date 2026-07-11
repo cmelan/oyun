@@ -1,0 +1,8 @@
+{
+  "_comment": "Vetted CC0/Public-Domain Wikimedia Commons source files per game photo slot. Run scripts/fetch-photos.mjs to download, crop, and WebP-encode into public/photos/. Add species here as they are sourced (all must be CC0/PD).",
+  "slots": {
+    "meşe":    { "leaf": "20180703Quercus robur1.jpg",              "bark": "20140209Quercus robur5.jpg",            "tree": "20250806Quercus robur.jpg" },
+    "çınar":   { "leaf": "Morgenländische Platane Blatt.jpg",        "bark": "Morgenländische Platane Rinde.jpg",      "tree": "Platanus orientalis Meise Nationale Plantentuin.jpg" },
+    "ıhlamur": { "leaf": "20130502Tilia cordata2.jpg",              "bark": "20160114Tilia cordata1.jpg",            "tree": "Baumkirchen, Linde am Kreuzbühel.jpg" }
+  }
+}
