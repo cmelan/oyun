@@ -505,10 +505,12 @@ export class LevelScene extends Scene {
       this.darkGfx.fillStyle(0x0a0718, .62);
       this.darkGfx.fillRect(0, 0, W, H);
       this.darkGfx.setBlendMode(BLEND.ERASE);
+      /* soft-edged punches (alpha ramp → feathered lantern glow, not a hard spotlight) */
+      const GLOW: [number, number][] = [[0, 1], [.6, .88], [1, 0]];
       const px = this.player.x + this.player.w / 2 - this.cam, py = this.player.y + this.player.h / 2;
-      this.darkGfx.fillStyle(0xffffff, 1); this.darkGfx.fillCircle(px, py, 130);
+      this.darkGfx.fillStyle(0xffffff, 1); this.darkGfx.fillRadial(px, py, 150, GLOW);
       for (const it of this.L.interact) {
-        if (it.type === 'torch' && it.done) this.darkGfx.fillCircle((it as any).x - this.cam, (it as any).y - 60, 150);
+        if (it.type === 'torch' && it.done) this.darkGfx.fillRadial((it as any).x - this.cam, (it as any).y - 60, 165, GLOW);
       }
       this.darkGfx.setBlendMode(BLEND.NORMAL);
     }

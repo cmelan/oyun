@@ -8,7 +8,7 @@ import { LevelScene } from '../src/game/LevelScene';
 
 const REC = { calls: [] as { m: string; args: any[] }[] };
 /* every geometry method whose coordinates must stay finite */
-const GEOM = ['fillRoundedRect', 'strokeRoundedRect', 'fillRect', 'strokeRect', 'fillCircle', 'strokeCircle', 'fillTriangle', 'fillEllipse', 'moveTo', 'lineTo', 'arc', 'translateCanvas', 'rotateCanvas'];
+const GEOM = ['fillRoundedRect', 'strokeRoundedRect', 'fillRect', 'strokeRect', 'fillCircle', 'strokeCircle', 'fillRadial', 'fillTriangle', 'fillEllipse', 'moveTo', 'lineTo', 'arc', 'translateCanvas', 'rotateCanvas'];
 
 const canvasStub = () => ({ width: 0, height: 0, getContext: () => new Proxy({}, { get: () => () => ({}) }), toDataURL: () => 'data:image/png;base64,STUB' });
 beforeEach(() => {
@@ -41,7 +41,7 @@ function run(idx: number, frames: number) {
 }
 
 describe('render regression', () => {
-  for (const idx of [0, 1, 5]) {
+  for (const idx of [0, 1, 2, 5]) {
     it(`level ${idx + 1}: no NaN/undefined draw coordinates over 200 frames`, () => {
       run(idx, 200);
       /* the monster bug produced undefined w/h and NaN y; a rounded-rect radius may
@@ -56,6 +56,23 @@ describe('render regression', () => {
     run(0, 3);
     const monsterBodies = REC.calls.filter(c => c.m === 'fillRoundedRect' && c.args[2] === 40 && c.args[3] === 40);
     expect(monsterBodies.length).toBeGreaterThan(0);
+  });
+
+  it('B3 (cave): player drawn AND soft light punch present with finite geometry', () => {
+    /* the Section-3 white-dot bug: darkness ERASE must not swallow the player.
+       Player body must be drawn, and the darkness layer must punch a soft
+       radial hole (feathered edge) around a screen-space player position. */
+    run(2, 3);
+    const playerish = REC.calls.filter(c => c.m === 'fillRoundedRect' && c.args[2] > 20 && c.args[2] < 80 && c.args[3] > 15 && c.args[3] < 70);
+    expect(playerish.length, 'player body missing on B3').toBeGreaterThan(0);
+    const punches = REC.calls.filter(c => c.m === 'fillRadial');
+    expect(punches.length, 'darkness light punch missing on B3').toBeGreaterThan(0);
+    for (const p of punches) {
+      expect(Number.isFinite(p.args[0]) && Number.isFinite(p.args[1]) && p.args[2] > 0).toBe(true);
+      const stops = p.args[3] as [number, number][];
+      expect(stops[0][1], 'punch must be fully transparent-making at centre').toBe(1);
+      expect(stops[stops.length - 1][1], 'punch edge must feather to 0').toBe(0);
+    }
   });
 
   it('B2 (peaks): monsters drawn AND player body drawn with valid box', () => {

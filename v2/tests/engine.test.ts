@@ -28,6 +28,33 @@ describe('engine: Graphics', () => {
     expect(g.scrollFactorX).toBe(0);
   });
 
+  it('darkness sequence: erase blend is active only between the blend ops', () => {
+    /* the Section-3 regression: fill rect (normal) → erase punch → back to normal.
+       Replay the exact op sequence LevelScene's dark layer records and assert the
+       composite operation active at each fill. */
+    const g = new Graphics();
+    g.fillStyle(0x0a0718, .62).fillRect(0, 0, 960, 540);
+    g.setBlendMode(BLEND.ERASE);
+    g.fillStyle(0xffffff, 1).fillRadial(480, 270, 150, [[0, 1], [.6, .88], [1, 0]]);
+    g.setBlendMode(BLEND.NORMAL);
+    const fills: { kind: string; gco: string }[] = [];
+    const stops: string[] = [];
+    const ctx: any = {
+      globalCompositeOperation: 'source-over', globalAlpha: 1, fillStyle: '',
+      fillRect() { fills.push({ kind: 'rect', gco: this.globalCompositeOperation }); },
+      createRadialGradient: () => ({ addColorStop: (_o: number, c: string) => { stops.push(c); } }),
+      beginPath() {}, arc() {},
+      fill() { fills.push({ kind: 'radial', gco: this.globalCompositeOperation }); },
+    };
+    for (const op of g.ops) op(ctx);
+    expect(fills).toEqual([
+      { kind: 'rect', gco: 'source-over' },       /* darkness veil drawn normally */
+      { kind: 'radial', gco: 'destination-out' }, /* punch erases the veil only */
+    ]);
+    expect(ctx.globalCompositeOperation).toBe('source-over'); /* restored for next frame */
+    expect(stops).toEqual(['rgba(255,255,255,1)', 'rgba(255,255,255,0.88)', 'rgba(255,255,255,0)']);
+  });
+
   it('replays recorded ops onto a 2D context (smoke, no throw)', () => {
     const g = new Graphics();
     g.fillStyle(0x445566, 0.5).fillRoundedRect(1, 2, 20, 10, 4);

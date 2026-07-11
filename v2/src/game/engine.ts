@@ -91,6 +91,21 @@ export class Graphics {
     this.ops.push(ctx => { ctx.globalAlpha = a; ctx.fillStyle = f; ctx.beginPath(); ctx.arc(x, y, Math.max(0, r), 0, TAU); ctx.fill(); });
     return this;
   }
+  /* Radial-alpha circle: current fill colour, alpha ramping through `stops`
+     [offset, alpha]. Under BLEND.ERASE this is the soft light punch (v1's
+     lantern glow) — the alpha ramp is what feathers the erased edge. */
+  fillRadial(x: number, y: number, r: number, stops: [number, number][]): this {
+    const f = this._fill, st = stops.slice();
+    this.ops.push(ctx => {
+      const n = parseInt(f.slice(1), 16) || 0;
+      const cr = (n >> 16) & 0xff, cg = (n >> 8) & 0xff, cb = n & 0xff;
+      const grad = ctx.createRadialGradient(x, y, 0, x, y, Math.max(0.01, r));
+      for (const [off, a] of st) grad.addColorStop(off, `rgba(${cr},${cg},${cb},${a})`);
+      ctx.globalAlpha = 1; ctx.fillStyle = grad;
+      ctx.beginPath(); ctx.arc(x, y, Math.max(0, r), 0, TAU); ctx.fill();
+    });
+    return this;
+  }
   strokeCircle(x: number, y: number, r: number): this {
     const s = this._stroke, lw = this._strokeW, a = this._strokeA;
     this.ops.push(ctx => { ctx.globalAlpha = a; ctx.strokeStyle = s; ctx.lineWidth = lw; ctx.beginPath(); ctx.arc(x, y, Math.max(0, r), 0, TAU); ctx.stroke(); });
