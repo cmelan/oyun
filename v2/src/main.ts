@@ -78,6 +78,20 @@ window.addEventListener('keydown', (e) => {
 });
 window.addEventListener('pointerdown', () => initAudio(!!save.muted), { once: true });
 
+/* --- mobile hardening --- */
+/* Block browser gestures over the game surface (pull-to-refresh, overscroll,
+   two-finger page zoom); the pads/cards handle their own pointer events. */
+const wrap = document.getElementById('wrap')!;
+wrap.addEventListener('touchmove', (e) => e.preventDefault(), { passive: false });
+document.addEventListener('gesturestart', (e) => e.preventDefault()); /* iOS pinch zoom */
+wrap.addEventListener('contextmenu', (e) => e.preventDefault());      /* long-press menu */
+/* Portrait on a touch device: the CSS #rotateHint overlay covers the game —
+   also pause a running level so nothing happens under it. */
+const portrait = window.matchMedia('(orientation: portrait) and (pointer: coarse)');
+portrait.addEventListener?.('change', (m) => {
+  if (m.matches && scene && scene.scene.isActive()) pauseToggle();
+});
+
 startMusic();
 ui.setGameplayVisible(false);
 ui.showMenu();

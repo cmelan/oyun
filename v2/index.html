@@ -2,20 +2,22 @@
 <html lang="tr">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
 <title>Çok Kalpli Koruyucu</title>
 <style>
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;}
-  html,body{margin:0;height:100%;background:#0f2b29;overflow:hidden;font-family:"Trebuchet MS","Segoe UI",system-ui,sans-serif;}
-  #wrap{position:relative;width:100%;height:100%;}
+  html,body{margin:0;height:100%;background:#0f2b29;overflow:hidden;font-family:"Trebuchet MS","Segoe UI",system-ui,sans-serif;overscroll-behavior:none;}
+  body{height:100dvh;} /* iOS Safari: track the real viewport, not the address-bar one */
+  #wrap{position:relative;width:100%;height:100%;touch-action:none;} /* game surface: no browser gestures */
+  button,.sayBtn{touch-action:manipulation;} /* taps stay instant, no double-tap zoom */
   #game{position:absolute;inset:0;}
   #game canvas{width:100%!important;height:100%!important;object-fit:contain;}
-  .top{position:absolute;top:12px;width:42px;height:42px;border:none;border-radius:13px;background:rgba(255,247,236,.85);color:#1f4d4a;font-size:20px;cursor:pointer;box-shadow:0 4px 0 rgba(0,0,0,.15);z-index:7;}
+  .top{position:absolute;top:calc(12px + env(safe-area-inset-top,0px));width:42px;height:42px;border:none;border-radius:13px;background:rgba(255,247,236,.85);color:#1f4d4a;font-size:20px;cursor:pointer;box-shadow:0 4px 0 rgba(0,0,0,.15);z-index:7;}
   .top:active{transform:translateY(2px);box-shadow:0 2px 0 rgba(0,0,0,.15);}
-  #restart{right:12px;} #mute{right:60px;} #fsBtn{right:108px;} #pauseBtn{right:156px;}
-  .pad{position:absolute;bottom:18px;z-index:5;}
-  #padL{left:18px;display:flex;gap:13px;}
-  #padR{right:18px;display:grid;grid-template-columns:repeat(2,auto);gap:12px;}
+  #restart{right:calc(12px + env(safe-area-inset-right,0px));} #mute{right:calc(60px + env(safe-area-inset-right,0px));} #fsBtn{right:calc(108px + env(safe-area-inset-right,0px));} #pauseBtn{right:calc(156px + env(safe-area-inset-right,0px));}
+  .pad{position:absolute;bottom:calc(18px + env(safe-area-inset-bottom,0px));z-index:5;}
+  #padL{left:calc(18px + env(safe-area-inset-left,0px));display:flex;gap:13px;}
+  #padR{right:calc(18px + env(safe-area-inset-right,0px));display:grid;grid-template-columns:repeat(2,auto);gap:12px;}
   .btn{width:70px;height:70px;border-radius:50%;border:none;display:flex;align-items:center;justify-content:center;font-size:27px;color:#1f4d4a;background:rgba(255,247,236,.78);box-shadow:0 5px 0 rgba(0,0,0,.18);cursor:pointer;font-weight:bold;}
   .btn:active{transform:translateY(3px);box-shadow:0 2px 0 rgba(0,0,0,.18);}
   #bJump{background:rgba(255,178,122,.9);} #bSand{background:rgba(232,194,122,.92);position:relative;} #bHeal{background:rgba(255,213,74,.92);}
@@ -34,7 +36,7 @@
   .eyes{font-size:28px;letter-spacing:3px;margin-bottom:6px;}
   .hint{font-size:11.5px;color:#7a9a96;margin-top:10px;line-height:1.5;}
   .pw{display:inline-block;padding:1px 6px;border-radius:7px;color:#fff;font-weight:bold;font-size:12px;}
-  #langRow{position:absolute;top:12px;left:12px;display:flex;gap:6px;z-index:7;}
+  #langRow{position:absolute;top:calc(12px + env(safe-area-inset-top,0px));left:calc(12px + env(safe-area-inset-left,0px));display:flex;gap:6px;z-index:7;}
   .langBtn{border:none;background:rgba(255,247,236,.78);color:#1f4d4a;font-weight:bold;font-size:12px;padding:7px 10px;border-radius:10px;cursor:pointer;box-shadow:0 3px 0 rgba(0,0,0,.15);}
   .langBtn.active{background:#ffb27a;color:#5a2c12;}
   .mapRegion{margin:12px 0;text-align:left;}
@@ -87,7 +89,13 @@
   @keyframes guardianBob{0%,100%{margin-top:0}50%{margin-top:-7px}}
   .mapCloud{position:absolute;opacity:.55;pointer-events:none;animation:cloudDrift linear infinite;}
   @keyframes cloudDrift{0%{transform:translateX(-120px)}100%{transform:translateX(1080px)}}
-  #mapBack{position:absolute;left:14px;bottom:14px;}
+  #mapBack{position:absolute;left:calc(14px + env(safe-area-inset-left,0px));bottom:calc(14px + env(safe-area-inset-bottom,0px));}
+  /* --- portrait guard: picture-only "rotate your device" (game is landscape) --- */
+  #rotateHint{display:none;position:absolute;inset:0;z-index:20;background:#0f2b29;color:#fff7ec;align-items:center;justify-content:center;flex-direction:column;gap:14px;text-align:center;}
+  #rotateHint .phone{font-size:76px;animation:rotatePhone 1.8s ease-in-out infinite;}
+  #rotateHint .arrow{font-size:30px;opacity:.85;}
+  @keyframes rotatePhone{0%,20%{transform:rotate(0)}60%,100%{transform:rotate(90deg)}}
+  @media (orientation: portrait) and (pointer: coarse){ #rotateHint{display:flex;} }
 </style>
 </head>
 <body>
@@ -108,6 +116,7 @@
   <div id="menu"></div>
   <div id="mapView" class="hidden"></div>
   <div id="ov" class="hidden"><div class="card" id="card"></div></div>
+  <div id="rotateHint" aria-hidden="true"><span class="phone">📱</span><span class="arrow">↻ 🔄 ↻</span></div>
 </div>
 <script type="module" src="/src/main.ts"></script>
 </body>
