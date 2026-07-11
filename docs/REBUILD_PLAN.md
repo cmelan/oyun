@@ -13,8 +13,12 @@ Consequences accepted:
   No scraped/unvetted web images, ever.
 
 ## Stack
-- **Phaser 3 + TypeScript + Vite** (the "next lever" already earmarked in
-  PROJECT_INSTRUCTIONS — graphics quality is now the binding constraint).
+- **TypeScript + Vite**, rendered on a **thin vanilla-Canvas engine**
+  (`v2/src/game/engine.ts`). *Originally built on Phaser 3; Phaser was dropped
+  2026-07-11 — the game used only its immediate-mode Graphics + camera, not
+  sprites/physics, so a ~250-line engine replaced it. Bundle 1.5 MB → 89 KB
+  (gzip 30 KB); `node_modules` shed ~115 MB. `src/core/` was already
+  framework-free; only `engine.ts` (new), `LevelScene.ts` + `main.ts` changed.*
 - **Capacitor** for iOS/Android wrap (App Store OK; Apple Arcade remains a separate,
   later decision — historically wants native engines).
 - **Vitest** for the test suite — port `tests/smoke.test.js` coverage 1:1, keep growing it.

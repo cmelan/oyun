@@ -10,9 +10,6 @@
     "typecheck": "tsc --noEmit",
     "fetch-photos": "node scripts/fetch-photos.mjs"
   },
-  "dependencies": {
-    "phaser": "^3.90.0"
-  },
   "devDependencies": {
     "sharp": "^0.35.3",
     "typescript": "^5.6.3",

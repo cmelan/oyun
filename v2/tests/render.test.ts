@@ -2,9 +2,13 @@
    assert none carry NaN/undefined coordinates (that's the exact failure mode of
    the missing monster w/h — monsters drew at ground-undefined = NaN and vanished),
    and that monsters + player are actually drawn on representative levels. */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { Graphics } from '../src/game/engine';
+import { LevelScene } from '../src/game/LevelScene';
 
-const REC = vi.hoisted(() => ({ calls: [] as { m: string; args: number[] }[] }));
+const REC = { calls: [] as { m: string; args: any[] }[] };
+/* every geometry method whose coordinates must stay finite */
+const GEOM = ['fillRoundedRect', 'strokeRoundedRect', 'fillRect', 'strokeRect', 'fillCircle', 'strokeCircle', 'fillTriangle', 'fillEllipse', 'moveTo', 'lineTo', 'arc', 'translateCanvas', 'rotateCanvas'];
 
 const canvasStub = () => ({ width: 0, height: 0, getContext: () => new Proxy({}, { get: () => () => ({}) }), toDataURL: () => 'data:image/png;base64,STUB' });
 beforeEach(() => {
@@ -15,34 +19,16 @@ beforeEach(() => {
     addEventListener() {}, documentElement: { style: {} },
   };
   (globalThis as any).window = { addEventListener() {}, removeEventListener() {}, setTimeout: () => 0, clearTimeout() {} };
-});
-
-vi.mock('phaser', () => {
-  const GEOM = new Set(['fillRoundedRect', 'strokeRoundedRect', 'fillRect', 'strokeRect', 'fillCircle', 'strokeCircle', 'fillTriangle', 'fillEllipse', 'moveTo', 'lineTo', 'arc', 'translateCanvas', 'rotateCanvas', 'fillPoint']);
-  function makeGfx() {
-    const g: any = new Proxy({}, {
-      get(_t, prop: string) {
-        return (...args: any[]) => { if (GEOM.has(prop)) REC.calls.push({ m: prop, args }); return g; };
-      },
+  /* spy on the real vanilla Graphics: record args, then run the actual method */
+  for (const m of GEOM) {
+    const orig = (Graphics.prototype as any)[m];
+    vi.spyOn(Graphics.prototype as any, m).mockImplementation(function (this: any, ...args: any[]) {
+      REC.calls.push({ m, args });
+      return orig.apply(this, args);
     });
-    return g;
   }
-  class Scene {
-    scene = { pause() {}, resume() {}, isActive: () => true, stop() {}, remove() {} };
-    add = { graphics: () => makeGfx() };
-    cameras = { main: { setBounds() {}, setScroll() {}, shake() {}, flash() {} } };
-    constructor(_k?: string) {}
-  }
-  return {
-    default: {
-      Scene, GameObjects: { Graphics: class {} },
-      Display: { Color: { HexStringToColor: () => ({ color: 0 }) } },
-      BlendModes: { ERASE: 1, NORMAL: 0 }, Scale: { FIT: 0, CENTER_BOTH: 0 }, AUTO: 0,
-    },
-  };
 });
-
-import { LevelScene } from '../src/game/LevelScene';
+afterEach(() => vi.restoreAllMocks());
 
 function run(idx: number, frames: number) {
   const scene = new LevelScene();

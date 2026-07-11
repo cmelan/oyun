@@ -1,8 +1,8 @@
-/* LevelScene — v1 engine ported onto Phaser 3. Kinematics/constants are the
-   proven v1 values (game feel preserved); Phaser supplies camera, particles,
-   tweenable juice, and the render loop. World entities draw immediate-mode into
-   one Graphics layer (a faithful port of the v1 renderer, biome-tinted). */
-import Phaser from 'phaser';
+/* LevelScene — v1 engine on the vanilla-Canvas engine (src/game/engine.ts).
+   Kinematics/constants are the proven v1 values (game feel preserved); the engine
+   supplies the camera (scroll/shake/flash) and render loop. World entities draw
+   immediate-mode into Graphics layers (a faithful port of the v1 renderer). */
+import { Scene, Graphics, BLEND, hexToNum } from './engine';
 import { CONFIG, TOOLS, type Eye } from '../core/config';
 import { BIOME } from '../core/biomes';
 import { prepLevel, LEVEL_META, WORLD, LEVELS, regionTreePool } from '../core/world';
@@ -32,15 +32,15 @@ export interface SceneHooks {
   onGameOver(): void;
 }
 
-export class LevelScene extends Phaser.Scene {
+export class LevelScene extends Scene {
   static KEY = 'level';
   private hooks!: SceneHooks;
   private L!: LevelData;
   private idx = 0;
   private monsters: MonsterRuntime[] = [];
-  private gfx!: Phaser.GameObjects.Graphics;
-  private bgGfx!: Phaser.GameObjects.Graphics;
-  private darkGfx!: Phaser.GameObjects.Graphics;
+  private gfx!: Graphics;
+  private bgGfx!: Graphics;
+  private darkGfx!: Graphics;
   private input2: InputState = { left: false, right: false, jumpEdge: false, jumpHeld: false, useEdge: false, sandEdge: false, healHeld: false };
   private player = { x: 90, y: 340, w: CONFIG.player.w, h: CONFIG.player.h, vx: 0, vy: 0, grounded: false, face: 1, coyote: 0, jbuf: 0, iframe: 0, squash: 1, squashVel: 0, blink: 0, blinkT: 2.2 };
   private hearts: number = CONFIG.hearts;
@@ -114,6 +114,13 @@ export class LevelScene extends Phaser.Scene {
     if (a === 'jump') i.jumpHeld = false; if (a === 'heal') i.healHeld = false;
   }
   setModal(m: boolean): void { this.modal = m; }
+  shutdown(): void {
+    if (this.keyHandlers) {
+      window.removeEventListener('keydown', this.keyHandlers.dn);
+      window.removeEventListener('keyup', this.keyHandlers.up);
+      this.keyHandlers = null;
+    }
+  }
 
   /* ---------- helpers ---------- */
   private spawnP(x: number, y: number, n: number, col: number, sp: number, life: number): void {
@@ -427,7 +434,7 @@ export class LevelScene extends Phaser.Scene {
   }
 
   /* ---------- render (immediate-mode port, biome-tinted) ---------- */
-  private col(hex: string): number { return Phaser.Display.Color.HexStringToColor(hex).color; }
+  private col(hex: string): number { return hexToNum(hex); }
   private draw(): void {
     const B = BIOME[this.L.biome || 'meadow'] || BIOME.meadow;
     const g = this.gfx, bg = this.bgGfx;
@@ -497,16 +504,16 @@ export class LevelScene extends Phaser.Scene {
     if (B.dark) {
       this.darkGfx.fillStyle(0x0a0718, .62);
       this.darkGfx.fillRect(0, 0, W, H);
-      this.darkGfx.setBlendMode(Phaser.BlendModes.ERASE);
+      this.darkGfx.setBlendMode(BLEND.ERASE);
       const px = this.player.x + this.player.w / 2 - this.cam, py = this.player.y + this.player.h / 2;
       this.darkGfx.fillStyle(0xffffff, 1); this.darkGfx.fillCircle(px, py, 130);
       for (const it of this.L.interact) {
         if (it.type === 'torch' && it.done) this.darkGfx.fillCircle((it as any).x - this.cam, (it as any).y - 60, 150);
       }
-      this.darkGfx.setBlendMode(Phaser.BlendModes.NORMAL);
+      this.darkGfx.setBlendMode(BLEND.NORMAL);
     }
   }
-  private drawPlayer(g: Phaser.GameObjects.Graphics): void {
+  private drawPlayer(g: Graphics): void {
     const p = this.player;
     const sq = Math.max(.5, Math.min(1.5, p.squash));
     const w = p.w / sq, h = p.h * sq;
@@ -537,7 +544,7 @@ export class LevelScene extends Phaser.Scene {
     });
     g.fillStyle(0xffb3c8, 1); g.fillRoundedRect(x + w * .38, y + h * .62, w * .24, 5, 3);
   }
-  private drawMonster(g: Phaser.GameObjects.Graphics, m: MonsterRuntime): void {
+  private drawMonster(g: Graphics, m: MonsterRuntime): void {
     const md = m as any, x = m.x, y = m.ground - md.h;
     const body = m.state === 'happy' ? 0x76c893 : m.state === 'blind' ? 0xb8b2c9 : 0xd66a6a;
     g.fillStyle(body, 1); g.fillRoundedRect(x, y, md.w, md.h, 12);
@@ -555,7 +562,7 @@ export class LevelScene extends Phaser.Scene {
       g.lineStyle(1, 0x8a6a1a, .8); g.strokeRect(x, y - 12, md.w, 5);
     }
   }
-  private drawBoss(g: Phaser.GameObjects.Graphics, b: BossData): void {
+  private drawBoss(g: Graphics, b: BossData): void {
     const sc = b.scale, w = b.w * sc, h = b.h * sc;
     const wob = b.shake > 0 ? Math.sin(this.t * 40) * 3 : 0;
     const x = b.x + wob, y = b.ground - h;
@@ -580,7 +587,7 @@ export class LevelScene extends Phaser.Scene {
     /* hp pips */
     for (let k = 0; k < 3; k++) { g.fillStyle(k < b.hp ? 0xff6b8a : 0x3a2a35, 1); g.fillCircle(x + w / 2 - 20 + k * 20, y - 18, 6); }
   }
-  private drawTree(g: Phaser.GameObjects.Graphics, tr: { id: string; x: number; y: number; awake?: boolean }): void {
+  private drawTree(g: Graphics, tr: { id: string; x: number; y: number; awake?: boolean }): void {
     const info = TREES[tr.id]; const crown = info?.crown || 'broad';
     const bob = tr.awake ? Math.sin(this.t * 1.6) * 3 : 0;
     const x = tr.x, y = tr.y + bob;
@@ -629,7 +636,7 @@ export class LevelScene extends Phaser.Scene {
       g.fillStyle(0xffd54a, 1); g.fillCircle(x, y - trunkH - 65, 6);
     }
   }
-  private drawInteract(g: Phaser.GameObjects.Graphics, it: Interact): void {
+  private drawInteract(g: Graphics, it: Interact): void {
     const a = it as any;
     const eyeMark = (ex: number, ey: number, eye: Eye) => {
       const pu = 1 + Math.sin(this.t * 4) * .12;

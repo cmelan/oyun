@@ -1,5 +1,5 @@
-/* Boot: Phaser + DOM UI + save wiring. */
-import Phaser from 'phaser';
+/* Boot: vanilla-Canvas engine + DOM UI + save wiring. */
+import { Game } from './game/engine';
 import { CONFIG } from './core/config';
 import { setLang, type Lang } from './core/i18n';
 import { loadSave, writeSave, recordTreeWake, type SaveData } from './core/save';
@@ -11,14 +11,12 @@ import { initAudio, setMuted, isMuted, startMusic, sfx } from './game/audio';
 const save: SaveData = loadSave(localStorage);
 if (save.lang) setLang(save.lang as Lang);
 
-const game = new Phaser.Game({
-  type: Phaser.AUTO,
+/* Canvas is FIT-scaled + letterboxed by CSS (#game canvas{width/height:100%;object-fit:contain}). */
+const game = new Game({
   parent: 'game',
   width: CONFIG.canvas.W,
   height: CONFIG.canvas.H,
   backgroundColor: '#57c0ba',
-  scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
-  scene: [],
 });
 
 let scene: LevelScene | null = null;

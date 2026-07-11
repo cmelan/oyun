@@ -2,9 +2,11 @@
    create() and many update() ticks across representative levels, asserting the
    engine never throws and key state transitions fire. Catches the render/update
    wiring bugs that the pure-logic suite can't. */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 
-/* ---- minimal DOM canvas stub (art.ts uses document.createElement('canvas')) ---- */
+/* ---- minimal DOM stubs. LevelScene's engine records draw ops without executing
+   them (no real canvas needed here); art.ts uses document.createElement('canvas')
+   for icon caching, and bindKeys uses window.add/removeEventListener. ---- */
 const canvasStub = () => ({
   width: 0, height: 0,
   getContext: () => new Proxy({}, { get: () => () => ({}) }),
@@ -17,27 +19,6 @@ beforeEach(() => {
     addEventListener() {}, documentElement: { style: {} },
   };
   (globalThis as any).window = { addEventListener() {}, removeEventListener() {}, setTimeout: () => 0, clearTimeout() {} };
-});
-
-/* ---- Phaser mock: Graphics/camera/scene no-ops, Scene base with .scene facade ---- */
-vi.mock('phaser', () => {
-  const gfxProxy = () => new Proxy({}, { get: () => () => gfxProxy() });
-  class Scene {
-    scene = { pause() {}, resume() {}, isActive: () => true, stop() {}, remove() {} };
-    add = { graphics: () => { const g: any = gfxProxy(); g.setScrollFactor = () => g; return g; } };
-    cameras = { main: { setBounds() {}, setScroll() {}, shake() {}, flash() {} } };
-    constructor(_k?: string) {}
-  }
-  return {
-    default: {
-      Scene,
-      GameObjects: { Graphics: class {} },
-      Display: { Color: { HexStringToColor: () => ({ color: 0x000000 }) } },
-      BlendModes: { ERASE: 1, NORMAL: 0 },
-      Scale: { FIT: 0, CENTER_BOTH: 0 },
-      AUTO: 0,
-    },
-  };
 });
 
 import { LevelScene } from '../src/game/LevelScene';
