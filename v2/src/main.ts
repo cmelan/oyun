@@ -96,9 +96,10 @@ startMusic();
 ui.setGameplayVisible(false);
 ui.showMenu();
 
-/* e2e hook: ?test exposes the UI + level starter so Playwright scripts can
-   drive screens directly (never active for players). */
+/* e2e hook: ?test exposes the UI + level starter + art helpers so Playwright
+   scripts (device matrix, design pack) can drive screens directly (never
+   active for players). */
 if (new URLSearchParams(location.search).has('test')) {
-  (window as any).__ckk = { ui, startLevel };
+  import('./game/art').then(art => { (window as any).__ckk = { ui, startLevel, art }; });
 }
 export { game, sfx };
