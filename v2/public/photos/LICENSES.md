@@ -22,6 +22,19 @@ If you replace any of these with your own/licensed photos, keep the same filenam
 | ıhlamur · tree | Baumkirchen, Linde am Kreuzbühel.jpg | CC0 | https://commons.wikimedia.org/wiki/File:Baumkirchen,_Linde_am_Kreuzb%C3%BChel.jpg |
 
 ## Remaining species (B2–B10)
-Not yet sourced. Same process: `scripts/fetch-photos.mjs` reads `scripts/photo-manifest.json`
-— add entries there, rerun. Until a species has all three photos, the game uses its
-botanical vector art (automatic fallback in `src/game/art.ts`).
+Not yet sourced — the sourcing itself is now automated but must run on a machine
+with network access (this repo's cloud sessions cannot reach Commons):
+
+```bash
+node scripts/source-photos.mjs          # find CC0/PD candidates per empty slot
+node scripts/source-photos.mjs --apply  # merge best picks into the manifest + log rows here
+node scripts/fetch-photos.mjs           # download, crop, WebP-encode
+node scripts/legibility-sheet.mjs       # then OPEN the sheet: every card must read at 58px
+```
+
+Only files whose Commons license metadata is exactly CC0/Public domain are ever
+considered (enforced in source-photos.mjs). The human step stays mandatory:
+check the legibility sheet and that each photo shows the right species/organ;
+swap any bad pick for the next candidate in `photo-manifest.candidates.json`.
+Until a species has all three photos, the game uses its botanical vector art
+(automatic fallback in `src/game/art.ts`).
