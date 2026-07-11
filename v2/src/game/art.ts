@@ -360,6 +360,36 @@ export function getBarkClue(species: string, size: number): string {
   const url = cv.toDataURL(); iconCache[key] = url; return url;
 }
 
+/* Guardian avatar badge (map/journey marker) — same look as LevelScene's
+   drawPlayer: purple rounded body, head sheen, five coloured eyes, smile. */
+export function guardianBadge(size: number): string {
+  const key = `guardian:${size}`;
+  if (iconCache[key]) return iconCache[key];
+  const cv = document.createElement('canvas');
+  cv.width = size; cv.height = Math.round(size * 1.24);
+  const c = cv.getContext('2d')!;
+  const w = size * .84, h = size * 1.06, x = (size - w) / 2, y = size * .12, r = size * .2;
+  const rr = (rx: number, ry: number, rw: number, rh: number, rad: number) => {
+    c.beginPath(); c.moveTo(rx + rad, ry);
+    c.arcTo(rx + rw, ry, rx + rw, ry + rh, rad); c.arcTo(rx + rw, ry + rh, rx, ry + rh, rad);
+    c.arcTo(rx, ry + rh, rx, ry, rad); c.arcTo(rx, ry, rx + rw, ry, rad); c.closePath();
+  };
+  c.fillStyle = 'rgba(20,58,51,.18)'; c.beginPath(); c.ellipse(size / 2, y + h + size * .04, w * .45, size * .07, 0, 0, 7); c.fill();
+  c.fillStyle = '#7a52c8'; rr(x, y, w, h, r); c.fill();
+  c.lineWidth = Math.max(1.6, size * .05); c.strokeStyle = '#3a2470'; rr(x, y, w, h, r); c.stroke();
+  c.fillStyle = '#9a78e0'; rr(x + w * .1, y + h * .06, w * .8, h * .38, r * .7); c.fill();
+  const eyes: [number, number][] = [[.22, .3], [.4, .22], [.5, .34], [.6, .22], [.78, .3]];
+  const eyeCols = ['#3fa9f5', '#ff6b4a', '#54c97a', '#ffcc3a', '#b07ad8'];
+  eyes.forEach(([ex, ey], k) => {
+    const exx = x + w * ex, eyy = y + h * ey;
+    c.fillStyle = '#2a1a4a'; c.beginPath(); c.arc(exx, eyy, size * .1, 0, 7); c.fill();
+    c.fillStyle = '#fff'; c.beginPath(); c.arc(exx, eyy, size * .08, 0, 7); c.fill();
+    c.fillStyle = eyeCols[k]; c.beginPath(); c.arc(exx + size * .02, eyy, size * .05, 0, 7); c.fill();
+  });
+  c.fillStyle = '#ffb3c8'; rr(x + w * .38, y + h * .62, w * .24, size * .1, size * .06); c.fill();
+  const url = cv.toDataURL(); iconCache[key] = url; return url;
+}
+
 export type ClueKind = 'leaf' | 'bark' | 'silhouette';
 
 /* Art resolver — REAL PHOTOS FIRST (the mandated card art), vector fallback. */

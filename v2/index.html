@@ -66,6 +66,28 @@
   @keyframes confettiFall{0%{transform:translateY(0) rotate(0deg);opacity:1}100%{transform:translateY(84vh) rotate(320deg);opacity:0}}
   .journalPlus{position:absolute;top:10px;right:14px;background:#ffd54a;color:#5a4400;font-weight:bold;font-size:14px;padding:5px 10px;border-radius:12px;box-shadow:0 3px 0 rgba(0,0,0,.15);animation:journalPop .5s ease-out;}
   @keyframes journalPop{0%{transform:scale(0) rotate(-14deg)}70%{transform:scale(1.2) rotate(4deg)}100%{transform:scale(1) rotate(0)}}
+  /* --- adventure journey map --- */
+  #mapView{position:absolute;inset:0;z-index:6;background:linear-gradient(#dff6f0,#a9e6dc 55%,#8fdcca);overflow:hidden;}
+  #mapView.hidden{display:none;}
+  #mapView .mapArt{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;} /* designer bg drop-in (public/map/bg.webp) */
+  #mapView svg{position:absolute;inset:0;width:100%;height:100%;}
+  #mapTitle{position:absolute;top:14px;left:50%;transform:translateX(-50%);margin:0;color:#1f4d4a;font-size:22px;text-shadow:0 2px 0 rgba(255,255,255,.5);}
+  .mNode{position:absolute;transform:translate(-50%,-50%);width:88px;border:none;background:rgba(255,247,236,.94);border-radius:20px;padding:9px 6px 7px;box-shadow:0 5px 0 rgba(31,77,74,.2);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;}
+  .mNode:active{transform:translate(-50%,-50%) translateY(3px);box-shadow:0 2px 0 rgba(31,77,74,.2);}
+  .mNode img{width:42px;height:auto;pointer-events:none;}
+  .mNode .nm{font-size:10.5px;font-weight:bold;color:#1f4d4a;line-height:1.15;}
+  .mNode .badge{position:absolute;top:-10px;right:-8px;font-size:18px;filter:drop-shadow(0 2px 1px rgba(0,0,0,.25));}
+  .mNode .sayBtn{width:22px;height:22px;font-size:11px;}
+  .mNode.locked{filter:grayscale(.9);opacity:.66;cursor:default;}
+  .mNode.next{animation:nodeGlow 1.6s ease-in-out infinite;}
+  @keyframes nodeGlow{0%,100%{box-shadow:0 5px 0 rgba(31,77,74,.2),0 0 0 0 rgba(255,178,122,.75)}50%{box-shadow:0 5px 0 rgba(31,77,74,.2),0 0 0 12px rgba(255,178,122,0)}}
+  .mNode.wiggle{animation:nodeWiggle .4s ease-in-out;}
+  @keyframes nodeWiggle{0%,100%{margin-left:0}25%{margin-left:-6px}75%{margin-left:6px}}
+  #mapGuardian{position:absolute;transform:translate(-50%,-100%);pointer-events:none;z-index:2;animation:guardianBob 2.2s ease-in-out infinite;}
+  @keyframes guardianBob{0%,100%{margin-top:0}50%{margin-top:-7px}}
+  .mapCloud{position:absolute;opacity:.55;pointer-events:none;animation:cloudDrift linear infinite;}
+  @keyframes cloudDrift{0%{transform:translateX(-120px)}100%{transform:translateX(1080px)}}
+  #mapBack{position:absolute;left:14px;bottom:14px;}
 </style>
 </head>
 <body>
@@ -84,6 +106,7 @@
     <button class="btn" id="bPow">✨</button><button class="btn" id="bJump">⤴</button>
   </div>
   <div id="menu"></div>
+  <div id="mapView" class="hidden"></div>
   <div id="ov" class="hidden"><div class="card" id="card"></div></div>
 </div>
 <script type="module" src="/src/main.ts"></script>

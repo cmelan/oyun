@@ -6,7 +6,8 @@ import { TOOLS, type Eye } from '../core/config';
 import { WORLD, LEVEL_META, type ClueTier } from '../core/world';
 import { familyStars, pick3, streakStart, streakAnswer, type StreakState } from '../core/logic';
 import type { SaveData } from '../core/save';
-import { getTreeArt, getChoiceArt } from './art';
+import { BIOME } from '../core/biomes';
+import { getTreeArt, getChoiceArt, getTreeIcon, guardianBadge } from './art';
 import { speak, sfx } from './audio';
 
 /* Clue-tier picture cue so pre-readers can tell what kind of clue they see. */
@@ -107,6 +108,7 @@ export class UI {
   setGameplayVisible(on: boolean): void {
     for (const id of ['padL', 'padR', 'hud']) $(id).style.display = on ? '' : 'none';
     $('menu').style.display = on ? 'none' : '';
+    if (on) $('mapView').classList.add('hidden');
   }
 
   /* ---------- overlay plumbing ---------- */
@@ -145,6 +147,7 @@ export class UI {
   /* ---------- screens ---------- */
   showMenu(): void {
     this.setGameplayVisible(false);
+    $('mapView').classList.add('hidden');
     $('menu').innerHTML = `
       <button class="play" id="mStart">${S('ui.newGame')}</button>
       <button class="ghost" id="mCont">${S('ui.continue')}</button>
@@ -152,7 +155,7 @@ export class UI {
       <button class="ghost" id="mJournal">${S('ui.journal')}</button>
       <button class="ghost" id="mHow">${S('ui.howto')}</button>`;
     $('mStart').onclick = () => { this.requestFS(); this.cb.onStart(0); };
-    $('mCont').onclick = () => { this.requestFS(); this.cb.onStart(Math.min(this.save.furthest || 0, 9)); };
+    $('mCont').onclick = () => this.showMap(); /* journey hub: pick up where you left off */
     $('mMap').onclick = () => this.showMap();
     $('mJournal').onclick = () => this.showJournal();
     $('mHow').onclick = () => this.showHowto();
@@ -169,23 +172,73 @@ export class UI {
       <div class="row"><button class="play" id="hBack">${S('ui.back')}</button></div>`);
     (card.querySelector('#hBack') as HTMLElement).onclick = () => this.showMenu();
   }
+  /* Adventure journey map — the game's hub. A winding path crosses all 10
+     biome-tinted zones; each region is a tappable node (its signature tree as
+     the icon, name + 🔊 for pre-readers). The Guardian stands on the frontier
+     node; done nodes wear a ⭐, locked ones a 🔒 (tapping one speaks the hint).
+     Designer art drop-in: public/map/bg.webp covers the procedural backdrop,
+     public/map/node_<regionId>.webp replaces a node icon — no code change. */
   showMap(): void {
+    this.setGameplayVisible(false);
+    this.hideOverlay();
+    $('menu').style.display = 'none';
     const furthest = this.save.furthest || 0;
-    let flat = 0;
-    const rows = WORLD.map(r => {
-      const nodes = r.levels.map(() => {
-        const idx = flat++;
-        const cls = idx < furthest ? 'done' : idx === furthest ? 'next' : 'locked';
-        return `<button class="mapNode ${cls}" data-i="${idx}" ${cls === 'locked' ? 'disabled' : ''}>${idx + 1}</button>`;
-      }).join('');
-      return `<div class="mapRegion"><h2>${S(r.nameKey)}</h2><div class="row" style="justify-content:flex-start">${nodes}</div></div>`;
+    /* serpentine node layout on the 960×540 design canvas (positioned in %) */
+    const pts = WORLD.map((_, i) => i < 5
+      ? { x: 100 + i * 170, y: 372 - (i % 2) * 26 }
+      : { x: 860 - (i - 5) * 170, y: 186 + ((i - 5) % 2) * 26 });
+    let d = `M ${pts[0].x} ${pts[0].y}`;
+    for (let i = 1; i < pts.length; i++) {
+      const p = pts[i - 1], q = pts[i], mx = (p.x + q.x) / 2;
+      d += ` C ${mx} ${p.y}, ${mx} ${q.y}, ${q.x} ${q.y}`;
+    }
+    const zones = WORLD.map((r, i) => {
+      const B = BIOME[r.biome] || BIOME.meadow;
+      return `<ellipse cx="${pts[i].x}" cy="${pts[i].y + 58}" rx="94" ry="46" fill="${B.grass}" opacity=".42"/>
+        <ellipse cx="${pts[i].x + 24}" cy="${pts[i].y + 74}" rx="60" ry="26" fill="${B.hillsMid}" opacity=".35"/>`;
     }).join('');
-    const card = this.show(`<h1>${S('map.title')}</h1>${rows}
-      <div class="row"><button class="play" id="mapBack">${S('ui.back')}</button></div>`);
-    card.querySelectorAll<HTMLButtonElement>('.mapNode:not(.locked)').forEach(b => {
-      b.onclick = () => { this.requestFS(); this.cb.onStart(Number(b.dataset.i)); };
+    let flat = 0;
+    const nodes = WORLD.map((r, i) => {
+      const start = flat; flat += r.levels.length;
+      const cls = furthest >= flat ? 'done' : furthest >= start ? 'next' : 'locked';
+      const badge = cls === 'done' ? '⭐' : cls === 'locked' ? '🔒' : '';
+      const nm = S(r.nameKey);
+      return `<button class="mNode ${cls}" data-i="${start}" style="left:${(pts[i].x / 9.6).toFixed(2)}%;top:${(pts[i].y / 5.4).toFixed(2)}%">
+        ${badge ? `<span class="badge">${badge}</span>` : ''}
+        <img src="./map/node_${r.id}.webp" onerror="this.onerror=null;this.src='${getTreeIcon(r.treeSet[0], 42, false)}'" alt="">
+        <span class="nameRow"><span class="nm">${nm}</span>${this.sayBtn(nm)}</span>
+      </button>`;
+    }).join('');
+    const gi = Math.min(furthest, WORLD.length - 1);
+    const clouds = [0, 1, 2].map(k =>
+      `<span class="mapCloud" style="top:${6 + k * 11}%;font-size:${30 + k * 10}px;animation-duration:${34 + k * 14}s;animation-delay:${-k * 12}s">☁️</span>`).join('');
+    const mv = $('mapView');
+    mv.innerHTML = `
+      <img class="mapArt" src="./map/bg.webp" onerror="this.remove()" alt="">
+      <svg viewBox="0 0 960 540" preserveAspectRatio="xMidYMid slice">
+        ${zones}
+        <path d="${d}" fill="none" stroke="#fff7ec" stroke-width="16" stroke-linecap="round" opacity=".9"/>
+        <path d="${d}" fill="none" stroke="#d9b98a" stroke-width="7" stroke-linecap="round" stroke-dasharray="1 18"/>
+      </svg>
+      ${clouds}
+      <h1 id="mapTitle">${S('map.title')}</h1>
+      ${nodes}
+      <img id="mapGuardian" src="${guardianBadge(44)}"
+        style="left:${(pts[gi].x / 9.6).toFixed(2)}%;top:${((pts[gi].y - 32) / 5.4).toFixed(2)}%" alt="">
+      <button class="ghost" id="mapBack">${S('ui.back')}</button>`;
+    mv.classList.remove('hidden');
+    mv.querySelectorAll<HTMLButtonElement>('.mNode').forEach(b => {
+      b.onclick = () => {
+        if (b.classList.contains('locked')) {
+          speak(S('map.locked')); sfx('hmm');
+          b.classList.remove('wiggle'); void b.offsetWidth; b.classList.add('wiggle');
+          return;
+        }
+        this.requestFS(); this.cb.onStart(Number(b.dataset.i));
+      };
     });
-    (card.querySelector('#mapBack') as HTMLElement).onclick = () => this.showMenu();
+    ($('mapBack') as HTMLElement).onclick = () => this.showMenu();
+    this.wireSayButtons(mv);
   }
   showJournal(): void {
     const journal = this.save.journal || [];
