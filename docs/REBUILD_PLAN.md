@@ -37,6 +37,14 @@ Consequences accepted:
   (pixel-preview script, now on photo crops — similar species must be distinguishable)
 - Difficulty tiers across 10 levels: leaf-photo match (B1–B4) → bark-only (B5–B7) →
   silhouette-only + spaced-repetition review (B8–B10)
+- **Shipped 2026-07-11:** audio-first card flow (question auto-spoken, every tapped
+  choice speaks its name, confetti + first-try streak chime, kind retry on wrong),
+  tree/mimic cards unified into one component; adventure journey map hub (designer
+  drop-in via `public/map/`, brief in `docs/design-pack/`); soft cave light halo +
+  B3 render regression tests; mobile hardening (gesture-proofing, safe areas,
+  portrait rotate overlay, device screenshot matrix); Arabic removed (owner request).
+  Photo sourcing automated (`scripts/source-photos.mjs`) — fetching still needs a
+  networked machine.
 
 ## Content: 10 bölümler
 | # | Bölüm | Biome | Trees |
