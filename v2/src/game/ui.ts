@@ -1,6 +1,6 @@
-/* DOM overlay UI: menu, map, journal, cards, HUD. Fully i18n'd (RTL-aware),
+/* DOM overlay UI: menu, map, journal, cards, HUD. Fully i18n'd (tr/en/de),
    every tree name carries a 🔊 listen button (never triggers selection). */
-import { S, setLang, getLang, type Lang, STR } from '../core/i18n';
+import { S, setLang, getLang, LANGS, type Lang } from '../core/i18n';
 import { TREES, treeName } from '../core/trees';
 import { TOOLS, type Eye } from '../core/config';
 import { WORLD, LEVEL_META, type ClueTier } from '../core/world';
@@ -41,14 +41,13 @@ export class UI {
 
   /* ---------- chrome ---------- */
   private buildLangRow(): void {
-    $('langRow').innerHTML = (['tr', 'en', 'de', 'ar'] as Lang[])
+    $('langRow').innerHTML = LANGS
       .map(l => `<button class="langBtn" data-l="${l}">${l.toUpperCase()}</button>`).join('');
     $('langRow').querySelectorAll<HTMLButtonElement>('button').forEach(b => {
       b.onclick = () => { setLang(b.dataset.l as Lang); this.cb.onLangChange(b.dataset.l as Lang); this.applyLang(); };
     });
   }
   applyLang(): void {
-    document.documentElement.dir = getLang() === 'ar' ? 'rtl' : 'ltr';
     $('langRow').querySelectorAll<HTMLButtonElement>('button').forEach(b =>
       b.classList.toggle('active', b.dataset.l === getLang()));
   }

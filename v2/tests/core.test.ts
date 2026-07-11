@@ -148,12 +148,12 @@ describe('boss finisher\'ları', () => {
 });
 
 describe('Bilge Ağaçlar', () => {
-  it('26 tür tanımlı, hepsinde 4 dilde isim + aile + fact', () => {
+  it('26 tür tanımlı, hepsinde 3 dilde isim + aile + fact', () => {
     const ids = Object.keys(TREES);
     expect(ids.length).toBe(26);
     for (const id of ids) {
       const t = TREES[id];
-      for (const l of ['tr', 'en', 'de', 'ar'] as const) expect(t.name[l], `${id}.${l}`).toBeTruthy();
+      for (const l of ['tr', 'en', 'de'] as const) expect(t.name[l], `${id}.${l}`).toBeTruthy();
       expect(t.family).toBeTruthy(); expect(t.fact || t.gift).toBeTruthy();
     }
   });
@@ -161,7 +161,6 @@ describe('Bilge Ağaçlar', () => {
     expect(treeName('meşe', 'tr')).toBe('Meşe');
     expect(treeName('meşe', 'en')).toBe('Oak');
     expect(treeName('meşe', 'de')).toBe('Eiche');
-    expect(treeName('meşe', 'ar')).toBe('بلوط');
     expect(SPEECH_LOCALE.en).toBe('en-US');
   });
   it('pick3: doğru id daima içinde, 3 benzersiz seçenek', () => {
@@ -196,6 +195,14 @@ describe('kayıt / göç', () => {
   it('bozuk kayıt çökertmez, boş kayıtla devam eder', () => {
     const st = memStorage({ [SAVE_KEY_V2]: '{not json' });
     expect(loadSave(st)).toEqual({});
+  });
+  it("kaldırılan dil ('ar') kaydı tr'ye çevrilir — v2 ve v1 göçünde", () => {
+    const v2st = memStorage({ [SAVE_KEY_V2]: JSON.stringify({ furthest: 2, lang: 'ar' }) });
+    expect(loadSave(v2st).lang).toBe('tr');
+    const v1st = memStorage({ [SAVE_KEY_V1]: JSON.stringify({ furthest: 5, journal: ['meşe'], lang: 'ar' }) });
+    const migrated = loadSave(v1st);
+    expect(migrated.lang).toBe('tr');
+    expect(migrated.furthest).toBe(5); /* progress untouched */
   });
 });
 
@@ -255,8 +262,8 @@ describe('v2 içerik: B5–B10', () => {
 });
 
 describe('dil', () => {
-  it('boş EN/DE/AR tabloları TR\'ye düşer — hiçbir arayüz metni boş değil', () => {
-    for (const l of ['en', 'de', 'ar'] as const) {
+  it('boş EN/DE tabloları TR\'ye düşer — hiçbir arayüz metni boş değil', () => {
+    for (const l of ['en', 'de'] as const) {
       setLang(l);
       expect(S('ui.newGame')).toBe(STR.tr['ui.newGame']);
       expect(S('tree.question')).toBeTruthy();

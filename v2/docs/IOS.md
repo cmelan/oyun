@@ -18,7 +18,7 @@ npx cap open ios   # Xcode açılır → imzala → cihazda çalıştır / TestF
 Notlar:
 - `capacitor.config.json` hazır (appId: com.cagatay.cokkalplikoruyucu, webDir: dist).
 - Oyun dokunmatik-öncelikli: sol pad (◀ ▶), sağ pad (🏖️ 💛 ✨ ⤴), tam ekran + yatay kilit istekleri mevcut.
-- Ses: WebAudio sentez + Web Speech (tr/en/de/ar) — iOS WKWebView'de ilk dokunuşta başlar (mevcut `pointerdown` kancası bunu yapıyor).
+- Ses: WebAudio sentez + Web Speech (tr/en/de) — iOS WKWebView'de ilk dokunuşta başlar (mevcut `pointerdown` kancası bunu yapıyor).
 - Kayıt: `localStorage` — WKWebView'de kalıcıdır; App Store güncellemelerinde korunur.
 - Android için: `npm i @capacitor/android && npx cap add android`.
 - Apple **Arcade** ayrı bir karar (tarihsel olarak native motor bekler) — App Store hedefi için bu kurulum yeterli. `docs/REBUILD_PLAN.md`'deki karara bakın.

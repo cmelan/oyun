@@ -28,7 +28,7 @@ Consequences accepted:
 - `makeSection(recipe)` generator + SECTION_RHYTHM/GAP invariants (conflict-free by construction)
 - TREES registry (add `photos: {leaf, bark, tree}` alongside existing fields)
 - Boss template (data-driven identity, cage/shrink finishers)
-- 4-language STR/S() + locale-matched Web Speech + fallback-to-TR guarantee
+- STR/S() + locale-matched Web Speech + fallback-to-TR guarantee (tr/en/de — Arabic removed 2026-07-11 by owner request)
 - Save format (migrate `ckk2_save_v1` → v2 with an upgrade path, don't wipe progress)
 
 ## Recognition logic (deepened)

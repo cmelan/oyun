@@ -18,8 +18,10 @@ not by re-pasting an old copy.*
 - Bilge Ağaçlar (Sleeping Trees): a parallel "healing by naming" loop — match a leaf
   to the right tree by picture+name (with 🔊 listen, no reading required) → tree wakes,
   name spoken in the active language, card added to Doğa Günlüğü
-- Target languages: Turkish (primary, fully written), English/German/Arabic (UI chrome +
-  tree names done; descriptions/facts still TR-only, pending a dedicated translation pass)
+- Target languages: Turkish (primary, fully written), English/German (UI chrome +
+  tree names done; descriptions/facts still TR-only, pending a dedicated translation pass).
+  *Arabic was removed from v2 on 2026-07-11 by owner request (old `lang:'ar'` saves are
+  coerced to `tr`); the frozen v1 archive below still carries its original 4-language tables.*
 - Apple Arcade is an aspirational platform target (see Platform Decisions below)
 
 ## Ground Rules (non-negotiable)
@@ -117,7 +119,7 @@ way rather than reverting to eyeballing console output.
 - Journal → botanical-family completion stars (meta-goal layer, not yet built)
 - Flow-movement segments + hidden hearts (B1 ice-slide, B3 mushroom chain) — proposed early,
   deprioritized in favor of the tree-system work; still open
-- Full EN/DE/AR translation pass for tree descriptions/facts and any remaining literal-Turkish UI strings
+- Full EN/DE translation pass for tree descriptions/facts and any remaining literal-Turkish UI strings (AR dropped 2026-07-11)
 
 ## Working Agreement
 - One feature at a time, gradual delivery, concise updates
