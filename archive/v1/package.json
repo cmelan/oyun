@@ -1,0 +1,10 @@
+{
+  "name": "cok-kalpli-koruyucu",
+  "version": "0.1.0",
+  "description": "Çok Kalpli Koruyucu — non-violent puzzle-platformer for young children (5-8), Turkish/English/German",
+  "private": true,
+  "scripts": {
+    "test": "node tests/smoke.test.js",
+    "serve": "npx http-server game -p 8080 -o"
+  }
+}

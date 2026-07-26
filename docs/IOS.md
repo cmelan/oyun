@@ -1,6 +1,6 @@
 # iOS (ve Android) Paketleme — Capacitor
 
-Web build'i değişmeden native kabuğa sarılır. Tek seferlik kurulum (Mac'te, repo `v2/` içinde):
+Web build'i değişmeden native kabuğa sarılır. Tek seferlik kurulum (Mac'te, repo kökünde):
 
 ```bash
 npm install @capacitor/core @capacitor/cli @capacitor/ios

@@ -1,10 +1,23 @@
 {
-  "name": "cok-kalpli-koruyucu",
-  "version": "0.1.0",
-  "description": "Çok Kalpli Koruyucu — non-violent puzzle-platformer for young children (5-8), Turkish/English/German",
+  "name": "oyun-game",
+  "version": "2.0.0",
+  "description": "A kind, non-violent puzzle-platformer for young children",
   "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22 <23"
+  },
   "scripts": {
-    "test": "node tests/smoke.test.js",
-    "serve": "npx http-server game -p 8080 -o"
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "test": "vitest run tests",
+    "typecheck": "tsc --noEmit",
+    "fetch-photos": "node scripts/fetch-photos.mjs"
+  },
+  "devDependencies": {
+    "sharp": "^0.35.3",
+    "typescript": "^5.6.3",
+    "vite": "^6.3.5",
+    "vitest": "^3.1.4"
   }
 }

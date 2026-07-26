@@ -1,21 +1,21 @@
 # Development Agent Prompt — Meadow Vertical Slice
 
-You are continuing **Çok Kalpli Koruyucu v2**, a non-violent puzzle-platformer
+You are continuing **oyun-game**, a non-violent puzzle-platformer
 for children aged 5–8.
 
 ## Start here
 
 1. Read `docs/PROJECT_INSTRUCTIONS.md`, `docs/REBUILD_PLAN.md`, and
    `docs/MEADOW_VISUAL_SYSTEM.md` completely.
-2. Run `cd v2 && npm test && npm run build`.
+2. Run `npm test && npm run build` from the repository root.
 3. Report any pre-existing failure before changing code.
 
 ## Current state
 
 - Core gameplay, physics, puzzles, saves and tests are working.
-- `v2/src/game/engine.ts` now supports raster draws, tiled image fills and
+- `src/game/engine.ts` now supports raster draws, tiled image fills and
   horizontal tiled sprites.
-- `v2/src/game/assets.ts` preloads Meadow art with failure-safe fallbacks.
+- `src/game/assets.ts` preloads Meadow art with failure-safe fallbacks.
 - Level 1 uses the raster far background, soil tile and grass edge.
 - Every other biome remains on the procedural renderer.
 - Do not migrate to Phaser, PixiJS or another engine in this task.

@@ -1,38 +1,33 @@
-# Çok Kalpli Koruyucu
+# oyun-game
 
-Non-violent puzzle-platformer for children (~5–8). Single-file HTML5 Canvas +
-vanilla JS, offline-capable, Turkish/English/German/Arabic.
+The current game is a TypeScript/Vite canvas application. It lives directly at
+the repository root so local development and Render use the same build.
 
-## Structure
-```
-game/  cok-kalpli-koruyucu.html   ← the actual game (open directly in a browser)
-tests/ smoke.test.js              ← regression suite (node, no dependencies)
-       harness-helpers.js         ← DOM/canvas/localStorage stubs for headless testing
-docs/  PROJECT_INSTRUCTIONS.md    ← canonical project doc — read this first, every session
-```
+## Development
 
-## Setup
 ```bash
-git init
-git add .
-git commit -m "Initial import from chat-based development"
-```
-No `npm install` needed — the test suite is dependency-free Node.
-
-## Running the game
-Just open `game/cok-kalpli-koruyucu.html` in a browser, or:
-```bash
-npm run serve   # http-server on :8080, opens automatically
-```
-
-## Running tests
-```bash
+npm ci
 npm test
+npm run dev
 ```
-Run this before and after every change. See `docs/PROJECT_INSTRUCTIONS.md` for what's covered.
 
-## Continuing development
-Read `docs/PROJECT_INSTRUCTIONS.md` in full before making changes — it's the accurate,
-current state of the project (architecture, what's shipped, what's next, working agreements).
-If you're starting a fresh Claude Code session, see `docs/FIRST_PROMPT.md` for a ready-to-paste
-bootstrap message.
+## Production
+
+```bash
+npm run build
+```
+
+The production output is written to `dist/`. Render configuration is committed
+in `render.yaml` and publishes that directory.
+
+## Project layout
+
+- `src/` — game and core logic
+- `public/` — production art and photo assets
+- `tests/` — Vitest regression suite
+- `scripts/` — asset and screenshot utilities
+- `docs/` — current design, deployment, and platform notes
+- `archive/v1/` — frozen legacy single-file edition and its tests
+
+The archived edition is kept for reference only. Do not use it for development
+or deployment.

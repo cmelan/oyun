@@ -31,13 +31,13 @@ single illustration as a level background.
 
 | File | Purpose | Repeat behaviour |
 | --- | --- | --- |
-| `v2/public/art/meadow/far-background.webp` | Fixed far plate | Cover 960×540 |
-| `v2/public/art/meadow/midground-treeline.png` | Parallax tree-line plate | Repeat X at 960px |
-| `v2/public/art/meadow/foreground-left.png` | Foreground foliage, left-weighted | Sparse world placement |
-| `v2/public/art/meadow/foreground-middle.png` | Foreground foliage, low middle | Sparse world placement |
-| `v2/public/art/meadow/foreground-right.png` | Foreground foliage, right-weighted | Sparse world placement |
-| `v2/public/art/meadow/soil-tile.webp` | Platform vertical faces | Repeat X/Y at 128px |
-| `v2/public/art/meadow/grass-edge.png` | Collision-top dressing | Repeat X at 202px |
+| `public/art/meadow/far-background.webp` | Fixed far plate | Cover 960×540 |
+| `public/art/meadow/midground-treeline.png` | Parallax tree-line plate | Repeat X at 960px |
+| `public/art/meadow/foreground-left.png` | Foreground foliage, left-weighted | Sparse world placement |
+| `public/art/meadow/foreground-middle.png` | Foreground foliage, low middle | Sparse world placement |
+| `public/art/meadow/foreground-right.png` | Foreground foliage, right-weighted | Sparse world placement |
+| `public/art/meadow/soil-tile.webp` | Platform vertical faces | Repeat X/Y at 128px |
+| `public/art/meadow/grass-edge.png` | Collision-top dressing | Repeat X at 202px |
 
 The soil tile was mirrored in both axes during processing so its seams are
 deterministic. The grass strip was chroma-keyed, alpha-validated, cropped and
@@ -45,7 +45,7 @@ mirrored horizontally.
 
 The tree line and foliage clusters were generated one layer at a time on flat
 magenta, matte/despill cleaned, alpha-validated and normalized. Their complete
-source, prompt and license record is in `v2/public/art/meadow/PROVENANCE.md`.
+source, prompt and license record is in `public/art/meadow/PROVENANCE.md`.
 
 ## Asset production rules
 

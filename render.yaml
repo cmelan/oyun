@@ -1,0 +1,7 @@
+services:
+  - type: web
+    name: oyun-game
+    runtime: static
+    buildCommand: npm ci && npm run build
+    staticPublishPath: ./dist
+    autoDeployTrigger: commit

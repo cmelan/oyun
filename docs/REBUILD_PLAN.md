@@ -1,4 +1,4 @@
-# Çok Kalpli Koruyucu v2 — Rebuild Plan
+# oyun-game — Rebuild History and Roadmap
 *Agreed 2026-07-06. Companion to PROJECT_INSTRUCTIONS.md (ground rules there still apply:
 empathy over combat, minimal reading, playtest-gated batches, one feature at a time,
 tests before/after every change).*
@@ -9,12 +9,12 @@ Top-tier web game, iOS-ready via Capacitor. ≥10 bölümler. Real photos (leaf 
 Consequences accepted:
 - Single-file constraint is dropped → real build (Vite) with an asset pipeline.
 - Photos come only from vetted public-domain/CC0 sources (Wikimedia Commons PD/CC0,
-  USDA, etc.). Every image gets a license log entry in `assets/photos/LICENSES.md`.
+  USDA, etc.). Every image gets a license log entry in `public/photos/LICENSES.md`.
   No scraped/unvetted web images, ever.
 
 ## Stack
 - **TypeScript + Vite**, rendered on a **thin vanilla-Canvas engine**
-  (`v2/src/game/engine.ts`). *Originally built on Phaser 3; Phaser was dropped
+  (`src/game/engine.ts`). *Originally built on Phaser 3; Phaser was dropped
   2026-07-11 — the game used only its immediate-mode Graphics + camera, not
   sprites/physics, so a ~250-line engine replaced it. Bundle 1.5 MB → 89 KB
   (gzip 30 KB); `node_modules` shed ~115 MB. `src/core/` was already
@@ -29,7 +29,7 @@ Consequences accepted:
 - TREES registry (add `photos: {leaf, bark, tree}` alongside existing fields)
 - Boss template (data-driven identity, cage/shrink finishers)
 - STR/S() + locale-matched Web Speech + fallback-to-TR guarantee (tr/en/de — Arabic removed 2026-07-11 by owner request)
-- Save format (migrate `ckk2_save_v1` → v2 with an upgrade path, don't wipe progress)
+- Save format (migrate `ckk2_save_v1` to the current format without wiping progress)
 
 ## Recognition logic (deepened)
 - Core loop unchanged: see leaf → pick tree → 🔊 name → tree wakes → Doğa Günlüğü
@@ -57,7 +57,7 @@ Consequences accepted:
 | 9 | Göl Kenarı | lakeside (new) | TBD |
 | 10 | Usta Bahçıvan | mastery | all learned trees, hard clue tiers |
 
-## Engagement & Difficulty (v2 design review, 2026-07-06)
+## Engagement & Difficulty (rebuild design review, 2026-07-06)
 Problems identified in v1: bosses are one behavior with cosmetic differences (cageEye
 color + finisher anim); `tier` only nudges numbers, never adds new demands; one fixed
 SECTION_RHYTHM makes every level the same shape; journal is the only meta.
@@ -108,8 +108,8 @@ each still needs a real playtest; treat current content as "ready for testing," 
 
 ## How to run
 ```
-cd v2 && npm install
-npm test          # 36 tests (logic + runtime smoke across all 10 levels)
+npm install
+npm test          # logic + runtime smoke across all 10 levels
 npm run dev       # play in browser
 npm run fetch-photos   # (optional) pull real CC0 photos — needs `npm i -D sharp` + network
 npm run build && npx cap sync ios   # iOS

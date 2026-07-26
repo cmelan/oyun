@@ -1,7 +1,7 @@
 # Çok Kalpli Koruyucu — Designer Brief & Asset Pack
 
 *Generated 2026-07-11. Regenerate screenshots any time with
-`cd v2 && node scripts/design-pack-shots.mjs` (dev server running).*
+`node scripts/design-pack-shots.mjs` (dev server running).*
 
 ## The game in one paragraph
 A non-violent puzzle-platformer for children aged 5–8 (core audience 6–7,
@@ -27,7 +27,7 @@ procedural placeholder that ships today).
 | 2 | Region node icons — one motif per region (its signature tree / landscape element), readable at 88px | `node_<regionId>.webp` ×10 | 256×256, transparent background |
 | 3 | *(optional)* Path texture, star, padlock, cloud sprites | `path.webp`, `star.webp`, `lock.webp`, `cloud.webp` | 256px, transparent |
 
-**Drop-in contract (zero code changes):** files placed in `v2/public/map/`
+**Drop-in contract (zero code changes):** files placed in `public/map/`
 are picked up automatically — `bg.webp` covers the procedural backdrop,
 `node_<regionId>.webp` replaces that node's icon. Keep the safe margins below.
 
@@ -45,7 +45,7 @@ are picked up automatically — `bg.webp` covers the procedural backdrop,
 | gol | Göl Kenarı | still lakeside blues, reeds | `#aed4ec` · `#74b268` |
 | usta | Usta Bahçıvan | golden-hour mastery garden | `#ffe2a8` · `#a8c25f` |
 
-Full 12-colour palette per biome lives in `v2/src/core/biomes.ts` (hex,
+Full 12-colour palette per biome lives in `src/core/biomes.ts` (hex,
 commented) — treat those as the canonical colour world.
 
 ### UI palette (chrome & cards)
@@ -71,7 +71,7 @@ puzzle powers) — never recolour them.
   map is composed in that frame, so keep all 10 node areas inside a 5% safe
   margin and don't put anything essential in the outer 5%.
 - Node tap targets are 88px wide at design size — icons must read at that size
-  (we check everything at real size; see `v2/scripts/legibility-sheet.mjs`).
+  (we check everything at real size; see `scripts/legibility-sheet.mjs`).
 - Audience is pre-readers: meaning must come from picture + colour, never text.
 - Files: WebP preferred (or PNG); keep bg ≤ 400 KB if possible (offline game).
 - **Licensing: original work or fully licensed for commercial + App Store
