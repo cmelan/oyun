@@ -80,4 +80,11 @@ describe('opening identity art', () => {
     expect(meta.width).toBe(384);
     expect(meta.height).toBeGreaterThan(meta.width);
   });
+
+  it.each(['dormant', 'awake'])('ships a normalized transparent ancient-oak %s state', async (state) => {
+    const meta = await sharp(publicAsset(`art/characters/ancient-oak-${state}.webp`)).metadata();
+    expect(meta.hasAlpha).toBe(true);
+    expect(meta.width).toBe(768);
+    expect(meta.height).toBe(768);
+  });
 });

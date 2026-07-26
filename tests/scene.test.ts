@@ -88,6 +88,37 @@ describe('LevelScene runtime smoke', () => {
     expect(scene.L.trees[0].awake).toBe(true);
   });
 
+  it('B1 helper opens the root gate and the staged restoration completes the chapter', () => {
+    const scene: any = new LevelScene();
+    const { hooks, events } = makeHooks();
+    scene.init({ idx: 0, hooks }); scene.create();
+    const helper = scene.monsters[0];
+    helper.state = 'happy'; helper.x = 2517;
+    scene.meadowStory.helper = helper;
+    scene.player.x = 2400;
+    scene.update(0, 16.7);
+    expect(scene.meadowStory.pressureAwake).toBe(true);
+
+    scene.beginMeadowRestoration();
+    for (let frame = 0; frame < 260; frame++) scene.update(frame * 16.7, 16.7);
+    expect(scene.meadowStory.restoreCue).toBe(3);
+    expect(events).toContain('complete');
+  });
+
+  it('reduced-motion preference suppresses camera jolts and limits celebration particles', () => {
+    (globalThis as any).window.matchMedia = () => ({ matches: true });
+    const scene: any = new LevelScene();
+    const { hooks } = makeHooks();
+    scene.init({ idx: 0, hooks }); scene.create();
+
+    scene.spawnP(100, 100, 70, 0xffffff, 250, 1);
+    scene.shake(6, .25); scene.flash(500, 255, 235, 175);
+
+    expect(scene.particles).toHaveLength(8);
+    expect(scene.cameras.main.shakeT).toBe(0);
+    expect(scene.cameras.main.flashT).toBe(0);
+  });
+
   it('mimic boss level (B6): mimic answer path finishes without throw', () => {
     const scene: any = runLevel(5, 2);
     scene.bossActive = true;

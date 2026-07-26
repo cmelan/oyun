@@ -12,6 +12,7 @@ import * as artHelpers from './game/art';
 
 const save: SaveData = loadSave(localStorage);
 if (save.lang) setLang(save.lang as Lang);
+const bootParams = new URLSearchParams(location.search);
 
 /* Canvas is FIT-scaled + letterboxed by CSS (#game canvas{width/height:100%;object-fit:contain}). */
 const game = new Game({
@@ -99,14 +100,28 @@ startMusic();
 ui.setGameplayVisible(false);
 void preloadArt().finally(() => {
   document.body.classList.remove('booting');
-  setMusicMood('menu');
-  ui.showMenu();
+  const stage = bootParams.get('stage');
+  if (bootParams.has('test') && stage?.startsWith('oak-')) {
+    startLevel(0);
+    const s = scene as any;
+    const finalTree = s.L.trees.find((tree: any) => tree.x > 2800);
+    s.meadowStory.pressureAwake = true;
+    s.player.x = 2790; s.player.y = 292; s.player.vx = 0; s.player.vy = 0;
+    s.cam = s.L.w - CONFIG.canvas.W; s.cameras.main.setScroll(s.cam, 0);
+    if (stage === 'oak-awake') {
+      finalTree.awake = true; s.meadowStory.restoring = 1.72; s.meadowStory.restoreCue = 2;
+      setMusicMood('restored');
+    }
+  } else {
+    setMusicMood('menu');
+    ui.showMenu();
+  }
 });
 
 /* e2e hook: ?test exposes the UI + level starter + art helpers so Playwright
    scripts (device matrix, design pack) can drive screens directly (never
    active for players). */
-if (new URLSearchParams(location.search).has('test')) {
+if (bootParams.has('test')) {
   (window as any).__ckk = { ui, startLevel, art: artHelpers };
 }
 export { game, sfx };

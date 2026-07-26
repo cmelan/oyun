@@ -298,4 +298,12 @@ describe('dil', () => {
   it('bilinmeyen anahtar anahtarın kendisini döner (asla undefined)', () => {
     expect(S('no.such.key')).toBe('no.such.key');
   });
+  it('Çayır dikey kesitinin bütün anlatı vuruşları üç dilde yerelleştirilmiştir', () => {
+    for (const l of ['tr', 'en', 'de'] as const) {
+      setLang(l);
+      for (let i = 0; i < 6; i++) expect(S(`meadow.intro.${i}`)).not.toBe(`meadow.intro.${i}`);
+      for (const key of ['meadow.helper', 'meadow.gate', 'meadow.restored']) expect(S(key)).not.toBe(key);
+    }
+    setLang('tr');
+  });
 });

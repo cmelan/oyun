@@ -17,6 +17,7 @@ import { sfx, setMusicMood } from './audio';
 import type { UI } from './ui';
 import { art } from './assets';
 import { drawMeadowForeground, drawMeadowMidground } from './meadowEnvironment';
+import { S } from '../core/i18n';
 
 const { GRAV, MOVE, ACCEL, FRICTION, JUMP_V, JUMP_CUT, MAX_FALL, BOUNCE, COYOTE, JBUF } = CONFIG.physics;
 const W = CONFIG.canvas.W, H = CONFIG.canvas.H;
@@ -62,8 +63,9 @@ export class LevelScene extends Scene {
   private modal = false;   /* card open: world frozen */
   private ended = false;
   private introSeen = new Set<number>();
-  private meadowStory: { helper: MonsterRuntime | null; pressureAwake: boolean; restoring: number } = { helper: null, pressureAwake: false, restoring: 0 };
+  private meadowStory: { helper: MonsterRuntime | null; pressureAwake: boolean; restoring: number; restoreCue: number } = { helper: null, pressureAwake: false, restoring: 0, restoreCue: 0 };
   private keyHandlers: { dn: (e: KeyboardEvent) => void; up: (e: KeyboardEvent) => void } | null = null;
+  private reducedMotion = false;
 
   constructor() { super(LevelScene.KEY); }
 
@@ -81,7 +83,8 @@ export class LevelScene extends Scene {
     this.cam = 0; this.t = 0; this.ended = false; this.modal = false;
     this.bossActive = false; this.bossShots = []; this.sands = []; this.particles = [];
     this.assist = { deaths: 0 }; this.introSeen.clear();
-    this.meadowStory = { helper: null, pressureAwake: false, restoring: 0 };
+    this.meadowStory = { helper: null, pressureAwake: false, restoring: 0, restoreCue: 0 };
+    this.reducedMotion = typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     this.sandMax = sandCapacity(this.L); this.sandLeft = this.sandMax;
     this.bgGfx = this.add.graphics().setScrollFactor(0);
     this.gfx = this.add.graphics();
@@ -130,9 +133,14 @@ export class LevelScene extends Scene {
 
   /* ---------- helpers ---------- */
   private spawnP(x: number, y: number, n: number, col: number, sp: number, life: number): void {
-    for (let i = 0; i < n; i++) this.particles.push({ x, y, vx: (Math.random() * 2 - 1) * sp, vy: (Math.random() * 2 - 1) * sp - 40, life, max: life, col, alpha: 1, r: 2 + Math.random() * 3 });
+    const count = this.reducedMotion ? Math.min(8, Math.ceil(n * .22)) : n;
+    const speed = this.reducedMotion ? sp * .28 : sp;
+    for (let i = 0; i < count; i++) this.particles.push({ x, y, vx: (Math.random() * 2 - 1) * speed, vy: (Math.random() * 2 - 1) * speed - 40, life, max: life, col, alpha: 1, r: 2 + Math.random() * 3 });
   }
-  private shake(mag: number, dur: number): void { this.cameras.main.shake(dur * 1000, mag * 0.0016); }
+  private shake(mag: number, dur: number): void { if (!this.reducedMotion) this.cameras.main.shake(dur * 1000, mag * 0.0016); }
+  private flash(duration: number, r: number, g: number, b: number): void {
+    if (!this.reducedMotion) this.cameras.main.flash(duration, r, g, b);
+  }
   private solids(): Rect[] {
     const arr = this.L.platforms.slice();
     for (const it of this.L.interact) {
@@ -162,12 +170,13 @@ export class LevelScene extends Scene {
   private activate(it: Interact): void {
     it.done = true;
     const a = it as any;
-    this.cameras.main.flash(160, 190, 240, 220);
+    a.animT = 0;
+    this.flash(160, 190, 240, 220);
     switch (it.type) {
       case 'freeze': sfx('freeze'); this.spawnP(a.ice.x + a.ice.w / 2, a.ice.y, 30, 0xbfe9ff, 240, .9); break;
       case 'thorn': sfx('burn'); this.spawnP(a.wall.x + 14, a.wall.y + 60, 26, 0xff8a4a, 200, .8); break;
       case 'grow': sfx('grow'); a.leaves.forEach((l: Rect) => this.spawnP(l.x + l.w / 2, l.y, 14, 0x7fe0a0, 150, .8)); break;
-      case 'bridge': sfx('cut'); this.spawnP(a.bridge.x + a.bridge.w / 2, a.bridge.y, 22, 0xd9b98a, 200, .8); break;
+      case 'bridge': sfx('wake'); this.spawnP(a.bridge.x + a.bridge.w / 2, a.bridge.y, 22, 0xd9b98a, 200, .8); break;
       case 'rock': sfx('shrink'); this.spawnP(a.block.x + a.block.w / 2, a.block.y + 50, 24, 0xb07ad8, 180, .8); break;
       case 'mush': sfx('grow'); this.spawnP(a.pad.x + a.pad.w / 2, a.pad.y, 18, 0x7fe0a0, 160, .8); break;
       case 'torch': sfx('burn'); this.spawnP(a.x, a.y - 30, 18, 0xffcf7a, 150, .8); break;
@@ -226,10 +235,42 @@ export class LevelScene extends Scene {
   private beginMeadowRestoration(): void {
     if (this.meadowStory.restoring > 0) return;
     this.meadowStory.restoring = .001;
+    this.meadowStory.restoreCue = 0;
     this.spawnP(2925, 230, 70, 0xffe59a, 250, 2.6);
     this.spawnP(2840, 310, 45, 0x8fe3a8, 180, 2.4);
-    setMusicMood('restored'); sfx('win'); this.cameras.main.flash(700, 255, 235, 175);
-    this.hooks.ui.showHint('Çayır seni hatırladı.  💛  🌳  💛', 3.2);
+    setMusicMood('restored'); sfx('wake'); this.flash(500, 255, 235, 175);
+    this.hooks.ui.showHint(S('meadow.restored'), 3.2);
+  }
+  private updateMeadowRestoration(dt: number): boolean {
+    if (this.meadowStory.restoring <= 0) return false;
+    const story = this.meadowStory;
+    story.restoring += dt;
+    if (story.restoreCue === 0 && story.restoring >= .75) {
+      story.restoreCue = 1; sfx('grow');
+      this.spawnP(2925, 328, 44, 0x8fe3a8, 190, 2.1);
+    }
+    if (story.restoreCue === 1 && story.restoring >= 1.55) {
+      story.restoreCue = 2; sfx('streak'); this.flash(360, 255, 215, 110);
+      this.spawnP(2925, 185, 64, 0xffe27a, 230, 2.2);
+    }
+    if (story.restoreCue === 2 && story.restoring >= 2.55) {
+      story.restoreCue = 3; sfx('clear');
+      for (let x = 2500; x <= 3020; x += 80) this.spawnP(x, 330, 14, x % 160 ? 0x9fe6b3 : 0xffe59a, 155, 1.8);
+    }
+    /* A brief, non-interactive finale makes the causal chain legible: helper →
+       roots → oak → whole meadow. The camera settles instead of snapping. */
+    this.player.vx = 0; this.input2.left = false; this.input2.right = false;
+    const target = Math.max(0, this.L.w - W);
+    this.cam += (target - this.cam) * Math.min(1, dt * 2.4);
+    this.cameras.main.setScroll(this.cam, 0);
+    for (let pi = this.particles.length - 1; pi >= 0; pi--) {
+      const pt = this.particles[pi]; pt.life -= dt;
+      if (pt.life <= 0) { this.particles.splice(pi, 1); continue; }
+      pt.vy += 220 * dt; pt.x += pt.vx * dt; pt.y += pt.vy * dt; pt.alpha = pt.life / pt.max;
+    }
+    this.draw();
+    if (story.restoring >= 4.1) this.completeLevel();
+    return true;
   }
   resolveMimicAnswer(correct: boolean): void {
     if (!correct) { this.shake(CONFIG.tree.wrongShake, .15); sfx('hmm'); return; }
@@ -292,7 +333,7 @@ export class LevelScene extends Scene {
   private loseLife(doRespawn: boolean): void {
     if (this.player.iframe > 0 && !doRespawn) return;
     this.hearts--; this.assist.deaths++;
-    this.cameras.main.flash(240, 255, 80, 90); sfx('hurt'); this.shake(3, .15);
+    this.flash(240, 255, 80, 90); sfx('hurt'); this.shake(3, .15);
     this.spawnP(this.player.x + this.player.w / 2, this.player.y + this.player.h / 2, 14, 0xff8aa6, 200, .7);
     this.hooks.ui.setHearts(Math.max(0, this.hearts), CONFIG.hearts);
     if (this.hearts <= 0) { this.hearts = 0; this.ended = true; sfx('sad'); this.hooks.onGameOver(); return; }
@@ -314,9 +355,10 @@ export class LevelScene extends Scene {
     const dt = Math.min(deltaMs / 1000, 1 / 30);
     if (this.modal || this.ended) { this.draw(); return; }
     this.t += dt;
-    if (this.meadowStory.restoring > 0) {
-      this.meadowStory.restoring += dt;
-      if (this.meadowStory.restoring >= 3.1) { this.completeLevel(); return; }
+    if (this.updateMeadowRestoration(dt)) return;
+    for (const it of this.L.interact) {
+      const a = it as any;
+      if (it.done && typeof a.animT === 'number' && a.animT < 1) a.animT = Math.min(1, a.animT + dt * 1.9);
     }
     const p = this.player, i = this.input2;
     const af = assistFactors(this.assist);
@@ -381,7 +423,7 @@ export class LevelScene extends Scene {
         this.gainHeart(); this.spawnP(m.x + 20, m.ground - 40, 26, 0xffe6a0, 200, 1); sfx('heal'); this.shake(2, .12);
         if (this.idx === 0 && !this.meadowStory.helper) {
           this.meadowStory.helper = m; sfx('streak');
-          this.hooks.ui.showHint('Seni hatırladı… artık yanında.  💛', 3.2);
+          this.hooks.ui.showHint(S('meadow.helper'), 3.2);
         }
       }
       if (m.state === 'happy') {
@@ -395,7 +437,7 @@ export class LevelScene extends Scene {
           if (!this.meadowStory.pressureAwake && pcx > 2360 && Math.abs(m.x - plateX) < 7) {
             this.meadowStory.pressureAwake = true;
             this.spawnP(2655, 275, 42, 0x8fe3a8, 210, 1.4); sfx('grow'); this.shake(3, .25);
-            this.hooks.ui.showHint('Birlikte açtınız!  💛  +  💛', 2.8);
+            this.hooks.ui.showHint(S('meadow.gate'), 2.8);
           }
         } else {
           if (m.x <= m.gx0) (m as any).dir = 1; if (m.x >= m.gx1) (m as any).dir = -1;
@@ -461,7 +503,10 @@ export class LevelScene extends Scene {
     }
     /* intros → hint bar */
     this.L.intros.forEach((intro, ii) => {
-      if (!this.introSeen.has(ii) && Math.abs(pcx - intro.x) < 40) { this.introSeen.add(ii); this.hooks.ui.showHint(intro.text, 2.6); }
+      if (!this.introSeen.has(ii) && Math.abs(pcx - intro.x) < 40) {
+        this.introSeen.add(ii);
+        this.hooks.ui.showHint(this.idx === 0 ? S(`meadow.intro.${ii}`) : intro.text, 2.6);
+      }
     });
     /* sand throw */
     const target = Math.max(0, Math.min(this.L.w - W, pcx - W / 2));
@@ -660,6 +705,24 @@ export class LevelScene extends Scene {
   }
   private drawAncientOak(g: Graphics, tr: { id: string; x: number; y: number; awake?: boolean }): void {
     const x = tr.x, y = tr.y, awake = !!tr.awake;
+    const dormant = art('meadow.ancientOak.dormant'), awakened = art('meadow.ancientOak.awake');
+    if (dormant && awakened) {
+      const raw = this.meadowStory.restoring > 0 ? Math.min(1, this.meadowStory.restoring / 2.45) : 0;
+      const reveal = raw * raw * (3 - 2 * raw);
+      const size = 306, left = x - size / 2, top = y - size;
+      g.fillStyle(0x173e35, .22); g.fillEllipse(x, y + 4, 192, 18);
+      if (reveal > 0) {
+        g.fillStyle(0xffe49a, .12 + reveal * .18); g.fillCircle(x, y - size * .49, size * (.33 + reveal * .12));
+      }
+      g.drawImage(dormant, left, top, size, size, 1 - reveal);
+      if (reveal > 0) g.drawImage(awakened, left, top, size, size, reveal);
+      if (!awake && this.nearTree === tr) {
+        const pu = 1 + Math.sin(this.t * 3) * .08;
+        g.fillStyle(0xffe69b, .2); g.fillCircle(x, y - 132, 48 * pu);
+        g.fillStyle(0xfff4c7, .95); g.fillCircle(x, y - 132, 7);
+      }
+      return;
+    }
     const pulse = awake ? 1 + Math.sin(this.t * 1.7) * .025 : 1;
     g.fillStyle(0x173e35, .2); g.fillEllipse(x, y + 4, 164, 20);
     /* Root flare and split trunk make the finale read as the same oak as the menu. */
@@ -772,23 +835,28 @@ export class LevelScene extends Scene {
     if (!tr.awake) { /* beacon */
       const near = this.nearTree === tr;
       const ba = (near ? .34 : .2) + Math.sin(this.t * 2.4) * .06;
-      g.fillStyle(0xffe896, ba); g.fillTriangle(x - 12, 60, x + 12, 60, x, y);
+      /* Local lantern glow keeps sleeping trees discoverable without a giant
+         sky laser that competes with the environment painting. */
+      g.fillStyle(0xffe896, ba * .6); g.fillCircle(x, y - 82, near ? 58 : 42);
       g.fillStyle(0xfff3c4, .8);
-      for (let k = 0; k < 4; k++) { const ph = (this.t * .35 + k * .25) % 1; g.fillCircle(x + Math.sin(this.t * 1.3 + k * 2.2) * 18, y - 20 - ph * 150, 2.4); }
+      for (let k = 0; k < 4; k++) { const ph = (this.t * .35 + k * .25) % 1; g.fillCircle(x + Math.sin(this.t * 1.3 + k * 2.2) * 22, y - 28 - ph * 92, 2.2); }
     }
     const trunkH = crown === 'tall' || crown === 'palm' ? 72 : 56, trunkW = crown === 'tall' ? 16 : 18;
-    g.fillStyle(tr.awake ? (crown === 'tall' ? 0xcdbd90 : 0x7d5a3a) : 0x6b6560, 1);
+    g.fillStyle(tr.awake ? (crown === 'tall' ? 0xcdbd90 : 0x7d5a3a) : 0x655c50, 1);
     g.fillTriangle(x - trunkW / 2 - 3, y + 2, x - trunkW / 2, y - trunkH, x + trunkW / 2, y - trunkH);
     g.fillTriangle(x - trunkW / 2 - 3, y + 2, x + trunkW / 2, y - trunkH, x + trunkW / 2 + 3, y + 2);
     const cols = LEAF_COLOR[tr.id] || ['#63c49b', '#4fae87'];
-    const leafA = tr.awake ? this.col(cols[0]) : 0x8b9490;
-    const leafB = tr.awake ? this.col(cols[1]) : 0x767f7b;
+    const leafA = tr.awake ? this.col(cols[0]) : 0x718b82;
+    const leafB = tr.awake ? this.col(cols[1]) : 0x526f69;
     if (crown === 'tall') {
       g.fillStyle(leafA, 1); g.fillCircle(x - 16, y - trunkH - 18, 20); g.fillCircle(x + 16, y - trunkH - 18, 20); g.fillCircle(x, y - trunkH - 44, 24); g.fillCircle(x, y - trunkH - 14, 22);
       g.fillStyle(leafB, 1); g.fillCircle(x + 10, y - trunkH - 34, 13);
     } else if (crown === 'oval') {
-      g.fillStyle(leafA, 1); g.fillEllipse(x, y - trunkH - 24, 60, 76);
-      g.fillStyle(leafB, 1); g.fillEllipse(x + 9, y - trunkH - 14, 28, 40);
+      g.fillStyle(leafA, 1);
+      g.fillEllipse(x - 10, y - trunkH - 18, 42, 56); g.fillEllipse(x + 11, y - trunkH - 22, 40, 62);
+      g.fillEllipse(x, y - trunkH - 47, 38, 48);
+      g.fillStyle(leafB, 1);
+      g.fillEllipse(x + 13, y - trunkH - 12, 24, 35); g.fillEllipse(x - 13, y - trunkH - 37, 22, 31);
     } else if (crown === 'conifer') {
       g.fillStyle(leafA, 1);
       g.fillTriangle(x - 30, y - trunkH + 6, x + 30, y - trunkH + 6, x, y - trunkH - 34);
@@ -816,6 +884,8 @@ export class LevelScene extends Scene {
   }
   private drawInteract(g: Graphics, it: Interact): void {
     const a = it as any;
+    const raw = it.done ? Math.max(0, Math.min(1, a.animT ?? 1)) : 0;
+    const reveal = raw * raw * (3 - 2 * raw);
     const eyeMark = (ex: number, ey: number, eye: Eye) => {
       const pu = 1 + Math.sin(this.t * 4) * .12;
       g.fillStyle(this.col(TOOLS[eye].col), .28); g.fillCircle(ex, ey, 16 * pu);
@@ -825,8 +895,9 @@ export class LevelScene extends Scene {
     switch (it.type) {
       case 'freeze':
         if (it.done) {
-          const I = a.ice; g.fillStyle(0xc8eeff, .92); g.fillRoundedRect(I.x, I.y, I.w, I.h, 12);
-          g.fillStyle(0xffffff, .85); g.fillRoundedRect(I.x + 6, I.y + 4, I.w - 12, 8, 6);
+          const I = a.ice, iw = I.w * reveal;
+          g.fillStyle(0xc8eeff, .92); g.fillRoundedRect(I.x, I.y, iw, I.h, 12);
+          if (iw > 14) { g.fillStyle(0xffffff, .85); g.fillRoundedRect(I.x + 6, I.y + 4, iw - 12, 8, 6); }
         } else eyeMark(a.ice.x + a.ice.w / 2, it.zone.y + 30, 'blue');
         break;
       case 'thorn':
@@ -839,7 +910,12 @@ export class LevelScene extends Scene {
         break;
       case 'grow':
         if (it.done) {
-          for (const l of a.leaves) { g.fillStyle(0x3f8c52, 1); g.fillRoundedRect(l.x, l.y, l.w, l.h, 9); g.fillStyle(0x5fc77f, 1); g.fillRoundedRect(l.x, l.y - 3, l.w, 10, 8); }
+          a.leaves.forEach((l: Rect, k: number) => {
+            const lk = Math.max(0, Math.min(1, reveal * 1.35 - k * .18));
+            const lw = l.w * lk;
+            g.fillStyle(0x3f8c52, 1); g.fillRoundedRect(l.x, l.y + (1 - lk) * 13, lw, l.h * lk, 9);
+            if (lw > 4) { g.fillStyle(0x5fc77f, 1); g.fillRoundedRect(l.x, l.y - 3 + (1 - lk) * 13, lw, 10 * lk, 8); }
+          });
         } else {
           const s = a.sprout; g.lineStyle(3, 0x3f8c52); g.beginPath(); g.moveTo(s.x, s.y); g.lineTo(s.x, s.y - 14); g.strokePath();
           g.fillStyle(0x5fc77f, 1); g.fillEllipse(s.x - 6, s.y - 12, 14, 8); g.fillEllipse(s.x + 6, s.y - 15, 14, 8);
@@ -849,8 +925,9 @@ export class LevelScene extends Scene {
       case 'bridge': {
         const b = a.bridge;
         if (it.done) {
-          g.fillStyle(0xb5874f, 1); g.fillRoundedRect(b.x, b.y, b.w, b.h, 5);
-          g.lineStyle(2, 0x8a6336); for (let i2 = 14; i2 < b.w; i2 += 26) { g.beginPath(); g.moveTo(b.x + i2, b.y); g.lineTo(b.x + i2, b.y + b.h); g.strokePath(); }
+          const bw = b.w * reveal;
+          g.fillStyle(0xb5874f, 1); g.fillRoundedRect(b.x, b.y, bw, b.h, 5);
+          g.lineStyle(2, 0x8a6336); for (let i2 = 14; i2 < bw; i2 += 26) { g.beginPath(); g.moveTo(b.x + i2, b.y); g.lineTo(b.x + i2, b.y + b.h); g.strokePath(); }
         } else {
           const rx = a.ropeX, sw = Math.sin(this.t * 2) * .04;
           g.lineStyle(2, 0xc8a24a); g.beginPath(); g.moveTo(rx, a.anchorY); g.lineTo(rx, a.anchorY + 26); g.strokePath();

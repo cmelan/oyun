@@ -11,7 +11,9 @@ export type ArtKey =
   | 'meadow.soil'
   | 'meadow.grass'
   | 'character.guardian'
-  | 'character.mossling';
+  | 'character.mossling'
+  | 'meadow.ancientOak.dormant'
+  | 'meadow.ancientOak.awake';
 
 const SOURCES: Record<ArtKey, string> = {
   'meadow.far': 'art/meadow/far-background.webp',
@@ -23,6 +25,8 @@ const SOURCES: Record<ArtKey, string> = {
   'meadow.grass': 'art/meadow/grass-edge.png',
   'character.guardian': 'art/characters/guardian.webp',
   'character.mossling': 'art/characters/mossling.webp',
+  'meadow.ancientOak.dormant': 'art/characters/ancient-oak-dormant.webp',
+  'meadow.ancientOak.awake': 'art/characters/ancient-oak-awake.webp',
 };
 
 const images = new Map<ArtKey, HTMLImageElement>();

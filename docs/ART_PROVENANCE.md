@@ -53,3 +53,19 @@ folder.
   heart-shaped ancient oak; deep teal dawn background, painted foliage rim,
   disciplined storybook color, 12% mask-safe margin; no typography, border,
   watermark, extra characters, tiny clutter, or device mockup.”
+
+## Ancient oak finale states
+
+- Runtime: `public/art/characters/ancient-oak-dormant.webp` and
+  `public/art/characters/ancient-oak-awake.webp`
+- Sources: the matching chroma and transparent PNGs in `docs/art-source/`
+- The awakened image is an edit of the dormant image, preserving the same
+  silhouette, roots, heart knot, scale, and framing for a stable crossfade.
+- Dormant prompt: “The entrance oak as an isolated, front-facing finale sprite:
+  broad twisting silhouette, heart knot, cool sparse leaves, closed bark eyes,
+  faint amber veins, quiet potential; painted storybook finish; uniform chroma
+  magenta; no ground, scenery, characters, text, or watermark.”
+- Awakened edit: “Preserve the exact tree and framing; change only the state:
+  emerald and spring-gold leaves, kind amber bark eyes, living golden veins,
+  glowing heart knot, and a restrained ring of leaf motes; keep the uniform
+  magenta key and add nothing else.”
