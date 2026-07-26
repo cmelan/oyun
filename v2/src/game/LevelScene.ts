@@ -15,6 +15,8 @@ import { TREES } from '../core/trees';
 import { LEAF_COLOR } from './art';
 import { sfx } from './audio';
 import type { UI } from './ui';
+import { art } from './assets';
+import { drawMeadowForeground, drawMeadowMidground } from './meadowEnvironment';
 
 const { GRAV, MOVE, ACCEL, FRICTION, JUMP_V, JUMP_CUT, MAX_FALL, BOUNCE, COYOTE, JBUF } = CONFIG.physics;
 const W = CONFIG.canvas.W, H = CONFIG.canvas.H;
@@ -40,6 +42,7 @@ export class LevelScene extends Scene {
   private monsters: MonsterRuntime[] = [];
   private gfx!: Graphics;
   private bgGfx!: Graphics;
+  private foregroundGfx!: Graphics;
   private darkGfx!: Graphics;
   private input2: InputState = { left: false, right: false, jumpEdge: false, jumpHeld: false, useEdge: false, sandEdge: false, healHeld: false };
   private player = { x: 90, y: 340, w: CONFIG.player.w, h: CONFIG.player.h, vx: 0, vy: 0, grounded: false, face: 1, coyote: 0, jbuf: 0, iframe: 0, squash: 1, squashVel: 0, blink: 0, blinkT: 2.2 };
@@ -80,6 +83,7 @@ export class LevelScene extends Scene {
     this.sandMax = sandCapacity(this.L); this.sandLeft = this.sandMax;
     this.bgGfx = this.add.graphics().setScrollFactor(0);
     this.gfx = this.add.graphics();
+    this.foregroundGfx = this.add.graphics().setScrollFactor(0);
     this.darkGfx = this.add.graphics().setScrollFactor(0);
     this.cameras.main.setBounds(0, 0, this.L.w, H);
     this.bindKeys();
@@ -437,16 +441,31 @@ export class LevelScene extends Scene {
   private col(hex: string): number { return hexToNum(hex); }
   private draw(): void {
     const B = BIOME[this.L.biome || 'meadow'] || BIOME.meadow;
-    const g = this.gfx, bg = this.bgGfx;
+    const g = this.gfx, bg = this.bgGfx, foreground = this.foregroundGfx;
+    const meadowFar = this.L.biome === 'meadow' ? art('meadow.far') : null;
+    const meadowMidground = this.L.biome === 'meadow' ? art('meadow.midground') : null;
+    const meadowForeground = this.L.biome === 'meadow' ? {
+      left: art('meadow.foreground.left'),
+      middle: art('meadow.foreground.middle'),
+      right: art('meadow.foreground.right'),
+    } : null;
+    const meadowSoil = this.L.biome === 'meadow' ? art('meadow.soil') : null;
+    const meadowGrass = this.L.biome === 'meadow' ? art('meadow.grass') : null;
     /* sky + parallax */
     bg.clear();
-    bg.fillGradientStyle(this.col(B.skyTop), this.col(B.skyTop), this.col(B.skyMid), this.col(B.skyBot), 1);
-    bg.fillRect(0, 0, W, H);
-    bg.fillStyle(this.col(B.hillsFar), 1);
-    for (let hx = -1; hx < 6; hx++) { const bxx = hx * 260 - (this.cam * .2) % 260; bg.fillEllipse(bxx, H - 90, 340, 220); }
-    bg.fillStyle(this.col(B.hillsMid), 1);
-    for (let hx = -1; hx < 7; hx++) { const bxx = hx * 200 - (this.cam * .45) % 200; bg.fillEllipse(bxx, H - 40, 260, 170); }
+    if (meadowFar) {
+      bg.drawImage(meadowFar, 0, 0, W, H);
+    } else {
+      bg.fillGradientStyle(this.col(B.skyTop), this.col(B.skyTop), this.col(B.skyMid), this.col(B.skyBot), 1);
+      bg.fillRect(0, 0, W, H);
+      bg.fillStyle(this.col(B.hillsFar), 1);
+      for (let hx = -1; hx < 6; hx++) { const bxx = hx * 260 - (this.cam * .2) % 260; bg.fillEllipse(bxx, H - 90, 340, 220); }
+      bg.fillStyle(this.col(B.hillsMid), 1);
+      for (let hx = -1; hx < 7; hx++) { const bxx = hx * 200 - (this.cam * .45) % 200; bg.fillEllipse(bxx, H - 40, 260, 170); }
+    }
+    if (this.L.biome === 'meadow') drawMeadowMidground(bg, meadowMidground, this.cam, B, W, H);
     g.clear();
+    foreground.clear();
     /* water */
     if (this.L.water) {
       const wt = this.L.water;
@@ -456,11 +475,18 @@ export class LevelScene extends Scene {
     }
     /* platforms */
     for (const pl of this.L.platforms) {
-      g.fillStyle(this.col(B.soil), 1); g.fillRoundedRect(pl.x, pl.y, pl.w, pl.h, 8);
-      g.fillStyle(this.col(B.soilDark), 1); g.fillRect(pl.x + 4, pl.y + 22, pl.w - 8, Math.max(0, pl.h - 26));
-      g.fillStyle(this.col(B.grass), 1); g.fillRoundedRect(pl.x, pl.y, pl.w, 16, { tl: 8, tr: 8, bl: 0, br: 0 });
-      g.fillStyle(this.col(B.grassLight), 1);
-      for (let k = pl.x + 8; k < pl.x + pl.w - 8; k += 26) g.fillRect(k, pl.y + 2, 10, 4);
+      if (meadowSoil && meadowGrass) {
+        g.fillImagePattern(meadowSoil, pl.x, pl.y, pl.w, pl.h, 128, 128);
+        g.fillStyle(this.col(B.soilDark), .16);
+        g.fillRect(pl.x, pl.y + 24, pl.w, Math.max(0, pl.h - 24));
+        g.drawTiledX(meadowGrass, pl.x, pl.y - 14, pl.w, 38, 202);
+      } else {
+        g.fillStyle(this.col(B.soil), 1); g.fillRoundedRect(pl.x, pl.y, pl.w, pl.h, 8);
+        g.fillStyle(this.col(B.soilDark), 1); g.fillRect(pl.x + 4, pl.y + 22, pl.w - 8, Math.max(0, pl.h - 26));
+        g.fillStyle(this.col(B.grass), 1); g.fillRoundedRect(pl.x, pl.y, pl.w, 16, { tl: 8, tr: 8, bl: 0, br: 0 });
+        g.fillStyle(this.col(B.grassLight), 1);
+        for (let k = pl.x + 8; k < pl.x + pl.w - 8; k += 26) g.fillRect(k, pl.y + 2, 10, 4);
+      }
     }
     /* checkpoints: flags */
     for (const cp of this.L.checkpoints) {
@@ -499,6 +525,7 @@ export class LevelScene extends Scene {
     this.drawPlayer(g);
     /* particles */
     for (const pt of this.particles) { g.fillStyle(pt.col, pt.alpha); g.fillCircle(pt.x, pt.y, pt.r); }
+    if (meadowForeground) drawMeadowForeground(foreground, meadowForeground, this.cam, this.L.w, B, W, H);
     /* darkness (cave-like biomes) */
     this.darkGfx.clear();
     if (B.dark) {
