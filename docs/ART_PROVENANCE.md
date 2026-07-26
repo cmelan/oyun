@@ -28,3 +28,16 @@ folder.
   colored eyes, apricot scarf, seed satchel, tiny boots, and golden heart clasp;
   gentle and unarmed; readable at 48 px; centered on uniform chroma green; no
   ground, scenery, text, logo, watermark, or additional character.”
+
+## Mossling companion
+
+- Runtime: `public/art/characters/mossling.webp`
+- Sources: `docs/art-source/mossling-chroma.png` and
+  `docs/art-source/mossling-transparent.png`
+- Generated with the Guardian as the style reference, converted from a uniform
+  green key to alpha, trimmed, and resized for runtime delivery.
+- Prompt: “One small dusty-rose woodland mossling in a side-view three-quarter
+  pose; leaf ears, fern tail, moss tuft, wide worried eyes, cautious mouth, and
+  dormant leaf markings; huggable, unarmed, emotionally readable at 40 px;
+  uniform chroma green; no ground, scenery, props, text, logo, watermark, or
+  additional creature.”

@@ -73,4 +73,11 @@ describe('opening identity art', () => {
     expect(meta.width).toBe(512);
     expect(meta.height).toBeGreaterThan(meta.width);
   });
+
+  it('ships a compact transparent mossling companion', async () => {
+    const meta = await sharp(publicAsset('art/characters/mossling.webp')).metadata();
+    expect(meta.hasAlpha).toBe(true);
+    expect(meta.width).toBe(384);
+    expect(meta.height).toBeGreaterThan(meta.width);
+  });
 });

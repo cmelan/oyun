@@ -10,7 +10,8 @@ export type ArtKey =
   | 'meadow.foreground.right'
   | 'meadow.soil'
   | 'meadow.grass'
-  | 'character.guardian';
+  | 'character.guardian'
+  | 'character.mossling';
 
 const SOURCES: Record<ArtKey, string> = {
   'meadow.far': 'art/meadow/far-background.webp',
@@ -21,6 +22,7 @@ const SOURCES: Record<ArtKey, string> = {
   'meadow.soil': 'art/meadow/soil-tile.webp',
   'meadow.grass': 'art/meadow/grass-edge.png',
   'character.guardian': 'art/characters/guardian.webp',
+  'character.mossling': 'art/characters/mossling.webp',
 };
 
 const images = new Map<ArtKey, HTMLImageElement>();

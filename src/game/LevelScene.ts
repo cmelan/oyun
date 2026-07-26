@@ -694,6 +694,26 @@ export class LevelScene extends Scene {
     const body = m.state === 'happy' ? 0x70bd83 : m.state === 'blind' ? 0x9e9aaa : 0xb87977;
     const face = md.face || -1, bob = m.state === 'happy' ? Math.sin(this.t * 7 + x) * 2 : 0;
     g.fillStyle(0x173e35, .16); g.fillEllipse(x + md.w / 2, m.ground + 2, md.w * .9, 8);
+    const mossling = art('character.mossling');
+    if (mossling) {
+      const mh = md.h * 1.7, mw = mh * .75;
+      const mx = x + md.w / 2 - mw / 2, my = m.ground - mh + bob;
+      if (m.state === 'happy') {
+        g.fillStyle(0x9fe6a9, .22 + Math.sin(this.t * 4) * .06); g.fillCircle(x + md.w / 2, my + mh * .48, mw * .65);
+      }
+      if (face < 0) g.drawImageFlipX(mossling, mx, my, mw, mh, m.state === 'blind' ? .82 : 1);
+      else g.drawImage(mossling, mx, my, mw, mh, m.state === 'blind' ? .82 : 1);
+      if (m.state === 'blind') {
+        g.fillStyle(0xe8c27a, .95); g.fillRoundedRect(x + 1, my + mh * .34, md.w - 2, 8, 4);
+      } else if (m.state === 'happy') {
+        g.fillStyle(0xffd868, 1); g.fillCircle(x + md.w / 2, my - 5, 4 + Math.sin(this.t * 5) * .5);
+      }
+      if (m === this.healTarget && m.healT > 0) {
+        g.fillStyle(0xffd54a, .9); g.fillRect(x, my - 12, md.w * Math.min(1, m.healT / CONFIG.heal.HEAL_TIME), 5);
+        g.lineStyle(1, 0x8a6a1a, .8); g.strokeRect(x, my - 12, md.w, 5);
+      }
+      return;
+    }
     /* A round, nervous mossling—not an enemy block. Its silhouette reads from
        across a phone screen, while ears, tail and posture carry its emotion. */
     g.fillStyle(body, 1); g.fillRoundedRect(x, y + bob, md.w, md.h, 15);
