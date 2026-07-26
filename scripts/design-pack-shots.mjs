@@ -8,7 +8,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const OUT = path.join(__dirname, '..', '..', 'docs', 'design-pack', 'screens');
+const OUT = path.join(__dirname, '..', 'docs', 'design-pack', 'screens');
 const BASE = process.env.GAME_URL || 'http://localhost:5199';
 
 let chromium;

@@ -51,6 +51,10 @@
   .play:active{transform:translateY(3px);box-shadow:0 3px 0 #d98a52;}
   .ghost{border:1px solid rgba(255,255,255,.35);background:rgba(255,247,236,.88);backdrop-filter:blur(8px);color:#1f4d4a;font-weight:bold;font-size:13px;padding:9px 16px;border-radius:14px;cursor:pointer;box-shadow:0 4px 0 rgba(0,0,0,.13);}
   .ghost:active{transform:translateY(2px);box-shadow:0 2px 0 rgba(0,0,0,.13);}
+  .family-entry{background:rgba(242,228,170,.93);color:#365d45;border-color:rgba(255,244,190,.7)}
+  .family-question{font-size:22px!important;font-weight:900;color:#1f4d4a!important;letter-spacing:.02em}
+  .family-answer{min-width:62px;font-size:18px}
+  button:disabled{opacity:.55;cursor:wait}
   #ov{position:absolute;inset:0;z-index:8;display:flex;align-items:center;justify-content:center;background:rgba(15,43,41,.55);backdrop-filter:blur(5px);text-align:center;padding:18px;opacity:1;visibility:visible;transition:opacity .28s ease,visibility 0s linear;}
   #ov.hidden{opacity:0;visibility:hidden;pointer-events:none;transition:opacity .22s ease,visibility 0s linear .22s;}
   .card{position:relative;background:#fff7ec;border-radius:26px;padding:22px 24px 18px;max-width:520px;max-height:92vh;overflow-y:auto;box-shadow:0 12px 0 rgba(0,0,0,.18);transform:translateY(0) scale(1);transition:transform .32s cubic-bezier(.2,.8,.2,1);}
@@ -106,6 +110,7 @@
   .mNode .badge{position:absolute;top:-10px;right:-8px;font-size:18px;filter:drop-shadow(0 2px 1px rgba(0,0,0,.25));}
   .mNode .sayBtn{width:22px;height:22px;font-size:11px;}
   .mNode.locked{filter:grayscale(.9);opacity:.66;cursor:default;}
+  .mNode.premium{background:rgba(255,247,220,.96);box-shadow:0 5px 0 rgba(96,110,62,.24),0 0 0 4px rgba(255,217,110,.32)}
   .mNode.next{animation:nodeGlow 1.6s ease-in-out infinite;}
   @keyframes nodeGlow{0%,100%{box-shadow:0 5px 0 rgba(31,77,74,.2),0 0 0 0 rgba(255,178,122,.75)}50%{box-shadow:0 5px 0 rgba(31,77,74,.2),0 0 0 12px rgba(255,178,122,0)}}
   .mNode.wiggle{animation:nodeWiggle .4s ease-in-out;}

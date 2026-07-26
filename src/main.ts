@@ -9,6 +9,7 @@ import { UI } from './game/ui';
 import { initAudio, setMuted, isMuted, startMusic, setMusicMood, sfx } from './game/audio';
 import { preloadArt } from './game/assets';
 import * as artHelpers from './game/art';
+import { hasFullJourney, initPurchases, isFamilyPurchaseAvailable, presentFamilyPurchase } from './game/purchases';
 
 const save: SaveData = loadSave(localStorage);
 if (save.lang) setLang(save.lang as Lang);
@@ -63,14 +64,17 @@ function pauseToggle(): void {
 }
 
 const ui = new UI({
-  onStart: (idx) => startLevel(idx),
+  onStart: (idx) => idx === 0 || hasFullJourney() ? startLevel(idx) : ui.showFamilyGate(),
   onResume: () => { ui.hideOverlay(); paused = false; scene?.setModal(false); scene?.scene.resume(); ui.setGameplayVisible(true); },
   onRetry: () => startLevel(currentIdx),
-  onNextLevel: () => startLevel(currentIdx + 1),
+  onNextLevel: () => hasFullJourney() ? startLevel(currentIdx + 1) : ui.showFamilyGate(),
   onLangChange: (l) => { save.lang = l; persist(); if (!scene) ui.showMenu(); },
   onMuteToggle: () => { const m = !isMuted(); setMuted(m); save.muted = m; persist(); return m; },
   onRestartLevel: () => { if (scene) startLevel(currentIdx); },
   onPauseToggle: pauseToggle,
+  canAccessLevel: (idx) => idx === 0 || hasFullJourney(),
+  isFamilyPurchaseAvailable,
+  onFamilyPurchase: presentFamilyPurchase,
   press: (a) => scene?.press(a),
   release: (a) => scene?.release(a),
   onTreeAnswer: (ok, id) => scene?.resolveTreeAnswer(ok, id),
@@ -98,7 +102,7 @@ portrait.addEventListener?.('change', (m) => {
 
 startMusic();
 ui.setGameplayVisible(false);
-void preloadArt().finally(() => {
+void Promise.all([preloadArt(), initPurchases()]).finally(() => {
   document.body.classList.remove('booting');
   const stage = bootParams.get('stage');
   if (bootParams.has('test') && stage?.startsWith('oak-')) {

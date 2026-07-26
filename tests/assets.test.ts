@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import sharp from 'sharp';
+import { readFile } from 'node:fs/promises';
 
 const asset = (name: string) =>
   decodeURIComponent(new URL(`../public/art/meadow/${name}`, import.meta.url).pathname);
@@ -86,5 +87,30 @@ describe('opening identity art', () => {
     expect(meta.hasAlpha).toBe(true);
     expect(meta.width).toBe(768);
     expect(meta.height).toBe(768);
+  });
+});
+
+describe('competition shipping assets', () => {
+  it('ships the exact frameless Shipaton screenshot dimensions', async () => {
+    const path = decodeURIComponent(new URL('../docs/submission/media/shipaton-1179x2556.png', import.meta.url).pathname);
+    const meta = await sharp(path).metadata();
+    expect(meta.width).toBe(1179);
+    expect(meta.height).toBe(2556);
+  });
+
+  it('ships a public privacy page with the purchase disclosure', async () => {
+    const html = await readFile(publicAsset('privacy.html'), 'utf8');
+    expect(html).toContain('RevenueCat');
+    expect(html).toContain('purchase');
+    expect(html).toContain('no account, ads');
+  });
+
+  it('keeps the native app landscape-only with In-App Purchase enabled', async () => {
+    const info = await readFile(decodeURIComponent(new URL('../ios/App/App/Info.plist', import.meta.url).pathname), 'utf8');
+    const project = await readFile(decodeURIComponent(new URL('../ios/App/App.xcodeproj/project.pbxproj', import.meta.url).pathname), 'utf8');
+    expect(info).not.toContain('UIInterfaceOrientationPortrait</string>');
+    expect(info).toContain('UIInterfaceOrientationLandscapeLeft');
+    expect(info).toContain('UIInterfaceOrientationLandscapeRight');
+    expect(project).toContain('com.apple.InAppPurchase');
   });
 });

@@ -1,6 +1,6 @@
 # Çok Kalpli Koruyucu — Designer Brief & Asset Pack
 
-*Generated 2026-07-11. Regenerate screenshots any time with
+*Historical expansion brief, refreshed 2026-07-26. Regenerate screenshots with
 `node scripts/design-pack-shots.mjs` (dev server running).*
 
 ## The game in one paragraph
@@ -11,10 +11,11 @@ Trees by recognising their leaf/bark/silhouette. Tone: warm, soft, kind —
 rounded shapes, no sharp danger, no dark patterns. Languages: TR (primary),
 EN, DE. Ships to web + iOS/Android (Capacitor).
 
-**Every current visual is drawn by code** — there are no source art files.
-The `screens/` folder is the authoritative reference for how the game looks
-today (18 shots: menu, journey map, all 10 biomes, all 3 quiz tiers, wake
-card, journal, character close-up).
+The entrance, Guardian, Mossling, ancient-oak states, and Meadow environment
+now use authored production art with provenance in `docs/ART_PROVENANCE.md`.
+Procedural art remains only as fallback and in later expansion regions. For the
+current award-quality reference, use `docs/submission/media/`; the 18 images in
+this folder remain the expansion-system reference, not the competition bar.
 
 ## What we need designed (phase 1 — the journey map)
 The opening hub is an adventure map: a winding footpath through 10 zones,

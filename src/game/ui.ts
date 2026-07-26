@@ -22,6 +22,9 @@ export interface UICallbacks {
   onMuteToggle(): boolean;   /* returns new muted state */
   onRestartLevel(): void;
   onPauseToggle(): void;
+  canAccessLevel(levelIdx: number): boolean;
+  isFamilyPurchaseAvailable(): boolean;
+  onFamilyPurchase(): Promise<boolean>;
   /* input passthrough for pads */
   press(action: string): void;
   release(action: string): void;
@@ -164,6 +167,7 @@ export class UI {
         <button class="ghost" id="mMap">${S('ui.levels')}</button>
         <button class="ghost" id="mJournal">${S('ui.journal')}</button>
         <button class="ghost" id="mHow">${S('ui.howto')}</button>
+        ${this.cb.isFamilyPurchaseAvailable() && !this.cb.canAccessLevel(1) ? `<button class="ghost family-entry" id="mFamily">${S('family.button')}</button>` : ''}
       </div>`;
     $('mStart').onclick = () => {
       this.requestFS();
@@ -174,7 +178,31 @@ export class UI {
     $('mMap').onclick = () => this.showMap();
     $('mJournal').onclick = () => this.showJournal();
     $('mHow').onclick = () => this.showHowto();
+    const family = document.getElementById('mFamily');
+    if (family) family.onclick = () => this.showFamilyGate();
     this.hideOverlay();
+  }
+  showFamilyGate(): void {
+    const answers = [12, 15, 18];
+    const card = this.show(`<div class="eyes">🌿 💛 🌿</div><h1>${S('family.title')}</h1>
+      <p>${S('family.body')}</p><p class="family-question">${S('family.question')}</p>
+      <div class="row">${answers.map(n => `<button class="ghost family-answer" data-answer="${n}">${n}</button>`).join('')}</div>
+      <div class="row" style="margin-top:14px"><button class="ghost" id="fBack">${S('ui.back')}</button></div>`);
+    card.querySelectorAll<HTMLButtonElement>('.family-answer').forEach(button => {
+      button.onclick = async () => {
+        if (Number(button.dataset.answer) !== 15) {
+          sfx('hmm'); this.showHint(S('family.wrong'), 2.4); return;
+        }
+        card.querySelectorAll<HTMLButtonElement>('button').forEach(b => { b.disabled = true; });
+        this.hideOverlay();
+        const unlocked = await this.cb.onFamilyPurchase();
+        if (!unlocked) { this.showMenu(); return; }
+        const done = this.show(`<div class="eyes">🌿 ✨ 💛 ✨ 🌿</div><h1>${S('family.unlocked')}</h1>
+          <p>${S('family.unlocked.body')}</p><div class="row"><button class="play" id="fDone">${S('ui.continue')}</button></div>`);
+        (done.querySelector('#fDone') as HTMLElement).onclick = () => this.showMap();
+      };
+    });
+    (card.querySelector('#fBack') as HTMLElement).onclick = () => this.showMenu();
   }
   showHowto(): void {
     const card = this.show(`<h1>${S('howto.title')}</h1>
@@ -216,8 +244,9 @@ export class UI {
     let flat = 0;
     const nodes = WORLD.map((r, i) => {
       const start = flat; flat += r.levels.length;
-      const cls = furthest >= flat ? 'done' : furthest >= start ? 'next' : 'locked';
-      const badge = cls === 'done' ? '⭐' : cls === 'locked' ? '🔒' : '';
+      const reached = furthest >= start;
+      const cls = !reached ? 'locked' : !this.cb.canAccessLevel(start) ? 'premium' : furthest >= flat ? 'done' : 'next';
+      const badge = cls === 'done' ? '⭐' : cls === 'locked' ? '🔒' : cls === 'premium' ? '🌿' : '';
       const nm = S(r.nameKey);
       return `<button class="mNode ${cls}" data-i="${start}" style="left:${(pts[i].x / 9.6).toFixed(2)}%;top:${(pts[i].y / 5.4).toFixed(2)}%">
         ${badge ? `<span class="badge">${badge}</span>` : ''}
@@ -249,6 +278,9 @@ export class UI {
           speak(S('map.locked')); sfx('hmm');
           b.classList.remove('wiggle'); void b.offsetWidth; b.classList.add('wiggle');
           return;
+        }
+        if (b.classList.contains('premium')) {
+          speak(S('map.familyLocked')); sfx('hmm'); this.showFamilyGate(); return;
         }
         this.requestFS(); this.cb.onStart(Number(b.dataset.i));
       };

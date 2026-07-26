@@ -303,6 +303,7 @@ describe('dil', () => {
       setLang(l);
       for (let i = 0; i < 6; i++) expect(S(`meadow.intro.${i}`)).not.toBe(`meadow.intro.${i}`);
       for (const key of ['meadow.helper', 'meadow.gate', 'meadow.restored']) expect(S(key)).not.toBe(key);
+      for (const key of ['family.button', 'family.title', 'family.body', 'family.question', 'family.wrong', 'family.unlocked', 'family.unlocked.body', 'map.familyLocked']) expect(S(key)).not.toBe(key);
     }
     setLang('tr');
   });
