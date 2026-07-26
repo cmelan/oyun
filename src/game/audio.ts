@@ -79,28 +79,47 @@ export function sfx(n: SfxName, extra?: number): void {
   }
 }
 
-/* Gentle looping melody (v1 port), ticked from outside. */
-const MEL = [523.25, 587.33, 659.25, 783.99, 659.25, 587.33, 659.25, 880, 783.99, 659.25, 587.33, 523.25];
-let mi = 0;
+/* Adaptive pentatonic score. The same five-note identity is reharmonised across
+   menu → exploration → restoration, so actions feel like part of one world. */
+export type MusicMood = 'menu' | 'meadow' | 'restored';
+const SCORE: Record<MusicMood, { melody: number[]; bass: number[]; pace: number; air: number }> = {
+  menu: { melody: [392, 523.25, 587.33, 659.25, 523.25, 440], bass: [98, 130.81, 110], pace: 620, air: .025 },
+  meadow: { melody: [523.25, 587.33, 659.25, 783.99, 659.25, 587.33, 440, 523.25], bass: [130.81, 146.83, 110, 130.81], pace: 430, air: .035 },
+  restored: { melody: [523.25, 659.25, 783.99, 880, 1046.5, 880, 783.99, 659.25], bass: [130.81, 164.81, 196, 164.81], pace: 330, air: .045 },
+};
+let musicMood: MusicMood = 'menu';
+let mi = 0, musicTimer = 0;
 let musicOn = true;
 export function setMusicOn(on: boolean): void { musicOn = on; }
+export function setMusicMood(mood: MusicMood): void { if (musicMood !== mood) { musicMood = mood; mi = 0; } }
+function musicTick(): void {
+  if (!audio || !masterGain || muted || !musicOn) return;
+  const score = SCORE[musicMood], t0 = audio.currentTime;
+  const f = score.melody[mi % score.melody.length];
+  /* Soft glass-and-wood pairing: a round fundamental with a quiet harmonic. */
+  const o = audio.createOscillator(), shimmer = audio.createOscillator(), g = audio.createGain();
+  o.type = 'sine'; o.frequency.value = f / 2;
+  shimmer.type = 'triangle'; shimmer.frequency.value = f;
+  g.gain.setValueAtTime(.0001, t0); g.gain.linearRampToValueAtTime(score.air, t0 + .045);
+  g.gain.exponentialRampToValueAtTime(.0001, t0 + .72);
+  o.connect(g); shimmer.connect(g); g.connect(masterGain); o.start(t0); shimmer.start(t0);
+  o.stop(t0 + .76); shimmer.stop(t0 + .6);
+  if (mi % 2 === 0) {
+    const ob = audio.createOscillator(), gb = audio.createGain();
+    ob.type = 'triangle'; ob.frequency.value = score.bass[Math.floor(mi / 2) % score.bass.length];
+    gb.gain.setValueAtTime(.028, t0); gb.gain.exponentialRampToValueAtTime(.0001, t0 + 1.05);
+    ob.connect(gb); gb.connect(masterGain); ob.start(t0); ob.stop(t0 + 1.1);
+  }
+  if (musicMood !== 'menu' && mi % 8 === 5) noise(.32, .018, 2800); /* distant leaf hush */
+  mi++;
+}
 export function startMusic(): void {
-  setInterval(() => {
-    if (!audio || !masterGain || muted || !musicOn) return;
-    const t0 = audio.currentTime;
-    const o = audio.createOscillator(), g = audio.createGain();
-    o.type = 'sine'; o.frequency.value = MEL[mi % MEL.length] / 2;
-    g.gain.setValueAtTime(.0001, t0); g.gain.linearRampToValueAtTime(.05, t0 + .05);
-    g.gain.exponentialRampToValueAtTime(.0001, t0 + .55);
-    o.connect(g); g.connect(masterGain); o.start(t0); o.stop(t0 + .6);
-    if (mi % 4 === 0) {
-      const ob = audio.createOscillator(), gb = audio.createGain();
-      ob.type = 'triangle'; ob.frequency.value = 130.81;
-      gb.gain.setValueAtTime(.045, t0); gb.gain.exponentialRampToValueAtTime(.0001, t0 + .85);
-      ob.connect(gb); gb.connect(masterGain); ob.start(t0); ob.stop(t0 + .9);
-    }
-    mi++;
-  }, 360);
+  if (musicTimer) return;
+  const schedule = () => {
+    musicTick();
+    musicTimer = window.setTimeout(schedule, SCORE[musicMood].pace);
+  };
+  schedule();
 }
 
 /* Locale-matched speech (v1 port) — listening never triggers selection. */

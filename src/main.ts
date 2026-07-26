@@ -6,12 +6,12 @@ import { loadSave, writeSave, recordTreeWake, type SaveData } from './core/save'
 import { LEVELS } from './core/world';
 import { LevelScene, type SceneHooks } from './game/LevelScene';
 import { UI } from './game/ui';
-import { initAudio, setMuted, isMuted, startMusic, sfx } from './game/audio';
+import { initAudio, setMuted, isMuted, startMusic, setMusicMood, sfx } from './game/audio';
 import { preloadArt } from './game/assets';
+import * as artHelpers from './game/art';
 
 const save: SaveData = loadSave(localStorage);
 if (save.lang) setLang(save.lang as Lang);
-void preloadArt();
 
 /* Canvas is FIT-scaled + letterboxed by CSS (#game canvas{width/height:100%;object-fit:contain}). */
 const game = new Game({
@@ -46,6 +46,7 @@ const hooks: SceneHooks = {
 
 function startLevel(idx: number): void {
   initAudio(!!save.muted);
+  setMusicMood('meadow');
   currentIdx = Math.max(0, Math.min(idx, LEVELS.length - 1));
   paused = false;
   if (scene) { game.scene.stop(LevelScene.KEY); game.scene.remove(LevelScene.KEY); }
@@ -96,12 +97,16 @@ portrait.addEventListener?.('change', (m) => {
 
 startMusic();
 ui.setGameplayVisible(false);
-ui.showMenu();
+void preloadArt().finally(() => {
+  document.body.classList.remove('booting');
+  setMusicMood('menu');
+  ui.showMenu();
+});
 
 /* e2e hook: ?test exposes the UI + level starter + art helpers so Playwright
    scripts (device matrix, design pack) can drive screens directly (never
    active for players). */
 if (new URLSearchParams(location.search).has('test')) {
-  import('./game/art').then(art => { (window as any).__ckk = { ui, startLevel, art }; });
+  (window as any).__ckk = { ui, startLevel, art: artHelpers };
 }
 export { game, sfx };

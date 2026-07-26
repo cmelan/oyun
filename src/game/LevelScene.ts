@@ -13,7 +13,7 @@ import {
 } from '../core/logic';
 import { TREES } from '../core/trees';
 import { LEAF_COLOR } from './art';
-import { sfx } from './audio';
+import { sfx, setMusicMood } from './audio';
 import type { UI } from './ui';
 import { art } from './assets';
 import { drawMeadowForeground, drawMeadowMidground } from './meadowEnvironment';
@@ -62,6 +62,7 @@ export class LevelScene extends Scene {
   private modal = false;   /* card open: world frozen */
   private ended = false;
   private introSeen = new Set<number>();
+  private meadowStory: { helper: MonsterRuntime | null; pressureAwake: boolean; restoring: number } = { helper: null, pressureAwake: false, restoring: 0 };
   private keyHandlers: { dn: (e: KeyboardEvent) => void; up: (e: KeyboardEvent) => void } | null = null;
 
   constructor() { super(LevelScene.KEY); }
@@ -80,6 +81,7 @@ export class LevelScene extends Scene {
     this.cam = 0; this.t = 0; this.ended = false; this.modal = false;
     this.bossActive = false; this.bossShots = []; this.sands = []; this.particles = [];
     this.assist = { deaths: 0 }; this.introSeen.clear();
+    this.meadowStory = { helper: null, pressureAwake: false, restoring: 0 };
     this.sandMax = sandCapacity(this.L); this.sandLeft = this.sandMax;
     this.bgGfx = this.add.graphics().setScrollFactor(0);
     this.gfx = this.add.graphics();
@@ -142,6 +144,9 @@ export class LevelScene extends Scene {
       if (t === 'rock' && !it.done) arr.push(a.block);
       if (t === 'mush' && it.done) arr.push(a.pad);
     }
+    /* The Meadow's final root gate is opened by the creature the child healed.
+       It is a cooperation check, not a dexterity or combat check. */
+    if (this.idx === 0 && !this.meadowStory.pressureAwake) arr.push({ x: 2640, y: 188, w: 34, h: 164 });
     if (this.L.arena && this.bossActive && this.L.boss && this.L.boss.state !== 'defeated') arr.push(this.L.arena.wall);
     return arr;
   }
@@ -213,7 +218,18 @@ export class LevelScene extends Scene {
       this.spawnP(tr.x, tr.y - 70, 26, 0xffe6a0, 180, 1.1); this.shake(2, .2);
       this.hooks.onTreeLearned(treeId);
     }
-    this.hooks.ui.showTreeWake(treeId, () => { this.hooks.ui.hideOverlay(); this.setModal(false); });
+    this.hooks.ui.showTreeWake(treeId, () => {
+      this.hooks.ui.hideOverlay(); this.setModal(false);
+      if (this.idx === 0 && tr && tr.x > 2800) this.beginMeadowRestoration();
+    });
+  }
+  private beginMeadowRestoration(): void {
+    if (this.meadowStory.restoring > 0) return;
+    this.meadowStory.restoring = .001;
+    this.spawnP(2925, 230, 70, 0xffe59a, 250, 2.6);
+    this.spawnP(2840, 310, 45, 0x8fe3a8, 180, 2.4);
+    setMusicMood('restored'); sfx('win'); this.cameras.main.flash(700, 255, 235, 175);
+    this.hooks.ui.showHint('Çayır seni hatırladı.  💛  🌳  💛', 3.2);
   }
   resolveMimicAnswer(correct: boolean): void {
     if (!correct) { this.shake(CONFIG.tree.wrongShake, .15); sfx('hmm'); return; }
@@ -298,6 +314,10 @@ export class LevelScene extends Scene {
     const dt = Math.min(deltaMs / 1000, 1 / 30);
     if (this.modal || this.ended) { this.draw(); return; }
     this.t += dt;
+    if (this.meadowStory.restoring > 0) {
+      this.meadowStory.restoring += dt;
+      if (this.meadowStory.restoring >= 3.1) { this.completeLevel(); return; }
+    }
     const p = this.player, i = this.input2;
     const af = assistFactors(this.assist);
     const dir = (i.right ? 1 : 0) - (i.left ? 1 : 0);
@@ -357,10 +377,31 @@ export class LevelScene extends Scene {
     }
     /* monsters */
     for (const m of this.monsters) {
-      if (empathyTick(m, dt, m === this.healTarget)) { this.gainHeart(); this.spawnP(m.x + 20, m.ground - 40, 26, 0xffe6a0, 200, 1); sfx('heal'); this.shake(2, .12); }
+      if (empathyTick(m, dt, m === this.healTarget)) {
+        this.gainHeart(); this.spawnP(m.x + 20, m.ground - 40, 26, 0xffe6a0, 200, 1); sfx('heal'); this.shake(2, .12);
+        if (this.idx === 0 && !this.meadowStory.helper) {
+          this.meadowStory.helper = m; sfx('streak');
+          this.hooks.ui.showHint('Seni hatırladı… artık yanında.  💛', 3.2);
+        }
+      }
       if (m.state === 'happy') {
-        if (m.x <= m.gx0) (m as any).dir = 1; if (m.x >= m.gx1) (m as any).dir = -1;
-        m.x += ((m as any).dir || 1) * CONFIG.monster.happy * dt; continue;
+        if (this.idx === 0 && m === this.meadowStory.helper) {
+          const plateX = 2518;
+          const targetX = pcx > 2340 ? plateX : p.x - p.face * 58;
+          const delta = targetX - m.x;
+          (m as any).face = Math.sign(delta) || (m as any).face;
+          m.x += Math.sign(delta) * Math.min(Math.abs(delta), CONFIG.monster.happy * 1.25 * dt);
+          m.ground = p.x > 2080 ? 352 : p.x > 1550 ? 360 : 370;
+          if (!this.meadowStory.pressureAwake && pcx > 2360 && Math.abs(m.x - plateX) < 7) {
+            this.meadowStory.pressureAwake = true;
+            this.spawnP(2655, 275, 42, 0x8fe3a8, 210, 1.4); sfx('grow'); this.shake(3, .25);
+            this.hooks.ui.showHint('Birlikte açtınız!  💛  +  💛', 2.8);
+          }
+        } else {
+          if (m.x <= m.gx0) (m as any).dir = 1; if (m.x >= m.gx1) (m as any).dir = -1;
+          m.x += ((m as any).dir || 1) * CONFIG.monster.happy * dt;
+        }
+        continue;
       }
       if (m.state === 'blind') continue;
       const md = m as any;
@@ -497,8 +538,12 @@ export class LevelScene extends Scene {
     }
     /* interacts */
     for (const it of this.L.interact) this.drawInteract(g, it);
+    if (this.idx === 0) this.drawMeadowStory(g);
     /* trees */
-    for (const tr of this.L.trees) this.drawTree(g, tr as any);
+    for (const tr of this.L.trees) {
+      if (this.idx === 0 && tr.x > 2800) this.drawAncientOak(g, tr as any);
+      else this.drawTree(g, tr as any);
+    }
     /* goal */
     if (this.L.goal) {
       const go = this.L.goal, pu = 1 + Math.sin(this.t * 3) * .1;
@@ -526,6 +571,17 @@ export class LevelScene extends Scene {
     /* particles */
     for (const pt of this.particles) { g.fillStyle(pt.col, pt.alpha); g.fillCircle(pt.x, pt.y, pt.r); }
     if (meadowForeground) drawMeadowForeground(foreground, meadowForeground, this.cam, this.L.w, B, W, H);
+    if (this.meadowStory.restoring > 0) {
+      const rp = Math.min(1, this.meadowStory.restoring / 2.5);
+      foreground.fillStyle(0xffedb0, Math.sin(rp * Math.PI) * .18);
+      foreground.fillRect(0, 0, W, H);
+      foreground.fillStyle(0xfff4c7, .14 + rp * .12);
+      for (let k = 0; k < 24; k++) {
+        const mx = (k * 193 + this.t * (10 + k % 3)) % (W + 80) - 40;
+        const my = H - ((k * 71 + this.t * (34 + k % 5)) % (H + 60));
+        foreground.fillCircle(mx, my, 1.5 + (k % 3));
+      }
+    }
     /* darkness (cave-like biomes) */
     this.darkGfx.clear();
     if (B.dark) {
@@ -549,6 +605,15 @@ export class LevelScene extends Scene {
     const x = p.x + p.w / 2 - w / 2, y = p.y + p.h - h;
     const flick = p.iframe > 0 && Math.floor(this.t * 14) % 2 === 0;
     if (flick) return;
+    const guardian = art('character.guardian');
+    if (guardian) {
+      const gh = h * 1.42, gw = gh * (512 / 609);
+      const gx = p.x + p.w / 2 - gw / 2, gy = p.y + p.h - gh;
+      g.fillStyle(0x143a33, .18); g.fillEllipse(p.x + p.w / 2, p.y + p.h + 2, w * 1.05, 8);
+      if (p.face < 0) g.drawImageFlipX(guardian, gx, gy, gw, gh);
+      else g.drawImage(guardian, gx, gy, gw, gh);
+      return;
+    }
     const rad = Math.max(4, Math.min(10, w / 2, h / 2));
     /* ground shadow — anchors the Guardian so it never reads as a floating blob */
     g.fillStyle(0x143a33, .18); g.fillEllipse(p.x + p.w / 2, p.y + p.h + 2, w * .9, 8);
@@ -573,19 +638,83 @@ export class LevelScene extends Scene {
     });
     g.fillStyle(0xffb3c8, 1); g.fillRoundedRect(x + w * .38, y + h * .62, w * .24, 5, 3);
   }
+  private drawMeadowStory(g: Graphics): void {
+    const open = this.meadowStory.pressureAwake;
+    /* Two-part pressure stone: the child can stand nearby, but only the healed
+       companion settles on the heart inset and opens the living root gate. */
+    g.fillStyle(open ? 0x79c995 : 0x718a7d, .35); g.fillEllipse(2518, 354, 78, 15);
+    g.fillStyle(open ? 0x9fe6b3 : 0x9caea5, 1); g.fillRoundedRect(2485, 344 + (open ? 5 : 0), 66, 10, 5);
+    g.fillStyle(open ? 0xffdc78 : 0xd6d8c8, 1); g.fillCircle(2518, 349 + (open ? 5 : 0), 5);
+    if (!open) {
+      g.fillStyle(0x496f51, 1);
+      for (let k = 0; k < 5; k++) {
+        const xx = 2640 + k * 7;
+        g.fillRoundedRect(xx, 188 + (k % 2) * 12, 7, 164 - (k % 2) * 12, 4);
+      }
+      g.fillStyle(0x6d9b61, 1);
+      for (let k = 0; k < 6; k++) g.fillEllipse(2640 + (k % 3) * 14, 212 + k * 23, 22, 11);
+    } else {
+      g.fillStyle(0x79c995, .75);
+      for (let k = 0; k < 7; k++) g.fillEllipse(2634 + k * 9, 344 + Math.sin(k) * 3, 20, 9);
+    }
+  }
+  private drawAncientOak(g: Graphics, tr: { id: string; x: number; y: number; awake?: boolean }): void {
+    const x = tr.x, y = tr.y, awake = !!tr.awake;
+    const pulse = awake ? 1 + Math.sin(this.t * 1.7) * .025 : 1;
+    g.fillStyle(0x173e35, .2); g.fillEllipse(x, y + 4, 164, 20);
+    /* Root flare and split trunk make the finale read as the same oak as the menu. */
+    g.fillStyle(awake ? 0x765438 : 0x666763, 1);
+    g.fillTriangle(x - 58, y + 4, x - 22, y - 112, x + 2, y + 4);
+    g.fillTriangle(x + 58, y + 4, x + 22, y - 112, x - 2, y + 4);
+    g.fillRoundedRect(x - 26, y - 122, 52, 126, 18);
+    g.lineStyle(4, awake ? 0xd99b5b : 0x8b8b82, awake ? .78 : .38);
+    g.beginPath(); g.moveTo(x, y - 22); g.lineTo(x - 9, y - 53); g.lineTo(x, y - 73); g.lineTo(x + 9, y - 53); g.lineTo(x, y - 22); g.strokePath();
+    const leaf1 = awake ? 0x4f9f69 : 0x788783, leaf2 = awake ? 0x79c985 : 0x657572;
+    g.fillStyle(leaf1, 1);
+    g.fillEllipse(x, y - 145, 148 * pulse, 84 * pulse);
+    g.fillCircle(x - 62, y - 128, 40 * pulse); g.fillCircle(x + 62, y - 128, 40 * pulse);
+    g.fillCircle(x - 36, y - 174, 43 * pulse); g.fillCircle(x + 35, y - 178, 48 * pulse);
+    g.fillStyle(leaf2, 1);
+    g.fillCircle(x + 7, y - 155, 39 * pulse); g.fillCircle(x - 77, y - 151, 25 * pulse);
+    if (awake) {
+      g.fillStyle(0xffed9a, .45 + Math.sin(this.t * 3) * .12); g.fillCircle(x, y - 52, 12);
+      g.fillStyle(0xfffbeb, 1); g.fillCircle(x - 9, y - 96, 5); g.fillCircle(x + 9, y - 96, 5);
+      g.fillStyle(0x243d31, 1); g.fillCircle(x - 9, y - 96, 2); g.fillCircle(x + 9, y - 96, 2);
+    } else {
+      g.lineStyle(3, 0x444a47, .8);
+      g.beginPath(); g.moveTo(x - 16, y - 96); g.lineTo(x - 5, y - 94); g.moveTo(x + 5, y - 94); g.lineTo(x + 16, y - 96); g.strokePath();
+      if (this.nearTree === tr) {
+        g.fillStyle(0xffe69b, .26 + Math.sin(this.t * 2.2) * .07); g.fillCircle(x, y - 75, 76);
+        g.fillStyle(0xfff4c7, .9); g.fillCircle(x, y - 137, 7);
+      }
+    }
+  }
   private drawMonster(g: Graphics, m: MonsterRuntime): void {
     const md = m as any, x = m.x, y = m.ground - md.h;
-    const body = m.state === 'happy' ? 0x76c893 : m.state === 'blind' ? 0xb8b2c9 : 0xd66a6a;
-    g.fillStyle(body, 1); g.fillRoundedRect(x, y, md.w, md.h, 12);
-    if (m.state === 'blind') { g.fillStyle(0xe8c27a, 1); g.fillRoundedRect(x + 4, y + 8, md.w - 8, 9, 4); }
+    const body = m.state === 'happy' ? 0x70bd83 : m.state === 'blind' ? 0x9e9aaa : 0xb87977;
+    const face = md.face || -1, bob = m.state === 'happy' ? Math.sin(this.t * 7 + x) * 2 : 0;
+    g.fillStyle(0x173e35, .16); g.fillEllipse(x + md.w / 2, m.ground + 2, md.w * .9, 8);
+    /* A round, nervous mossling—not an enemy block. Its silhouette reads from
+       across a phone screen, while ears, tail and posture carry its emotion. */
+    g.fillStyle(body, 1); g.fillRoundedRect(x, y + bob, md.w, md.h, 15);
+    g.fillTriangle(x + 8, y + 12 + bob, x + 13, y - 2 + bob, x + 19, y + 10 + bob);
+    g.fillTriangle(x + 23, y + 9 + bob, x + 31, y - 1 + bob, x + 34, y + 14 + bob);
+    g.fillStyle(m.state === 'happy' ? 0x9bd49d : 0xd69a91, 1);
+    g.fillCircle(x + 12, y + 7 + bob, 3.5); g.fillCircle(x + 29, y + 7 + bob, 3.5);
+    g.lineStyle(4, body, 1); g.beginPath(); g.moveTo(x + (face > 0 ? 35 : 5), y + 25 + bob); g.arc(x + (face > 0 ? 42 : -2), y + 22 + bob, 8, face > 0 ? .8 : -.2, face > 0 ? 5.2 : 4.2); g.strokePath();
+    if (m.state === 'blind') { g.fillStyle(0xe8c27a, 1); g.fillRoundedRect(x + 4, y + 10 + bob, md.w - 8, 9, 4); }
     else {
-      g.fillStyle(0xffffff, 1); g.fillCircle(x + md.w * .32, y + 13, 5); g.fillCircle(x + md.w * .68, y + 13, 5);
+      g.fillStyle(0xffffff, 1); g.fillCircle(x + md.w * .32, y + 15 + bob, 5); g.fillCircle(x + md.w * .68, y + 15 + bob, 5);
       g.fillStyle(0x33222a, 1);
-      const dx = (md.face || -1) * 1.6;
-      g.fillCircle(x + md.w * .32 + dx, y + 13, 2.4); g.fillCircle(x + md.w * .68 + dx, y + 13, 2.4);
+      const dx = face * 1.6;
+      g.fillCircle(x + md.w * .32 + dx, y + 15 + bob, 2.4); g.fillCircle(x + md.w * .68 + dx, y + 15 + bob, 2.4);
     }
-    if (m.state === 'happy') { g.lineStyle(2.4, 0x2a4a33); g.beginPath(); g.arc(x + md.w / 2, y + 24, 7, .15 * Math.PI, .85 * Math.PI); g.strokePath(); }
-    else if (m.state === 'angry') { g.lineStyle(2.4, 0x4a2222); g.beginPath(); g.arc(x + md.w / 2, y + 32, 7, 1.15 * Math.PI, 1.85 * Math.PI); g.strokePath(); }
+    if (m.state === 'happy') {
+      g.lineStyle(2.4, 0x2a4a33); g.beginPath(); g.arc(x + md.w / 2, y + 26 + bob, 7, .15 * Math.PI, .85 * Math.PI); g.strokePath();
+      g.fillStyle(0xffd868, 1); g.fillCircle(x + md.w / 2, y - 9 + bob, 4 + Math.sin(this.t * 5) * .5);
+    } else if (m.state === 'angry') {
+      g.lineStyle(2.4, 0x573b42); g.beginPath(); g.arc(x + md.w / 2, y + 31 + bob, 6, 1.15 * Math.PI, 1.85 * Math.PI); g.strokePath();
+    }
     if (m === this.healTarget && m.healT > 0) {
       g.fillStyle(0xffd54a, .9); g.fillRect(x, y - 12, md.w * Math.min(1, m.healT / CONFIG.heal.HEAL_TIME), 5);
       g.lineStyle(1, 0x8a6a1a, .8); g.strokeRect(x, y - 12, md.w, 5);

@@ -8,7 +8,7 @@ import { familyStars, pick3, streakStart, streakAnswer, type StreakState } from 
 import type { SaveData } from '../core/save';
 import { BIOME } from '../core/biomes';
 import { getTreeArt, getChoiceArt, getTreeIcon, guardianBadge } from './art';
-import { speak, sfx } from './audio';
+import { speak, sfx, setMusicMood } from './audio';
 
 /* Clue-tier picture cue so pre-readers can tell what kind of clue they see. */
 const TIER_ICON: Record<ClueTier, string> = { leaf: '🍃', bark: '🪵', silhouette: '🌳' };
@@ -108,6 +108,7 @@ export class UI {
   setGameplayVisible(on: boolean): void {
     for (const id of ['padL', 'padR', 'hud']) $(id).style.display = on ? '' : 'none';
     $('menu').style.display = on ? 'none' : '';
+    if (on) document.body.classList.remove('menu-open', 'journey-start');
     if (on) $('mapView').classList.add('hidden');
   }
 
@@ -146,15 +147,29 @@ export class UI {
 
   /* ---------- screens ---------- */
   showMenu(): void {
+    setMusicMood('menu');
     this.setGameplayVisible(false);
+    document.body.classList.remove('journey-start');
+    document.body.classList.add('menu-open');
     $('mapView').classList.add('hidden');
     $('menu').innerHTML = `
-      <button class="play" id="mStart">${S('ui.newGame')}</button>
-      <button class="ghost" id="mCont">${S('ui.continue')}</button>
-      <button class="ghost" id="mMap">${S('ui.levels')}</button>
-      <button class="ghost" id="mJournal">${S('ui.journal')}</button>
-      <button class="ghost" id="mHow">${S('ui.howto')}</button>`;
-    $('mStart').onclick = () => { this.requestFS(); this.cb.onStart(0); };
+      <div class="brand-kicker">${S('menu.kicker')}</div>
+      <h1 class="brand-title">Çok Kalpli<br>Koruyucu <span class="heart">♥</span></h1>
+      <p class="brand-subtitle">${S('menu.subtitle')}</p>
+      <div class="menu-actions">
+        <button class="play" id="mStart">${S('ui.newGame')}</button>
+        <button class="ghost" id="mCont">${S('ui.continue')}</button>
+      </div>
+      <div class="menu-secondary">
+        <button class="ghost" id="mMap">${S('ui.levels')}</button>
+        <button class="ghost" id="mJournal">${S('ui.journal')}</button>
+        <button class="ghost" id="mHow">${S('ui.howto')}</button>
+      </div>`;
+    $('mStart').onclick = () => {
+      this.requestFS();
+      document.body.classList.add('journey-start');
+      window.setTimeout(() => this.cb.onStart(0), 520);
+    };
     $('mCont').onclick = () => this.showMap(); /* journey hub: pick up where you left off */
     $('mMap').onclick = () => this.showMap();
     $('mJournal').onclick = () => this.showJournal();
@@ -180,6 +195,7 @@ export class UI {
      public/map/node_<regionId>.webp replaces a node icon — no code change. */
   showMap(): void {
     this.setGameplayVisible(false);
+    document.body.classList.remove('menu-open');
     this.hideOverlay();
     $('menu').style.display = 'none';
     const furthest = this.save.furthest || 0;

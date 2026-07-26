@@ -84,6 +84,17 @@ describe('WORLD / bölge şeması', () => {
   });
 });
 
+describe('ödüllük Çayır dikey kesiti', () => {
+  it('beş vuruşlu şefkat akışını veri düzeyinde korur', () => {
+    const lv = prepLevel(0);
+    expect(lv.interact.map(i => i.type)).toEqual(['freeze', 'grow', 'bridge']);
+    expect(lv.monsters).toHaveLength(1);
+    expect(lv.goal).toBeNull();
+    expect(lv.trees.some(t => t.id === 'meşe' && t.x > 2800)).toBe(true);
+    expect(lv.intros.some(i => i.text.includes('kötü değil'))).toBe(true);
+  });
+});
+
 describe('bölüm üretici', () => {
   const gen = (): LevelData => level4();
   it('yapısal geçerlilik: ağaç = kontrol noktası, bulmaca = canavar, min 3', () => {
@@ -274,11 +285,13 @@ describe('v2 içerik: B5–B10', () => {
 });
 
 describe('dil', () => {
-  it('boş EN/DE tabloları TR\'ye düşer — hiçbir arayüz metni boş değil', () => {
+  it('EN/DE görünür arayüzü çevrilidir; eksik anahtarlar güvenle TR\'ye düşer', () => {
+    setLang('en'); expect(S('ui.newGame')).toBe('▶ New Journey');
+    setLang('de'); expect(S('ui.newGame')).toBe('▶ Neue Reise');
     for (const l of ['en', 'de'] as const) {
       setLang(l);
-      expect(S('ui.newGame')).toBe(STR.tr['ui.newGame']);
       expect(S('tree.question')).toBeTruthy();
+      expect(S('menu.subtitle')).not.toBe(STR.tr['menu.subtitle']);
     }
     setLang('tr');
   });

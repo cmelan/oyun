@@ -98,6 +98,14 @@ export class Graphics {
     });
     return this;
   }
+  drawImageFlipX(image: CanvasImageSource, x: number, y: number, w: number, h: number, alpha = 1): this {
+    this.ops.push(ctx => {
+      ctx.save(); ctx.globalAlpha = alpha;
+      ctx.translate(x + w, y); ctx.scale(-1, 1); ctx.drawImage(image, 0, 0, w, h);
+      ctx.restore();
+    });
+    return this;
+  }
   fillImagePattern(
     image: CanvasImageSource,
     x: number, y: number, w: number, h: number,
