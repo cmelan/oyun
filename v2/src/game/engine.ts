@@ -91,6 +91,57 @@ export class Graphics {
     this.ops.push(ctx => { ctx.globalAlpha = a; ctx.fillStyle = f; ctx.beginPath(); ctx.arc(x, y, Math.max(0, r), 0, TAU); ctx.fill(); });
     return this;
   }
+  drawImage(image: CanvasImageSource, x: number, y: number, w: number, h: number, alpha = 1): this {
+    this.ops.push(ctx => {
+      ctx.globalAlpha = alpha;
+      ctx.drawImage(image, x, y, w, h);
+    });
+    return this;
+  }
+  fillImagePattern(
+    image: CanvasImageSource,
+    x: number, y: number, w: number, h: number,
+    tileW: number, tileH: number,
+    alpha = 1,
+  ): this {
+    this.ops.push(ctx => {
+      ctx.globalAlpha = alpha;
+      const sourceW = Number((image as any).width || tileW);
+      const sourceH = Number((image as any).height || tileH);
+      for (let yy = y; yy < y + h; yy += tileH) {
+        for (let xx = x; xx < x + w; xx += tileW) {
+          const dw = Math.min(tileW, x + w - xx);
+          const dh = Math.min(tileH, y + h - yy);
+          ctx.drawImage(
+            image,
+            0, 0, sourceW * (dw / tileW), sourceH * (dh / tileH),
+            xx, yy, dw, dh,
+          );
+        }
+      }
+    });
+    return this;
+  }
+  drawTiledX(
+    image: CanvasImageSource,
+    x: number, y: number, w: number, h: number,
+    tileW: number,
+    alpha = 1,
+  ): this {
+    this.ops.push(ctx => {
+      ctx.globalAlpha = alpha;
+      for (let xx = x; xx < x + w; xx += tileW) {
+        const dw = Math.min(tileW, x + w - xx);
+        const sourceW = Math.max(1, Math.round((dw / tileW) * Number((image as any).width || tileW)));
+        ctx.drawImage(
+          image,
+          0, 0, sourceW, Number((image as any).height || h),
+          xx, y, dw, h,
+        );
+      }
+    });
+    return this;
+  }
   /* Radial-alpha circle: current fill colour, alpha ramping through `stops`
      [offset, alpha]. Under BLEND.ERASE this is the soft light punch (v1's
      lantern glow) — the alpha ramp is what feathers the erased edge. */

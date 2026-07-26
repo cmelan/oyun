@@ -7,9 +7,11 @@ import { LEVELS } from './core/world';
 import { LevelScene, type SceneHooks } from './game/LevelScene';
 import { UI } from './game/ui';
 import { initAudio, setMuted, isMuted, startMusic, sfx } from './game/audio';
+import { preloadArt } from './game/assets';
 
 const save: SaveData = loadSave(localStorage);
 if (save.lang) setLang(save.lang as Lang);
+void preloadArt();
 
 /* Canvas is FIT-scaled + letterboxed by CSS (#game canvas{width/height:100%;object-fit:contain}). */
 const game = new Game({
