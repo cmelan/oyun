@@ -41,3 +41,15 @@ folder.
   dormant leaf markings; huggable, unarmed, emotionally readable at 40 px;
   uniform chroma green; no ground, scenery, props, text, logo, watermark, or
   additional creature.”
+
+## App icon
+
+- Runtime/store exports: `public/icons/icon-180.png`, `icon-192.png`,
+  `icon-512.png`, and `icon-1024.png`
+- Source: `docs/art-source/app-icon-master.png`
+- Generated with the Guardian and entrance oak as strict references.
+- Prompt: “Premium square mobile game icon readable at 64 px: close-up of the
+  five-eyed leaf-hooded Guardian and heart clasp, backed by one warm glowing
+  heart-shaped ancient oak; deep teal dawn background, painted foliage rim,
+  disciplined storybook color, 12% mask-safe margin; no typography, border,
+  watermark, extra characters, tiny clutter, or device mockup.”

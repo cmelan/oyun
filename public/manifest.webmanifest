@@ -1,0 +1,15 @@
+{
+  "name": "Çok Kalpli Koruyucu",
+  "short_name": "Koruyucu",
+  "description": "A gentle puzzle-platform adventure where empathy and observation restore nature.",
+  "lang": "tr",
+  "start_url": "./",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#163d3b",
+  "theme_color": "#163d3b",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
