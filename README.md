@@ -18,7 +18,9 @@ npm run build
 ```
 
 The production output is written to `dist/`. Render configuration is committed
-in `render.yaml` and publishes that directory.
+in `render.yaml` and publishes that directory. The `npm start` command also
+serves the production build for compatibility with an existing Render web
+service.
 
 ## Project layout
 

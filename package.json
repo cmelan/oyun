@@ -10,6 +10,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
+    "start": "npm run build && vite preview --host 0.0.0.0 --port ${PORT:-4173}",
     "test": "vitest run tests",
     "typecheck": "tsc --noEmit",
     "fetch-photos": "node scripts/fetch-photos.mjs"
