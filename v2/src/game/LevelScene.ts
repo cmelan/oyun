@@ -16,6 +16,7 @@ import { LEAF_COLOR } from './art';
 import { sfx } from './audio';
 import type { UI } from './ui';
 import { art } from './assets';
+import { drawMeadowForeground, drawMeadowMidground } from './meadowEnvironment';
 
 const { GRAV, MOVE, ACCEL, FRICTION, JUMP_V, JUMP_CUT, MAX_FALL, BOUNCE, COYOTE, JBUF } = CONFIG.physics;
 const W = CONFIG.canvas.W, H = CONFIG.canvas.H;
@@ -41,6 +42,7 @@ export class LevelScene extends Scene {
   private monsters: MonsterRuntime[] = [];
   private gfx!: Graphics;
   private bgGfx!: Graphics;
+  private foregroundGfx!: Graphics;
   private darkGfx!: Graphics;
   private input2: InputState = { left: false, right: false, jumpEdge: false, jumpHeld: false, useEdge: false, sandEdge: false, healHeld: false };
   private player = { x: 90, y: 340, w: CONFIG.player.w, h: CONFIG.player.h, vx: 0, vy: 0, grounded: false, face: 1, coyote: 0, jbuf: 0, iframe: 0, squash: 1, squashVel: 0, blink: 0, blinkT: 2.2 };
@@ -81,6 +83,7 @@ export class LevelScene extends Scene {
     this.sandMax = sandCapacity(this.L); this.sandLeft = this.sandMax;
     this.bgGfx = this.add.graphics().setScrollFactor(0);
     this.gfx = this.add.graphics();
+    this.foregroundGfx = this.add.graphics().setScrollFactor(0);
     this.darkGfx = this.add.graphics().setScrollFactor(0);
     this.cameras.main.setBounds(0, 0, this.L.w, H);
     this.bindKeys();
@@ -438,8 +441,14 @@ export class LevelScene extends Scene {
   private col(hex: string): number { return hexToNum(hex); }
   private draw(): void {
     const B = BIOME[this.L.biome || 'meadow'] || BIOME.meadow;
-    const g = this.gfx, bg = this.bgGfx;
+    const g = this.gfx, bg = this.bgGfx, foreground = this.foregroundGfx;
     const meadowFar = this.L.biome === 'meadow' ? art('meadow.far') : null;
+    const meadowMidground = this.L.biome === 'meadow' ? art('meadow.midground') : null;
+    const meadowForeground = this.L.biome === 'meadow' ? {
+      left: art('meadow.foreground.left'),
+      middle: art('meadow.foreground.middle'),
+      right: art('meadow.foreground.right'),
+    } : null;
     const meadowSoil = this.L.biome === 'meadow' ? art('meadow.soil') : null;
     const meadowGrass = this.L.biome === 'meadow' ? art('meadow.grass') : null;
     /* sky + parallax */
@@ -454,7 +463,9 @@ export class LevelScene extends Scene {
       bg.fillStyle(this.col(B.hillsMid), 1);
       for (let hx = -1; hx < 7; hx++) { const bxx = hx * 200 - (this.cam * .45) % 200; bg.fillEllipse(bxx, H - 40, 260, 170); }
     }
+    if (this.L.biome === 'meadow') drawMeadowMidground(bg, meadowMidground, this.cam, B, W, H);
     g.clear();
+    foreground.clear();
     /* water */
     if (this.L.water) {
       const wt = this.L.water;
@@ -514,6 +525,7 @@ export class LevelScene extends Scene {
     this.drawPlayer(g);
     /* particles */
     for (const pt of this.particles) { g.fillStyle(pt.col, pt.alpha); g.fillCircle(pt.x, pt.y, pt.r); }
+    if (meadowForeground) drawMeadowForeground(foreground, meadowForeground, this.cam, this.L.w, B, W, H);
     /* darkness (cave-like biomes) */
     this.darkGfx.clear();
     if (B.dark) {

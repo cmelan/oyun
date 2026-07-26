@@ -4,11 +4,19 @@
 
 export type ArtKey =
   | 'meadow.far'
+  | 'meadow.midground'
+  | 'meadow.foreground.left'
+  | 'meadow.foreground.middle'
+  | 'meadow.foreground.right'
   | 'meadow.soil'
   | 'meadow.grass';
 
 const SOURCES: Record<ArtKey, string> = {
   'meadow.far': 'art/meadow/far-background.webp',
+  'meadow.midground': 'art/meadow/midground-treeline.png',
+  'meadow.foreground.left': 'art/meadow/foreground-left.png',
+  'meadow.foreground.middle': 'art/meadow/foreground-middle.png',
+  'meadow.foreground.right': 'art/meadow/foreground-right.png',
   'meadow.soil': 'art/meadow/soil-tile.webp',
   'meadow.grass': 'art/meadow/grass-edge.png',
 };
