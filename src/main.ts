@@ -110,7 +110,7 @@ void Promise.all([preloadArt(), initPurchases()]).finally(() => {
     const s = scene as any;
     const finalTree = s.L.trees.find((tree: any) => tree.x > 2800);
     s.meadowStory.pressureAwake = true;
-    s.player.x = 2790; s.player.y = 292; s.player.vx = 0; s.player.vy = 0;
+    s.player.x = finalTree.x - 135; s.player.y = 292; s.player.vx = 0; s.player.vy = 0;
     s.cam = s.L.w - CONFIG.canvas.W; s.cameras.main.setScroll(s.cam, 0);
     if (stage === 'oak-awake') {
       finalTree.awake = true; s.meadowStory.restoring = 1.72; s.meadowStory.restoreCue = 2;
@@ -126,6 +126,6 @@ void Promise.all([preloadArt(), initPurchases()]).finally(() => {
    scripts (device matrix, design pack) can drive screens directly (never
    active for players). */
 if (bootParams.has('test')) {
-  (window as any).__ckk = { ui, startLevel, art: artHelpers };
+  (window as any).__ckk = { ui, startLevel, getScene: () => scene, art: artHelpers };
 }
 export { game, sfx };

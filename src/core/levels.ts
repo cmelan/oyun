@@ -4,23 +4,23 @@ import { makeSection } from './generator';
 
 export function level1(): LevelData {
   return {
-    name: 'Bölüm 1 · İlk Adımlar', w: 3040, deathY: 700, gentle: true, spawn: { x: 90, y: 300 },
+    name: 'Bölüm 1 · İlk Adımlar', w: 3120, deathY: 700, gentle: true, spawn: { x: 90, y: 300 },
     platforms: [
-      { x: 20, y: 380, w: 380, h: 240 }, { x: 520, y: 370, w: 300, h: 240 }, { x: 1080, y: 370, w: 460, h: 240 },
-      { x: 1618, y: 360, w: 160, h: 242 }, { x: 1860, y: 355, w: 160, h: 245 }, { x: 2100, y: 352, w: 940, h: 252 },
+      { x: 20, y: 380, w: 380, h: 240 }, { x: 520, y: 370, w: 300, h: 240 }, { x: 1080, y: 370, w: 410, h: 240 },
+      { x: 1695, y: 360, w: 135, h: 242 }, { x: 2050, y: 352, w: 130, h: 248 }, { x: 2180, y: 352, w: 940, h: 252 },
     ],
     water: { x: 760, top: 470, w: 320 },
     interact: [
       { type: 'freeze', eye: 'blue', done: false, zone: { x: 660, y: 300, w: 200, h: 150 }, ice: { x: 760, y: 370, w: 320, h: 40 } },
-      { type: 'grow', eye: 'green', done: false, zone: { x: 1320, y: 278, w: 170, h: 110 }, sprout: { x: 1450, y: 370 }, leaves: [{ x: 1515, y: 354, w: 86, h: 18 }, { x: 1588, y: 350, w: 86, h: 18 }], em: { x: 1450, y: 322 } },
-      { type: 'bridge', eye: 'yellow', done: false, zone: { x: 1660, y: 270, w: 170, h: 110 }, bridge: { x: 1755, y: 348, w: 125, h: 18 }, ropeX: 1818, anchorY: 245, em: { x: 1818, y: 302 } },
+      { type: 'grow', eye: 'green', done: false, zone: { x: 1320, y: 278, w: 170, h: 110 }, sprout: { x: 1450, y: 370 }, leaves: [{ x: 1485, y: 354, w: 105, h: 18 }, { x: 1580, y: 354, w: 115, h: 18 }], em: { x: 1450, y: 322 } },
+      { type: 'bridge', eye: 'yellow', done: false, zone: { x: 1695, y: 270, w: 135, h: 110 }, bridge: { x: 1825, y: 348, w: 225, h: 18 }, ropeX: 1935, anchorY: 245, em: { x: 1762, y: 302 } },
     ],
-    trees: [{ id: 'çınar', x: 585, y: 370 }, { id: 'ıhlamur', x: 2125, y: 352 }, { id: 'meşe', x: 2925, y: 352 }],
+    trees: [{ id: 'çınar', x: 585, y: 370 }, { id: 'ıhlamur', x: 2125, y: 352 }, { id: 'meşe', x: 3005, y: 352 }],
     monsters: [
       { x: 1210, gx0: 1100, gx1: 1450, ground: 370, lo: 1088, hi: 1530, spd: 82, aggro: 185, patrolSpd: 36 },
     ],
     boss: null, arena: null,
-    checkpoints: [{ x: 560, y: 370 }, { x: 1125, y: 370 }, { x: 2112, y: 352 }],
+    checkpoints: [{ x: 560, y: 370 }, { x: 1125, y: 370 }, { x: 2080, y: 352 }],
     goal: null, hasSand: true, hasHeal: true,
     intros: [
       { x: 170, text: 'Çayır çok sessiz… birlikte dinleyelim.  ←  →' },

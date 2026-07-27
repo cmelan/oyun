@@ -93,6 +93,28 @@ describe('ödüllük Çayır dikey kesiti', () => {
     expect(lv.trees.some(t => t.id === 'meşe' && t.x > 2800)).toBe(true);
     expect(lv.intros.some(i => i.text.includes('kötü değil'))).toBe(true);
   });
+  it('üç doğa bulmacasının hiçbiri normal bir sıçrayışla atlanamaz', () => {
+    const lv = prepLevel(0);
+    const [freeze, grow, bridge] = lv.interact as any[];
+    const requiredGaps = [[lv.platforms[1], lv.platforms[2]], [lv.platforms[2], lv.platforms[3]], [lv.platforms[3], lv.platforms[4]]];
+    for (const [left, right] of requiredGaps) {
+      expect(right.x - (left.x + left.w)).toBeGreaterThan(200);
+    }
+    expect(freeze.ice.x).toBeLessThanOrEqual(lv.platforms[1].x + lv.platforms[1].w);
+    expect(freeze.ice.x + freeze.ice.w).toBeGreaterThanOrEqual(lv.platforms[2].x);
+    expect(grow.leaves[0].x).toBeLessThanOrEqual(lv.platforms[2].x + lv.platforms[2].w);
+    expect(grow.leaves.at(-1).x + grow.leaves.at(-1).w).toBeGreaterThanOrEqual(lv.platforms[3].x);
+    expect(bridge.bridge.x).toBeLessThanOrEqual(lv.platforms[3].x + lv.platforms[3].w);
+    expect(bridge.bridge.x + bridge.bridge.w).toBeGreaterThanOrEqual(lv.platforms[4].x);
+  });
+  it('restorasyon kadrajı ikincil ağacı dışarıda bırakıp antik meşeyi odakta tutar', () => {
+    const lv = prepLevel(0), finaleCam = lv.w - CONFIG.canvas.W;
+    const secondary = lv.trees.find(t => t.id === 'ıhlamur')!;
+    const oak = lv.trees.find(t => t.id === 'meşe')!;
+    expect(secondary.x).toBeLessThan(finaleCam - 20);
+    expect(oak.x - finaleCam).toBeGreaterThan(760);
+    expect(oak.x - finaleCam).toBeLessThan(900);
+  });
 });
 
 describe('bölüm üretici', () => {

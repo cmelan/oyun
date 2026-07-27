@@ -38,7 +38,9 @@ for (const [name, d] of Object.entries(DEVICES)) {
     hasTouch: true, isMobile: true,
   });
   await page.addInitScript(() => {
-    localStorage.setItem('ckk2_save_v2', JSON.stringify({ furthest: 4, journal: [], lang: 'tr' }));
+    /* Submission QA must exercise the authored Meadow vertical slice, not a
+       later generated level left unlocked by a developer save. */
+    localStorage.setItem('ckk2_save_v2', JSON.stringify({ furthest: 0, journal: [], lang: 'tr' }));
   });
   await page.goto(BASE);
   await page.waitForTimeout(700);

@@ -234,28 +234,30 @@ export class LevelScene extends Scene {
   }
   private beginMeadowRestoration(): void {
     if (this.meadowStory.restoring > 0) return;
+    const oakX = this.L.trees.find(tr => tr.x > 2800)?.x ?? 3005;
     this.meadowStory.restoring = .001;
     this.meadowStory.restoreCue = 0;
-    this.spawnP(2925, 230, 70, 0xffe59a, 250, 2.6);
-    this.spawnP(2840, 310, 45, 0x8fe3a8, 180, 2.4);
+    this.spawnP(oakX, 230, 70, 0xffe59a, 250, 2.6);
+    this.spawnP(oakX - 85, 310, 45, 0x8fe3a8, 180, 2.4);
     setMusicMood('restored'); sfx('wake'); this.flash(500, 255, 235, 175);
     this.hooks.ui.showHint(S('meadow.restored'), 3.2);
   }
   private updateMeadowRestoration(dt: number): boolean {
     if (this.meadowStory.restoring <= 0) return false;
     const story = this.meadowStory;
+    const oakX = this.L.trees.find(tr => tr.x > 2800)?.x ?? 3005;
     story.restoring += dt;
     if (story.restoreCue === 0 && story.restoring >= .75) {
       story.restoreCue = 1; sfx('grow');
-      this.spawnP(2925, 328, 44, 0x8fe3a8, 190, 2.1);
+      this.spawnP(oakX, 328, 44, 0x8fe3a8, 190, 2.1);
     }
     if (story.restoreCue === 1 && story.restoring >= 1.55) {
       story.restoreCue = 2; sfx('streak'); this.flash(360, 255, 215, 110);
-      this.spawnP(2925, 185, 64, 0xffe27a, 230, 2.2);
+      this.spawnP(oakX, 185, 64, 0xffe27a, 230, 2.2);
     }
     if (story.restoreCue === 2 && story.restoring >= 2.55) {
       story.restoreCue = 3; sfx('clear');
-      for (let x = 2500; x <= 3020; x += 80) this.spawnP(x, 330, 14, x % 160 ? 0x9fe6b3 : 0xffe59a, 155, 1.8);
+      for (let x = 2500; x <= this.L.w - 20; x += 80) this.spawnP(x, 330, 14, x % 160 ? 0x9fe6b3 : 0xffe59a, 155, 1.8);
     }
     /* A brief, non-interactive finale makes the causal chain legible: helper →
        roots → oak → whole meadow. The camera settles instead of snapping. */
@@ -841,22 +843,36 @@ export class LevelScene extends Scene {
       g.fillStyle(0xfff3c4, .8);
       for (let k = 0; k < 4; k++) { const ph = (this.t * .35 + k * .25) % 1; g.fillCircle(x + Math.sin(this.t * 1.3 + k * 2.2) * 22, y - 28 - ph * 92, 2.2); }
     }
-    const trunkH = crown === 'tall' || crown === 'palm' ? 72 : 56, trunkW = crown === 'tall' ? 16 : 18;
+    const trunkH = crown === 'tall' || crown === 'palm' ? 78 : 62, trunkW = crown === 'tall' ? 18 : 20;
+    g.fillStyle(0x173e35, .14); g.fillEllipse(x, y + 3, crown === 'tall' ? 68 : 58, 10);
     g.fillStyle(tr.awake ? (crown === 'tall' ? 0xcdbd90 : 0x7d5a3a) : 0x655c50, 1);
     g.fillTriangle(x - trunkW / 2 - 3, y + 2, x - trunkW / 2, y - trunkH, x + trunkW / 2, y - trunkH);
     g.fillTriangle(x - trunkW / 2 - 3, y + 2, x + trunkW / 2, y - trunkH, x + trunkW / 2 + 3, y + 2);
+    /* A visible fork and root flare keep the learning trees organic even when
+       their colours are muted asleep. */
+    g.lineStyle(7, tr.awake ? 0x806044 : 0x655c50, 1);
+    g.beginPath(); g.moveTo(x, y - trunkH + 34); g.lineTo(x - 22, y - trunkH - 4);
+    g.moveTo(x + 1, y - trunkH + 27); g.lineTo(x + 24, y - trunkH - 12); g.strokePath();
+    g.fillStyle(tr.awake ? 0x806044 : 0x655c50, 1);
+    g.fillTriangle(x - 22, y + 2, x - 4, y - 22, x - 2, y + 2);
+    g.fillTriangle(x + 22, y + 2, x + 4, y - 24, x + 2, y + 2);
     const cols = LEAF_COLOR[tr.id] || ['#63c49b', '#4fae87'];
     const leafA = tr.awake ? this.col(cols[0]) : 0x718b82;
     const leafB = tr.awake ? this.col(cols[1]) : 0x526f69;
     if (crown === 'tall') {
-      g.fillStyle(leafA, 1); g.fillCircle(x - 16, y - trunkH - 18, 20); g.fillCircle(x + 16, y - trunkH - 18, 20); g.fillCircle(x, y - trunkH - 44, 24); g.fillCircle(x, y - trunkH - 14, 22);
-      g.fillStyle(leafB, 1); g.fillCircle(x + 10, y - trunkH - 34, 13);
+      g.fillStyle(leafB, 1); g.fillEllipse(x, y - trunkH - 24, 78, 58);
+      g.fillCircle(x - 29, y - trunkH - 17, 22); g.fillCircle(x + 31, y - trunkH - 22, 25);
+      g.fillStyle(leafA, 1); g.fillCircle(x - 20, y - trunkH - 39, 26); g.fillCircle(x + 16, y - trunkH - 47, 29);
+      g.fillCircle(x - 2, y - trunkH - 68, 25); g.fillCircle(x + 34, y - trunkH - 49, 18);
+      g.fillStyle(tr.awake ? 0xb7df83 : 0x81958f, .65);
+      g.fillCircle(x - 25, y - trunkH - 49, 8); g.fillCircle(x + 8, y - trunkH - 69, 7); g.fillCircle(x + 31, y - trunkH - 35, 6);
     } else if (crown === 'oval') {
-      g.fillStyle(leafA, 1);
-      g.fillEllipse(x - 10, y - trunkH - 18, 42, 56); g.fillEllipse(x + 11, y - trunkH - 22, 40, 62);
-      g.fillEllipse(x, y - trunkH - 47, 38, 48);
-      g.fillStyle(leafB, 1);
-      g.fillEllipse(x + 13, y - trunkH - 12, 24, 35); g.fillEllipse(x - 13, y - trunkH - 37, 22, 31);
+      g.fillStyle(leafB, 1); g.fillEllipse(x, y - trunkH - 28, 72, 88);
+      g.fillEllipse(x - 27, y - trunkH - 19, 34, 58); g.fillEllipse(x + 27, y - trunkH - 23, 35, 62);
+      g.fillStyle(leafA, 1); g.fillEllipse(x - 13, y - trunkH - 49, 39, 55);
+      g.fillEllipse(x + 15, y - trunkH - 53, 41, 60); g.fillEllipse(x, y - trunkH - 76, 34, 43);
+      g.fillStyle(tr.awake ? 0xc9efb0 : 0x81958f, .58);
+      g.fillCircle(x - 19, y - trunkH - 61, 7); g.fillCircle(x + 11, y - trunkH - 77, 6); g.fillCircle(x + 28, y - trunkH - 43, 6);
     } else if (crown === 'conifer') {
       g.fillStyle(leafA, 1);
       g.fillTriangle(x - 30, y - trunkH + 6, x + 30, y - trunkH + 6, x, y - trunkH - 34);
