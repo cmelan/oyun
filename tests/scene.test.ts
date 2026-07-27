@@ -112,6 +112,39 @@ describe('LevelScene runtime smoke', () => {
     expect(events).toContain('complete');
   });
 
+  it('B1 roots cannot hide the missing-friend prerequisite at the final gate', () => {
+    const scene: any = runLevel(0, 2);
+    const grow = scene.L.interact[1];
+    scene.player.x = grow.zone.x + 12; scene.player.y = grow.zone.y + 20;
+    scene.equipped = grow.eye;
+    scene.doUse();
+    expect(grow.done).toBe(false);
+
+    const helper = scene.monsters[0]; helper.state = 'happy'; scene.meadowStory.helper = helper;
+    scene.doUse();
+    expect(grow.done).toBe(true);
+  });
+
+  it('an exhausted sealed boss arena always grows enough replacement sand', () => {
+    for (let idx = 1; idx < LEVELS.length; idx++) {
+      const scene: any = runLevel(idx, 2);
+      scene.bossActive = true; scene.L.boss.state = 'idle'; scene.sandLeft = 0; scene.sands = [];
+      scene.updateRecovery(1.5);
+      expect(scene.sandLeft, `level ${idx + 1}`).toBeGreaterThanOrEqual(scene.L.boss.hp);
+    }
+  });
+
+  it('rescue returns to the last grounded position and clears interrupted input', () => {
+    const scene: any = runLevel(1, 2);
+    scene.lastSafe = { x: 512, y: 316 };
+    scene.player.x = 900; scene.player.y = 620; scene.player.vx = 200; scene.player.vy = 700;
+    scene.press('right'); scene.press('jump'); scene.press('heal');
+    scene.rescueToSafety();
+    expect(scene.player.x).toBe(512); expect(scene.player.y).toBe(316);
+    expect(scene.player.vx).toBe(0); expect(scene.player.vy).toBe(0);
+    expect(scene.input2.right).toBe(false); expect(scene.input2.jumpHeld).toBe(false); expect(scene.input2.healHeld).toBe(false);
+  });
+
   it('reduced-motion preference suppresses camera jolts and limits celebration particles', () => {
     (globalThis as any).window.matchMedia = () => ({ matches: true });
     const scene: any = new LevelScene();

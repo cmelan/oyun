@@ -49,6 +49,7 @@ export class LevelScene extends Scene {
   private player = { x: 90, y: 340, w: CONFIG.player.w, h: CONFIG.player.h, vx: 0, vy: 0, grounded: false, face: 1, coyote: 0, jbuf: 0, iframe: 0, squash: 1, squashVel: 0, blink: 0, blinkT: 2.2 };
   private hearts: number = CONFIG.hearts;
   private respawn = { x: 90, y: 340 };
+  private lastSafe = { x: 90, y: 340 };
   private cam = 0;
   private t = 0;
   private equipped: Eye | null = null;
@@ -69,6 +70,10 @@ export class LevelScene extends Scene {
   private meadowStory: { helper: MonsterRuntime | null; pressureAwake: boolean; restoring: number; restoreCue: number; gateStep: number; oakGuided: boolean } = { helper: null, pressureAwake: false, restoring: 0, restoreCue: 0, gateStep: 0, oakGuided: false };
   private keyHandlers: { dn: (e: KeyboardEvent) => void; up: (e: KeyboardEvent) => void } | null = null;
   private reducedMotion = false;
+  private objectiveKey = '';
+  private progressSignature = '';
+  private noProgressT = 0;
+  private bossRefillT = 0;
 
   constructor() { super(LevelScene.KEY); }
 
@@ -81,11 +86,13 @@ export class LevelScene extends Scene {
     this.monsters = this.L.monsters.map(makeMonster);
     this.hearts = CONFIG.hearts;
     this.respawn = { x: this.L.spawn.x, y: this.L.spawn.y };
+    this.lastSafe = { x: this.L.spawn.x, y: this.L.spawn.y };
     this.player.x = this.L.spawn.x; this.player.y = this.L.spawn.y;
     this.player.vx = 0; this.player.vy = 0; this.player.iframe = 0; this.player.squash = 1;
     this.cam = 0; this.t = 0; this.ended = false; this.modal = false;
     this.bossActive = false; this.bossShots = []; this.sands = []; this.particles = [];
     this.assist = { deaths: 0 }; this.introSeen.clear();
+    this.objectiveKey = ''; this.progressSignature = ''; this.noProgressT = 0; this.bossRefillT = 0;
     this.meadowStory = { helper: null, pressureAwake: false, restoring: 0, restoreCue: 0, gateStep: 0, oakGuided: false };
     this.reducedMotion = typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     this.sandMax = sandCapacity(this.L); this.sandLeft = this.sandMax;
@@ -100,7 +107,9 @@ export class LevelScene extends Scene {
     ui.setHearts(this.hearts, CONFIG.hearts);
     ui.setSand(this.sandLeft);
     ui.setPower(null);
+    ui.setRescueVisible(false);
     ui.hideOverlay();
+    this.updateObjective(true);
   }
 
   private bindKeys(): void {
@@ -124,6 +133,19 @@ export class LevelScene extends Scene {
     const i = this.input2;
     if (a === 'left') i.left = false; if (a === 'right') i.right = false;
     if (a === 'jump') i.jumpHeld = false; if (a === 'heal') i.healHeld = false;
+  }
+  releaseAll(): void {
+    this.input2.left = false; this.input2.right = false; this.input2.jumpHeld = false;
+    this.input2.jumpEdge = false; this.input2.useEdge = false; this.input2.sandEdge = false; this.input2.healHeld = false;
+  }
+  rescueToSafety(): void {
+    if (this.ended) return;
+    this.player.x = this.lastSafe.x; this.player.y = this.lastSafe.y;
+    this.player.vx = 0; this.player.vy = 0; this.player.iframe = 1.1;
+    this.releaseAll(); this.noProgressT = 0; this.sands = []; this.bossShots = [];
+    this.sandLeft = Math.max(this.sandLeft, this.L.boss && this.bossActive ? Math.max(1, this.L.boss.hp) : 1);
+    this.hooks.ui.setSand(this.sandLeft); this.hooks.ui.setRescueVisible(false);
+    this.hooks.ui.showHint(S('objective.explore'), 2.4); sfx('ding');
   }
   setModal(m: boolean): void { this.modal = m; }
   shutdown(): void {
@@ -217,8 +239,60 @@ export class LevelScene extends Scene {
     for (const it of this.L.interact) {
       if (it.done) continue;
       const z = it.zone;
-      if (px > z.x && px < z.x + z.w && py > z.y && py < z.y + z.h && it.eye === this.equipped) { this.activate(it); return; }
+      if (px > z.x && px < z.x + z.w && py > z.y && py < z.y + z.h && it.eye === this.equipped) {
+        if (this.idx === 0 && it.type === 'grow' && !this.meadowStory.helper) {
+          this.hooks.ui.showHint(S('meadow.friendRequired'), 4.8); return;
+        }
+        this.activate(it); return;
+      }
     }
+  }
+
+  private updateObjective(force = false): void {
+    let steps: string[], current: number, label: string;
+    if (this.idx === 0) {
+      steps = ['❄️', '💛', '🌿', '🌀', '💛', '🌳', '✨'];
+      if (!this.L.interact[0]?.done) { current = 0; label = S('objective.meadow.freeze'); }
+      else if (!this.meadowStory.helper) { current = 1; label = S('objective.meadow.friend'); }
+      else if (!this.L.interact[1]?.done) { current = 2; label = S('objective.meadow.grow'); }
+      else if (!this.L.interact[2]?.done) { current = 3; label = S('objective.meadow.bridge'); }
+      else if (!this.meadowStory.pressureAwake) { current = 4; label = S('objective.meadow.gate'); }
+      else if (!this.L.trees.find(tr => tr.x > 2800)?.awake) { current = 5; label = S('objective.meadow.oak'); }
+      else { current = 6; label = S('objective.meadow.restore'); }
+    } else {
+      steps = ['→', '🏖️', '✨'];
+      current = this.bossActive ? (this.L.boss?.state === 'blind' || this.L.boss?.state === 'caged' ? 2 : 1) : 0;
+      label = this.bossActive ? S('objective.boss') : S('objective.explore');
+    }
+    const key = `${current}:${label}`;
+    if (force || key !== this.objectiveKey) {
+      this.objectiveKey = key; this.noProgressT = 0;
+      this.hooks.ui.setObjective(steps, current, label);
+      this.hooks.ui.setRescueVisible(false);
+    }
+  }
+
+  private updateRecovery(dt: number): void {
+    const p = this.player, b = this.L.boss;
+    if (p.grounded && p.iframe <= 0) this.lastSafe = { x: p.x, y: p.y };
+    const signature = `${this.L.interact.map(it => Number(it.done)).join('')}:${this.monsters.map(m => m.state[0]).join('')}:${this.meadowStory.pressureAwake}:${this.L.trees.map(t => Number(!!t.awake)).join('')}:${b?.state || '-'}:${b?.hp ?? '-'}:${this.respawn.x}`;
+    if (signature !== this.progressSignature) {
+      this.progressSignature = signature; this.noProgressT = 0; this.hooks.ui.setRescueVisible(false);
+    } else {
+      const engaged = this.input2.left || this.input2.right || this.input2.healHeld || this.bossActive || (this.idx === 0 && p.x > 1180);
+      if (engaged) this.noProgressT += dt;
+      if (this.noProgressT >= 12) {
+        this.hooks.ui.setRescueVisible(true);
+        if (this.noProgressT - dt < 12) this.hooks.ui.showHint(S('rescue.hint'), 3.6);
+      }
+    }
+    if (b && this.bossActive && b.state !== 'defeated' && this.sandLeft <= 0 && this.sands.length === 0) {
+      this.bossRefillT += dt;
+      if (this.bossRefillT >= 1.4) {
+        this.bossRefillT = 0; this.sandLeft = Math.max(1, b.hp); this.hooks.ui.setSand(this.sandLeft);
+        this.hooks.ui.showHint(S('boss.sandReturn'), 2.6); sfx('ding');
+      }
+    } else this.bossRefillT = 0;
   }
 
   /* modal answers, called from main wiring */
@@ -402,6 +476,9 @@ export class LevelScene extends Scene {
     }
     { const K = CONFIG.juice.squashK, D = CONFIG.juice.squashDamp; p.squashVel += (1 - p.squash) * K * dt; p.squashVel *= Math.max(0, 1 - D * dt); p.squash += p.squashVel * dt; }
     const pcx = p.x + p.w / 2, pFeet = p.y + p.h;
+    if (this.idx === 0 && pcx > 2280 && !this.meadowStory.helper && this.meadowStory.gateStep === 0) {
+      this.meadowStory.gateStep = -1; this.hooks.ui.showHint(S('meadow.friendRequired'), 5);
+    }
     /* heal target + near tree */
     this.healTarget = null;
     if (this.L.hasHeal && i.healHeld) {
@@ -521,6 +598,8 @@ export class LevelScene extends Scene {
       if (Math.hypot(dx, dy) < this.L.goal.r + 18) this.completeLevel();
     }
     if (p.iframe > 0) p.iframe -= dt;
+    this.updateObjective();
+    this.updateRecovery(dt);
     p.blinkT -= dt; if (p.blinkT <= 0) { p.blink = .12; p.blinkT = 1.8 + Math.random() * 2.6; } if (p.blink > 0) p.blink -= dt;
     for (let pi = this.particles.length - 1; pi >= 0; pi--) {
       const pt = this.particles[pi]; pt.life -= dt;

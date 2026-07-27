@@ -21,6 +21,7 @@ export interface UICallbacks {
   onLangChange(l: Lang): void;
   onMuteToggle(): boolean;   /* returns new muted state */
   onRestartLevel(): void;
+  onRescue(): void;
   onPauseToggle(): void;
   canAccessLevel(levelIdx: number): boolean;
   isFamilyPurchaseAvailable(): boolean;
@@ -58,10 +59,13 @@ export class UI {
   applyLang(): void {
     $('langRow').querySelectorAll<HTMLButtonElement>('button').forEach(b =>
       b.classList.toggle('active', b.dataset.l === getLang()));
+    $('rescueBtn').textContent = S('rescue.button');
+    $('rescueBtn').setAttribute('aria-label', S('rescue.button'));
   }
   private bindChrome(): void {
     $('mute').onclick = () => { $('mute').textContent = this.cb.onMuteToggle() ? '🔇' : '🔊'; };
     $('restart').onclick = () => this.cb.onRestartLevel();
+    $('rescueBtn').onclick = () => this.cb.onRescue();
     $('pauseBtn').onclick = () => this.cb.onPauseToggle();
     $('fsBtn').onclick = () => this.toggleFS();
     document.addEventListener('fullscreenchange', () => this.syncFsIcon());
@@ -103,16 +107,41 @@ export class UI {
     else { bp.style.background = 'rgba(255,247,236,.78)'; bp.textContent = '✨'; }
   }
   private hintTimer = 0;
+  private hintQueue: { msg: string; secs: number }[] = [];
+  private hintActive = false;
   showHint(msg: string, secs = 2.2): void {
-    const el = $('hintBar'); el.textContent = msg; el.style.opacity = '1';
+    if (this.hintActive) {
+      const tail = this.hintQueue[this.hintQueue.length - 1];
+      if (!tail || tail.msg !== msg) this.hintQueue.push({ msg, secs });
+      return;
+    }
+    this.playHint(msg, secs);
+  }
+  private playHint(msg: string, secs: number): void {
+    const el = $('hintBar'); this.hintActive = true; el.textContent = msg; el.style.opacity = '1';
     clearTimeout(this.hintTimer);
-    this.hintTimer = window.setTimeout(() => { el.style.opacity = '0'; }, secs * 1000);
+    this.hintTimer = window.setTimeout(() => {
+      el.style.opacity = '0'; this.hintActive = false;
+      const next = this.hintQueue.shift();
+      if (next) window.setTimeout(() => this.playHint(next.msg, next.secs), 180);
+    }, secs * 1000);
+  }
+  setObjective(steps: string[], current: number, label: string): void {
+    const bar = $('objectiveBar');
+    $('objectiveSteps').innerHTML = steps.map((icon, i) =>
+      `<span class="objectiveStep ${i < current ? 'done' : i === current ? 'current' : ''}">${icon}</span>`).join('');
+    $('objectiveText').textContent = label;
+    bar.classList.toggle('visible', !!label);
+  }
+  setRescueVisible(on: boolean): void {
+    $('rescueBtn').classList.toggle('visible', on);
   }
   setGameplayVisible(on: boolean): void {
     for (const id of ['padL', 'padR', 'hud']) $(id).style.display = on ? '' : 'none';
     $('menu').style.display = on ? 'none' : '';
     if (on) document.body.classList.remove('menu-open', 'journey-start');
     if (on) $('mapView').classList.add('hidden');
+    if (!on) { $('objectiveBar').classList.remove('visible'); this.setRescueVisible(false); }
   }
 
   /* ---------- overlay plumbing ---------- */
@@ -183,6 +212,12 @@ export class UI {
     this.hideOverlay();
   }
   showFamilyGate(): void {
+    if (!this.cb.isFamilyPurchaseAvailable()) {
+      const unavailable = this.show(`<div class="eyes">🌿 💛 🌿</div><h1>${S('family.unavailable.title')}</h1>
+        <p>${S('family.unavailable.body')}</p><div class="row"><button class="play" id="fUnavailableBack">${S('ui.menu')}</button></div>`);
+      (unavailable.querySelector('#fUnavailableBack') as HTMLElement).onclick = () => this.showMenu();
+      return;
+    }
     const answers = [12, 15, 18];
     const card = this.show(`<div class="eyes">🌿 💛 🌿</div><h1>${S('family.title')}</h1>
       <p>${S('family.body')}</p><p class="family-question">${S('family.question')}</p>

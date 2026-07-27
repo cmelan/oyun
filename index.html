@@ -94,7 +94,12 @@
   .famRow{display:flex;align-items:center;gap:8px;font-size:13px;color:#37635f;margin:4px 0;text-align:left;}
   .famRow .star{font-size:17px;}
   #hud{position:absolute;top:14px;left:50%;transform:translateX(-50%);z-index:6;display:flex;gap:6px;font-size:24px;pointer-events:none;text-shadow:0 2px 3px rgba(0,0,0,.25);}
-  #hintBar{position:absolute;top:64px;left:50%;transform:translateX(-50%);z-index:6;background:rgba(255,247,236,.92);color:#1f4d4a;font-weight:bold;font-size:14px;padding:8px 18px;border-radius:14px;box-shadow:0 4px 0 rgba(0,0,0,.15);opacity:0;transition:opacity .25s;pointer-events:none;max-width:80%;text-align:center;}
+  #hintBar{position:absolute;top:112px;left:50%;transform:translateX(-50%);z-index:6;background:rgba(255,247,236,.92);color:#1f4d4a;font-weight:bold;font-size:14px;padding:8px 18px;border-radius:14px;box-shadow:0 4px 0 rgba(0,0,0,.15);opacity:0;transition:opacity .25s;pointer-events:none;max-width:80%;text-align:center;}
+  #objectiveBar{position:absolute;top:64px;left:50%;transform:translateX(-50%);z-index:5;display:flex;align-items:center;gap:9px;min-width:220px;max-width:min(620px,72%);padding:8px 13px;border-radius:16px;background:rgba(15,43,41,.78);color:#fff7ec;box-shadow:0 4px 14px rgba(0,0,0,.18);pointer-events:none;opacity:0;transition:opacity .25s,transform .25s;}
+  #objectiveBar.visible{opacity:1}.objectiveSteps{display:flex;gap:4px;flex:none}.objectiveStep{width:25px;height:25px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;background:rgba(255,255,255,.13);opacity:.48}.objectiveStep.done{background:#5fc77f;opacity:.92}.objectiveStep.current{background:#ffd36b;color:#3e3517;opacity:1;box-shadow:0 0 0 3px rgba(255,211,107,.24)}
+  #objectiveText{font-size:12px;font-weight:800;line-height:1.15;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #rescueBtn{position:absolute;left:50%;bottom:calc(18px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:7;border:1px solid rgba(255,255,255,.45);background:rgba(255,247,236,.94);color:#1f4d4a;font-size:13px;font-weight:900;padding:10px 16px;border-radius:16px;box-shadow:0 4px 0 rgba(0,0,0,.18);opacity:0;visibility:hidden;pointer-events:none;transition:opacity .25s,visibility 0s linear .25s}
+  #rescueBtn.visible{opacity:1;visibility:visible;pointer-events:auto;transition:opacity .25s}
   .confetti{position:absolute;top:-32px;z-index:9;pointer-events:none;animation:confettiFall 1.7s ease-in forwards;}
   @keyframes confettiFall{0%{transform:translateY(0) rotate(0deg);opacity:1}100%{transform:translateY(84vh) rotate(320deg);opacity:0}}
   .journalPlus{position:absolute;top:10px;right:14px;background:#ffd54a;color:#5a4400;font-weight:bold;font-size:14px;padding:5px 10px;border-radius:12px;box-shadow:0 3px 0 rgba(0,0,0,.15);animation:journalPop .5s ease-out;}
@@ -138,6 +143,9 @@
   /* Short landscape phones need a card designed for the 320–393px height,
      rather than a desktop card that happens to be scrollable. */
   @media (orientation:landscape) and (pointer:coarse) and (max-height:430px){
+    #objectiveBar{top:max(55px,calc(8px + env(safe-area-inset-top,0px)));min-width:190px;max-width:48%;padding:6px 9px;gap:6px}.objectiveStep{width:21px;height:21px;font-size:12px}#objectiveText{font-size:10.5px}
+    #hintBar{top:max(88px,calc(42px + env(safe-area-inset-top,0px)));font-size:12px;padding:6px 12px}
+    #rescueBtn{bottom:calc(8px + env(safe-area-inset-bottom,0px));font-size:11px;padding:8px 12px}
     #ov{align-items:flex-start;padding:max(7px,env(safe-area-inset-top,0px)) max(10px,env(safe-area-inset-right,0px)) max(7px,env(safe-area-inset-bottom,0px)) max(10px,env(safe-area-inset-left,0px));}
     .card{width:min(620px,100%);max-height:calc(100dvh - 14px);padding:11px 14px 10px;border-radius:19px;box-shadow:0 7px 0 rgba(0,0,0,.18);}
     .card h1{margin:0 0 3px;font-size:18px;line-height:1.12}.card p{margin:3px 0 7px;font-size:12px;line-height:1.32}.eyes{font-size:20px;line-height:1;margin-bottom:3px}
@@ -167,7 +175,9 @@
   <div id="entrance" aria-hidden="true"><i class="entrance-mote"></i><i class="entrance-mote"></i><i class="entrance-mote"></i></div>
   <div id="langRow"></div>
   <div id="hud"></div>
+  <div id="objectiveBar" aria-live="polite"><div class="objectiveSteps" id="objectiveSteps"></div><span id="objectiveText"></span></div>
   <div id="hintBar"></div>
+  <button id="rescueBtn" aria-label="Son güvenli çiçeğe dön">🌼 Güvenli yere dön</button>
   <button id="pauseBtn" class="top" title="Mola" aria-label="Oyunu duraklat">⏸</button>
   <button id="fsBtn" class="top" title="Tam ekran" aria-label="Tam ekran">⛶</button>
   <button id="mute" class="top" title="Ses" aria-label="Sesi aç veya kapat">🔊</button>

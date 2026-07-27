@@ -71,6 +71,7 @@ const ui = new UI({
   onLangChange: (l) => { save.lang = l; persist(); if (!scene) ui.showMenu(); },
   onMuteToggle: () => { const m = !isMuted(); setMuted(m); save.muted = m; persist(); return m; },
   onRestartLevel: () => { if (scene) startLevel(currentIdx); },
+  onRescue: () => scene?.rescueToSafety(),
   onPauseToggle: pauseToggle,
   canAccessLevel: (idx) => idx === 0 || hasFullJourney(),
   isFamilyPurchaseAvailable,
@@ -99,11 +100,19 @@ wrap.addEventListener('touchmove', (e) => {
 }, { passive: false });
 document.addEventListener('gesturestart', (e) => e.preventDefault()); /* iOS pinch zoom */
 wrap.addEventListener('contextmenu', (e) => e.preventDefault());      /* long-press menu */
+const releaseInterruptedInput = () => scene?.releaseAll();
+window.addEventListener('blur', releaseInterruptedInput);
+document.addEventListener('visibilitychange', () => { if (document.hidden) releaseInterruptedInput(); });
 /* Portrait on a touch device: the CSS #rotateHint overlay covers the game —
    also pause a running level so nothing happens under it. */
 const portrait = window.matchMedia('(orientation: portrait) and (pointer: coarse)');
+let portraitPaused = false;
 portrait.addEventListener?.('change', (m) => {
-  if (m.matches && scene && scene.scene.isActive()) pauseToggle();
+  releaseInterruptedInput();
+  if (m.matches && scene && scene.scene.isActive()) { portraitPaused = true; pauseToggle(); }
+  else if (!m.matches && portraitPaused && scene && paused) {
+    portraitPaused = false; paused = false; ui.hideOverlay(); scene.scene.resume(); ui.setGameplayVisible(true);
+  }
 });
 
 startMusic();
