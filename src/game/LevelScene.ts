@@ -63,7 +63,10 @@ export class LevelScene extends Scene {
   private modal = false;   /* card open: world frozen */
   private ended = false;
   private introSeen = new Set<number>();
-  private meadowStory: { helper: MonsterRuntime | null; pressureAwake: boolean; restoring: number; restoreCue: number } = { helper: null, pressureAwake: false, restoring: 0, restoreCue: 0 };
+  /* Meadow's ending is a readable two-character tableau, not an invisible
+     position check: the Guardian takes the sun-heart stone and the friend takes
+     the leaf-heart stone. gateStep drives one-time spoken/visual prompts. */
+  private meadowStory: { helper: MonsterRuntime | null; pressureAwake: boolean; restoring: number; restoreCue: number; gateStep: number; oakGuided: boolean } = { helper: null, pressureAwake: false, restoring: 0, restoreCue: 0, gateStep: 0, oakGuided: false };
   private keyHandlers: { dn: (e: KeyboardEvent) => void; up: (e: KeyboardEvent) => void } | null = null;
   private reducedMotion = false;
 
@@ -83,7 +86,7 @@ export class LevelScene extends Scene {
     this.cam = 0; this.t = 0; this.ended = false; this.modal = false;
     this.bossActive = false; this.bossShots = []; this.sands = []; this.particles = [];
     this.assist = { deaths: 0 }; this.introSeen.clear();
-    this.meadowStory = { helper: null, pressureAwake: false, restoring: 0, restoreCue: 0 };
+    this.meadowStory = { helper: null, pressureAwake: false, restoring: 0, restoreCue: 0, gateStep: 0, oakGuided: false };
     this.reducedMotion = typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     this.sandMax = sandCapacity(this.L); this.sandLeft = this.sandMax;
     this.bgGfx = this.add.graphics().setScrollFactor(0);
@@ -227,10 +230,11 @@ export class LevelScene extends Scene {
       this.spawnP(tr.x, tr.y - 70, 26, 0xffe6a0, 180, 1.1); this.shake(2, .2);
       this.hooks.onTreeLearned(treeId);
     }
+    const isFinalMeadowOak = this.idx === 0 && !!tr && tr.x > 2800;
     this.hooks.ui.showTreeWake(treeId, () => {
       this.hooks.ui.hideOverlay(); this.setModal(false);
-      if (this.idx === 0 && tr && tr.x > 2800) this.beginMeadowRestoration();
-    });
+      if (isFinalMeadowOak) this.beginMeadowRestoration();
+    }, isFinalMeadowOak ? S('tree.wake.finish') : undefined);
   }
   private beginMeadowRestoration(): void {
     if (this.meadowStory.restoring > 0) return;
@@ -430,16 +434,36 @@ export class LevelScene extends Scene {
       }
       if (m.state === 'happy') {
         if (this.idx === 0 && m === this.meadowStory.helper) {
-          const plateX = 2518;
-          const targetX = pcx > 2340 ? plateX : p.x - p.face * 58;
+          const guardianPlateX = 2420, friendPlateX = 2518;
+          const atGuardianPlate = Math.abs(pcx - guardianPlateX) < 40 && Math.abs(pFeet - 352) < 26;
+          const nearGate = pcx > 2280;
+          if (nearGate && this.meadowStory.gateStep === 0) {
+            this.meadowStory.gateStep = 1;
+            this.hooks.ui.showHint(S('meadow.gateApproach'), 4.2);
+          }
+          if (atGuardianPlate && this.meadowStory.gateStep < 2) {
+            this.meadowStory.gateStep = 2;
+            this.hooks.ui.showHint(S('meadow.gateFriend'), 3.4);
+          }
+          /* The companion keeps pace on the journey, then deliberately settles
+             on its own visible stone once the Guardian reaches theirs. */
+          const targetX = atGuardianPlate ? friendPlateX : nearGate ? guardianPlateX + 66 : p.x - p.face * 58;
           const delta = targetX - m.x;
           (m as any).face = Math.sign(delta) || (m as any).face;
-          m.x += Math.sign(delta) * Math.min(Math.abs(delta), CONFIG.monster.happy * 1.25 * dt);
+          /* A catch-up burst avoids a child waiting in front of an understood
+             puzzle while a friend walks across the whole meadow. */
+          const togetherSpeed = nearGate ? 210 : CONFIG.monster.happy * 1.25;
+          m.x += Math.sign(delta) * Math.min(Math.abs(delta), togetherSpeed * dt);
           m.ground = p.x > 2080 ? 352 : p.x > 1550 ? 360 : 370;
-          if (!this.meadowStory.pressureAwake && pcx > 2360 && Math.abs(m.x - plateX) < 7) {
+          if (!this.meadowStory.pressureAwake && atGuardianPlate && Math.abs(m.x - friendPlateX) < 8) {
             this.meadowStory.pressureAwake = true;
+            this.meadowStory.gateStep = 3;
             this.spawnP(2655, 275, 42, 0x8fe3a8, 210, 1.4); sfx('grow'); this.shake(3, .25);
-            this.hooks.ui.showHint(S('meadow.gate'), 2.8);
+            this.hooks.ui.showHint(S('meadow.gate'), 3.6);
+            if (!this.meadowStory.oakGuided) {
+              this.meadowStory.oakGuided = true;
+              this.hooks.ui.showHint(S('meadow.oakPath'), 4.4);
+            }
           }
         } else {
           if (m.x <= m.gx0) (m as any).dir = 1; if (m.x >= m.gx1) (m as any).dir = -1;
@@ -686,12 +710,39 @@ export class LevelScene extends Scene {
     g.fillStyle(0xffb3c8, 1); g.fillRoundedRect(x + w * .38, y + h * .62, w * .24, 5, 3);
   }
   private drawMeadowStory(g: Graphics): void {
-    const open = this.meadowStory.pressureAwake;
-    /* Two-part pressure stone: the child can stand nearby, but only the healed
-       companion settles on the heart inset and opens the living root gate. */
-    g.fillStyle(open ? 0x79c995 : 0x718a7d, .35); g.fillEllipse(2518, 354, 78, 15);
-    g.fillStyle(open ? 0x9fe6b3 : 0x9caea5, 1); g.fillRoundedRect(2485, 344 + (open ? 5 : 0), 66, 10, 5);
-    g.fillStyle(open ? 0xffdc78 : 0xd6d8c8, 1); g.fillCircle(2518, 349 + (open ? 5 : 0), 5);
+    const story = this.meadowStory, open = story.pressureAwake;
+    const guardianPlateX = 2420, friendPlateX = 2538;
+    const pcx = this.player.x + this.player.w / 2, pFeet = this.player.y + this.player.h;
+    const guardianOn = Math.abs(pcx - guardianPlateX) < 40 && Math.abs(pFeet - 352) < 26;
+    const friendOn = !!story.helper && Math.abs(story.helper.x - 2518) < 8;
+    const pulse = .55 + Math.sin(this.t * 4) * .22;
+    const heart = (x: number, y: number, col: number, alpha = 1) => {
+      g.fillStyle(col, alpha); g.fillCircle(x - 4, y - 2, 4); g.fillCircle(x + 4, y - 2, 4);
+      g.fillTriangle(x - 8, y - 1, x + 8, y - 1, x, y + 9);
+    };
+    const plate = (x: number, active: boolean, companion: boolean) => {
+      const lit = active || open;
+      g.fillStyle(lit ? 0xffdc78 : 0x718a7d, lit ? .18 + pulse * .18 : .12); g.fillCircle(x, 341, lit ? 34 + pulse * 6 : 28);
+      g.fillStyle(0x173e35, .24); g.fillEllipse(x, 354, 76, 14);
+      g.fillStyle(lit ? 0x9fe6b3 : 0x9caea5, 1); g.fillRoundedRect(x - 33, 344 + (lit ? 5 : 0), 66, 10, 5);
+      heart(x, 349 + (lit ? 5 : 0), lit ? 0xffdc78 : 0xd6d8c8);
+      if (companion) { g.fillStyle(lit ? 0x5fc77f : 0x526f69, 1); g.fillCircle(x, 328, 7); }
+      else { g.fillStyle(lit ? 0x7a52c8 : 0x526f69, 1); g.fillTriangle(x, 320, x - 7, 332, x + 7, 332); }
+    };
+    plate(guardianPlateX, guardianOn, false);
+    plate(friendPlateX, friendOn, true);
+    /* Once the pair reaches the gate, the two stones pulse together until the
+       child stands on theirs—no reading or timing guess is required. */
+    if (!open && story.helper && pcx > 2280 && !guardianOn) {
+      g.fillStyle(0xffe69b, .45 + pulse * .3);
+      g.fillTriangle(guardianPlateX, 300, guardianPlateX - 8, 314, guardianPlateX + 8, 314);
+    }
+    if (!open && guardianOn && !friendOn) {
+      g.fillStyle(0x9fe6b3, .45 + pulse * .3);
+      g.fillTriangle(friendPlateX, 300, friendPlateX - 8, 314, friendPlateX + 8, 314);
+    }
+    g.lineStyle(3, open ? 0x8fcea0 : 0x5a8060, open ? .8 : .46);
+    g.beginPath(); g.moveTo(guardianPlateX + 33, 349); g.lineTo(2646, 349); g.strokePath();
     if (!open) {
       g.fillStyle(0x496f51, 1);
       for (let k = 0; k < 5; k++) {
@@ -703,6 +754,13 @@ export class LevelScene extends Scene {
     } else {
       g.fillStyle(0x79c995, .75);
       for (let k = 0; k < 7; k++) g.fillEllipse(2634 + k * 9, 344 + Math.sin(k) * 3, 20, 9);
+      /* The open gate points toward the last tree with a physical, musical
+         breadcrumb trail rather than a disappearing sentence. */
+      for (let k = 0; k < 8; k++) {
+        const x = 2700 + k * 38, y = 334 - Math.sin(this.t * 2 + k) * 6;
+        g.fillStyle(k % 2 ? 0xffe49a : 0x9fe6b3, .45 + pulse * .25); g.fillCircle(x, y, 3.5);
+      }
+      g.fillStyle(0xffe49a, .42 + pulse * .22); g.fillTriangle(2960, 316, 2948, 330, 2960, 344);
     }
   }
   private drawAncientOak(g: Graphics, tr: { id: string; x: number; y: number; awake?: boolean }): void {

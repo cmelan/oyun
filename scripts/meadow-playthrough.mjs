@@ -74,7 +74,9 @@ try {
   await page.keyboard.press('KeyF');
   await waitFor('s.L.interact[2].done', 'wake the hanging bridge');
   await jumpRight(2070);
-  await moveTo(2390);
+  /* The Guardian's sun-heart stone is deliberately a real second half of the
+     cooperation puzzle; stop on it while the healed friend reaches theirs. */
+  await moveTo(2401);
   await waitFor('s.meadowStory.pressureAwake', 'companion pressure-stone cooperation', 42000);
 
   await moveTo(2945);
@@ -96,6 +98,11 @@ try {
     restoration:s.meadowStory.restoreCue,
     ended:s.ended
   })`);
+  const nextLabel = await page.locator('#nNext').innerText();
+  if (!/Emerald Peaks/.test(nextLabel)) throw new Error(`Unclear Meadow transition label: ${nextLabel}`);
+  await page.click('#nNext');
+  await waitFor('s.idx === 1', 'enter Emerald Peaks after the Meadow finale', 5000);
+  summary.nextChapter = await sceneValue('s.idx === 1');
   console.log(`✓ full Meadow browser playthrough in ${elapsed}s`);
   console.log(JSON.stringify(summary));
 } finally {

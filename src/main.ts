@@ -38,7 +38,7 @@ const hooks: SceneHooks = {
   onLevelComplete(idx: number, name: string, isLast: boolean) {
     save.furthest = Math.max(save.furthest || 0, idx + 1); persist();
     ui.setGameplayVisible(false);
-    ui.showLevelComplete(name, isLast);
+    ui.showLevelComplete(name, isLast, idx === 0);
   },
   onGameOver() {
     ui.setGameplayVisible(false);
@@ -90,7 +90,13 @@ window.addEventListener('pointerdown', () => initAudio(!!save.muted), { once: tr
 /* Block browser gestures over the game surface (pull-to-refresh, overscroll,
    two-finger page zoom); the pads/cards handle their own pointer events. */
 const wrap = document.getElementById('wrap')!;
-wrap.addEventListener('touchmove', (e) => e.preventDefault(), { passive: false });
+/* The playable canvas remains gesture-free, but cards are real scroll
+   containers. Preventing every touchmove on #wrap made short phone cards trap
+   the child below their own primary action. */
+wrap.addEventListener('touchmove', (e) => {
+  if ((e.target as HTMLElement | null)?.closest('#ov .card')) return;
+  e.preventDefault();
+}, { passive: false });
 document.addEventListener('gesturestart', (e) => e.preventDefault()); /* iOS pinch zoom */
 wrap.addEventListener('contextmenu', (e) => e.preventDefault());      /* long-press menu */
 /* Portrait on a touch device: the CSS #rotateHint overlay covers the game —

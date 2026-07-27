@@ -323,15 +323,19 @@ export class UI {
     (card.querySelector('#oRetry') as HTMLElement).onclick = () => this.cb.onRetry();
     (card.querySelector('#oMenu') as HTMLElement).onclick = () => this.showMenu();
   }
-  showLevelComplete(levelName: string, isLast: boolean): void {
+  showLevelComplete(levelName: string, isLast: boolean, isMeadowFinale = false): void {
     if (isLast) {
       const card = this.show(`<div class="eyes">${S('win.eyes')}</div><h1>${S('win.title')}</h1><p>${S('win.body')}</p>
         <div class="row"><button class="play" id="wMenu">${S('ui.menu')}</button></div>`);
       (card.querySelector('#wMenu') as HTMLElement).onclick = () => this.showMenu();
       return;
     }
-    const card = this.show(`<div class="eyes">${S('next.eyes')}</div><h1>${levelName}${S('next.suffix')}</h1><p>${S('next.body')}</p>
-      <div class="row"><button class="play" id="nNext">${S('ui.nextLevel')}</button>
+    const title = isMeadowFinale ? S('meadow.complete.title') : `${levelName}${S('next.suffix')}`;
+    const body = isMeadowFinale ? S('meadow.complete.body') : S('next.body');
+    const recap = isMeadowFinale ? `<div class="meadowRecap"><span>❄️</span><span>💛</span><span>🌳</span></div>` : '';
+    const next = isMeadowFinale ? S('meadow.next') : S('ui.nextLevel');
+    const card = this.show(`<div class="eyes">${S('next.eyes')}</div><h1>${title}</h1><p>${body}</p>${recap}
+      <div class="row"><button class="play" id="nNext">${next}</button>
       <button class="ghost" id="nMenu">${S('ui.menu')}</button></div>`);
     (card.querySelector('#nNext') as HTMLElement).onclick = () => this.cb.onNextLevel();
     (card.querySelector('#nMenu') as HTMLElement).onclick = () => this.showMenu();
@@ -382,16 +386,18 @@ export class UI {
       onAnswer: ok => this.cb.onTreeAnswer(ok, treeId),
     });
   }
-  showTreeWake(treeId: string, onDone: () => void): void {
+  /* Final story beats can name the action they actually start (for example,
+     "Wake the Meadow") while ordinary learning cards retain "Continue". */
+  showTreeWake(treeId: string, onDone: () => void, actionLabel?: string): void {
     const info = TREES[treeId]; const nm = treeName(treeId);
     const card = this.show(`<div class="wakeCard"><div class="eyes">${S('tree.wake.eyes')}</div>
       <div class="journalPlus">+1 📖</div>
       <div class="clueBadge"><img src="${getTreeArt(treeId, 'leaf', 120)}" alt=""></div>
       <div class="tBig nameRow"><span><b>${nm}</b>${S('tree.wake.title')}</span>${this.sayBtn(nm)}</div>
-      <p style="margin:2px 0 0">${S('journal.family')}${info?.family || ''} · ${info?.desc || ''}</p>
+      <p class="wakeMeta">${S('journal.family')}${info?.family || ''} · ${info?.desc || ''}</p>
       <div class="wakeFact">🌱 ${info?.fact || info?.gift || ''}</div>
       <p class="hint">${S('tree.wake.body')}</p>
-      <div class="row"><button class="play" id="tDone">${S('ui.resume')}</button></div></div>`);
+      <div class="row treeWakeAction"><button class="play" id="tDone">${actionLabel || S('ui.resume')}</button></div></div>`);
     (card.querySelector('#tDone') as HTMLElement).onclick = onDone;
     speak(nm); /* reinforce the learned name */
   }

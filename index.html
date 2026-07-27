@@ -13,9 +13,9 @@
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;}
   html,body{margin:0;height:100%;background:#0f2b29;overflow:hidden;font-family:"Trebuchet MS","Segoe UI",system-ui,sans-serif;overscroll-behavior:none;}
   body{height:100dvh;} /* iOS Safari: track the real viewport, not the address-bar one */
-  #wrap{position:relative;width:100%;height:100%;touch-action:none;} /* game surface: no browser gestures */
+  #wrap{position:relative;width:100%;height:100%;} /* UI overlays may need to scroll */
   button,.sayBtn{touch-action:manipulation;} /* taps stay instant, no double-tap zoom */
-  #game{position:absolute;inset:0;}
+  #game{position:absolute;inset:0;touch-action:none;} /* game surface: no browser gestures */
   #game canvas{width:100%!important;height:100%!important;object-fit:contain;}
   #entrance{position:absolute;inset:0;z-index:4;overflow:hidden;background:#b8deea url('/art/entrance/meadow-dawn.webp') 62% 50%/cover no-repeat;opacity:0;visibility:hidden;transform:scale(1.025);transition:opacity .9s ease,transform 4s cubic-bezier(.2,.7,.2,1),visibility 0s linear .9s;}
   body.menu-open #entrance,body.booting #entrance{opacity:1;visibility:visible;transform:scale(1);transition-delay:0s;}
@@ -55,9 +55,9 @@
   .family-question{font-size:22px!important;font-weight:900;color:#1f4d4a!important;letter-spacing:.02em}
   .family-answer{min-width:62px;font-size:18px}
   button:disabled{opacity:.55;cursor:wait}
-  #ov{position:absolute;inset:0;z-index:8;display:flex;align-items:center;justify-content:center;background:rgba(15,43,41,.55);backdrop-filter:blur(5px);text-align:center;padding:18px;opacity:1;visibility:visible;transition:opacity .28s ease,visibility 0s linear;}
+  #ov{position:absolute;inset:0;z-index:8;display:flex;align-items:center;justify-content:center;background:rgba(15,43,41,.55);backdrop-filter:blur(5px);text-align:center;padding:18px;opacity:1;visibility:visible;touch-action:pan-y;transition:opacity .28s ease,visibility 0s linear;}
   #ov.hidden{opacity:0;visibility:hidden;pointer-events:none;transition:opacity .22s ease,visibility 0s linear .22s;}
-  .card{position:relative;background:#fff7ec;border-radius:26px;padding:22px 24px 18px;max-width:520px;max-height:92vh;overflow-y:auto;box-shadow:0 12px 0 rgba(0,0,0,.18);transform:translateY(0) scale(1);transition:transform .32s cubic-bezier(.2,.8,.2,1);}
+  .card{position:relative;background:#fff7ec;border-radius:26px;padding:22px 24px 18px;max-width:520px;max-height:92vh;overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y;box-shadow:0 12px 0 rgba(0,0,0,.18);transform:translateY(0) scale(1);transition:transform .32s cubic-bezier(.2,.8,.2,1);}
   #ov.hidden .card{transform:translateY(14px) scale(.97)}
   .card h1{margin:0 0 6px;color:#1f4d4a;font-size:23px;line-height:1.15;}
   .card p{margin:6px 0 14px;color:#37635f;font-size:14px;line-height:1.5;}
@@ -86,6 +86,8 @@
   .treeChoice.dim{opacity:.45;filter:grayscale(.6);}
   .wakeCard .tBig{font-size:30px;color:#1f4d4a;margin:2px 0 2px;}
   .wakeFact{background:#eafaf0;border-radius:14px;padding:10px 14px;font-size:13px;color:#37635f;margin:10px 0 4px;line-height:1.45;}
+  .meadowRecap{display:flex;justify-content:center;gap:16px;margin:8px 0 14px;}
+  .meadowRecap span{width:42px;height:42px;display:flex;align-items:center;justify-content:center;border-radius:50%;font-size:22px;background:#eafaf0;box-shadow:0 3px 0 rgba(31,77,74,.12);}
   .sayBtn{border:none;background:#ffd54a;color:#5a4400;width:30px;height:30px;border-radius:50%;font-size:14px;cursor:pointer;box-shadow:0 2px 0 rgba(0,0,0,.18);flex:none;display:inline-flex;align-items:center;justify-content:center;}
   .sayBtn:active{transform:translateY(1px);box-shadow:0 1px 0 rgba(0,0,0,.18);}
   .nameRow{display:flex;align-items:center;gap:8px;justify-content:center;}
@@ -132,6 +134,27 @@
   body:not(.booting) #boot{opacity:0;visibility:hidden}
   @media (max-width:720px){
     #menu{left:26px;top:49%;width:55vw}.brand-title{font-size:clamp(34px,7.8vw,53px)}.brand-subtitle{font-size:13px;margin:7px 0 10px}.play{font-size:15px;padding:10px 22px}.ghost{font-size:11px;padding:7px 11px}.menu-secondary{gap:5px}
+  }
+  /* Short landscape phones need a card designed for the 320–393px height,
+     rather than a desktop card that happens to be scrollable. */
+  @media (orientation:landscape) and (pointer:coarse) and (max-height:430px){
+    #ov{align-items:flex-start;padding:max(7px,env(safe-area-inset-top,0px)) max(10px,env(safe-area-inset-right,0px)) max(7px,env(safe-area-inset-bottom,0px)) max(10px,env(safe-area-inset-left,0px));}
+    .card{width:min(620px,100%);max-height:calc(100dvh - 14px);padding:11px 14px 10px;border-radius:19px;box-shadow:0 7px 0 rgba(0,0,0,.18);}
+    .card h1{margin:0 0 3px;font-size:18px;line-height:1.12}.card p{margin:3px 0 7px;font-size:12px;line-height:1.32}.eyes{font-size:20px;line-height:1;margin-bottom:3px}
+    .clueBadge{width:72px;height:72px;margin:2px auto 6px;box-shadow:inset 0 0 0 3px rgba(95,199,127,.35),0 3px 8px rgba(31,77,74,.18)}
+    .clueBadge img{width:54px}.clueBadge img.photo{width:72px;height:72px}
+    .treeChoices{margin-top:2px;gap:7px;flex-wrap:nowrap;justify-content:center;overflow-x:auto;padding:0 2px 5px;scroll-snap-type:x proximity;}
+    .treeChoice{width:100px;min-width:100px;padding:6px 5px 5px;border-radius:13px;gap:2px;box-shadow:0 3px 0 rgba(31,77,74,.16);scroll-snap-align:center;}
+    .treeChoice img{width:42px;height:42px;object-fit:contain}.treeChoice .tName{font-size:13px}.treeChoice .tDesc{display:none}.nameRow{gap:4px}.sayBtn{width:25px;height:25px;font-size:12px}
+    .wakeCard{display:grid;grid-template-columns:78px minmax(0,1fr);column-gap:10px;align-items:center;text-align:left;padding-bottom:0;}
+    .wakeCard .eyes{position:absolute;top:9px;left:12px;font-size:16px;letter-spacing:1px}.wakeCard .journalPlus{top:7px;right:10px;font-size:11px;padding:4px 7px}
+    .wakeCard .clueBadge{grid-row:1 / span 3;grid-column:1;margin:10px 0 2px;width:72px;height:72px}.wakeCard .clueBadge img{width:54px}.wakeCard .clueBadge img.photo{width:72px;height:72px}
+    .wakeCard .tBig{grid-column:2;font-size:20px!important;line-height:1.05;margin:0!important;justify-content:flex-start}.wakeCard .tBig .nameRow{justify-content:flex-start}
+    .wakeCard .wakeMeta{grid-column:2;margin:2px 0 0!important;font-size:11px!important;line-height:1.18!important}.wakeCard .wakeFact{grid-column:2;margin:4px 0 2px;padding:5px 7px;border-radius:9px;font-size:11px;line-height:1.2}
+    .wakeCard .hint{display:none}.wakeCard .treeWakeAction{grid-column:1 / -1;position:sticky;bottom:-1px;margin:5px -14px 0;padding:7px 14px calc(7px + env(safe-area-inset-bottom,0px));background:linear-gradient(180deg,rgba(255,247,236,.75),#fff7ec 25%);}
+    /* 52px leaves a physical 48px target after mobile browser scaling. */
+    .wakeCard #tDone{width:min(330px,100%);min-height:52px;font-size:16px;padding:10px 20px}
+    .meadowRecap{margin:5px 0 8px;gap:9px}.meadowRecap span{width:32px;height:32px;font-size:18px}
   }
   @media (hover:hover) and (pointer:fine){.pad{display:none!important}}
   button:focus-visible,.sayBtn:focus-visible{outline:3px solid #fff4a8;outline-offset:3px}

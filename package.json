@@ -17,6 +17,7 @@
     "native:sync:ios": "npm run build && cap sync ios",
     "native:build:ios": "npm run native:sync:ios && xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Release -destination 'generic/platform=iOS' CODE_SIGNING_ALLOWED=NO build",
     "qa:devices": "node scripts/device-shots.mjs",
+    "qa:tree-cards": "node scripts/mobile-tree-card-qa.mjs",
     "qa:meadow": "node scripts/meadow-playthrough.mjs",
     "submission:media": "node scripts/submission-media.mjs"
   },

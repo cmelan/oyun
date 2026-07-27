@@ -88,16 +88,23 @@ describe('LevelScene runtime smoke', () => {
     expect(scene.L.trees[0].awake).toBe(true);
   });
 
-  it('B1 helper opens the root gate and the staged restoration completes the chapter', () => {
+  it('B1 root gate requires both visible heart-stones, then restoration completes the chapter', () => {
     const scene: any = new LevelScene();
     const { hooks, events } = makeHooks();
     scene.init({ idx: 0, hooks }); scene.create();
     const helper = scene.monsters[0];
     helper.state = 'happy'; helper.x = 2517;
     scene.meadowStory.helper = helper;
-    scene.player.x = 2400;
+    /* Near the gate is not enough: the Guardian must stand on its own stone. */
+    scene.player.x = 2350;
     scene.update(0, 16.7);
+    expect(scene.meadowStory.pressureAwake).toBe(false);
+
+    scene.player.x = 2401; /* player centre = 2420, the Guardian heart-stone */
+    scene.player.y = 308;
+    scene.update(16.7, 16.7);
     expect(scene.meadowStory.pressureAwake).toBe(true);
+    expect(scene.meadowStory.gateStep).toBe(3);
 
     scene.beginMeadowRestoration();
     for (let frame = 0; frame < 260; frame++) scene.update(frame * 16.7, 16.7);
