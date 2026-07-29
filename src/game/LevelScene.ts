@@ -103,6 +103,7 @@ export class LevelScene extends Scene {
     this.cameras.main.setBounds(0, 0, this.L.w, H);
     this.bindKeys();
     const ui = this.hooks.ui;
+    ui.clearHints();          /* a new chapter never inherits the last one's voice */
     ui.setGameplayVisible(true);
     ui.setHearts(this.hearts, CONFIG.hearts);
     ui.setSand(this.sandLeft);
