@@ -20,6 +20,7 @@
     "qa:tree-cards": "node scripts/mobile-tree-card-qa.mjs",
     "qa:meadow": "node scripts/meadow-playthrough.mjs",
     "qa:progression": "node scripts/progression-recovery-qa.mjs",
+    "qa:levels": "node scripts/level-audit.mjs",
     "submission:media": "node scripts/submission-media.mjs"
   },
   "devDependencies": {
