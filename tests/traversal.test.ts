@@ -189,3 +189,42 @@ describe('landing zones are safe', () => {
     expect(problems, problems.join('; ')).toEqual([]);
   });
 });
+
+describe('forgiveness windows suit the hand holding the phone', () => {
+  /* Pits were the overwhelming cause of lost hearts in end-to-end playthroughs.
+     These windows are how much of a child's intent the game reads; they change
+     nothing about a jump's reach or arc. Published bands: precision platformer
+     70-110ms, action 90-150ms, casual/touch 110-180ms. This audience is five to
+     eight years old on a touchscreen. */
+  it('coyote time and jump buffering sit in the casual/touch band', () => {
+    expect(CONFIG.physics.COYOTE * 1000, 'coyote time is tuned for adult hands').toBeGreaterThanOrEqual(110);
+    expect(CONFIG.physics.COYOTE * 1000, 'coyote time so long it feels floaty').toBeLessThanOrEqual(200);
+    expect(CONFIG.physics.JBUF * 1000, 'jump buffer is tuned for adult hands').toBeGreaterThanOrEqual(110);
+    expect(CONFIG.physics.JBUF * 1000, 'jump buffer so long it queues stray taps').toBeLessThanOrEqual(220);
+  });
+
+  it('a late jump off a ledge still carries the gap', () => {
+    /* The concrete failure: walking off the lip and pressing jump a frame late.
+       With the old window that was a pit; it should now be a crossing. */
+    const scene = boot(3);
+    scene.monsters = [];
+    scene.L.boss = null;
+    const plats = scene.L.platforms.slice().sort((a: any, b: any) => a.x - b.x);
+    const from = plats[0], to = plats[1];
+    const p = scene.player;
+    p.x = from.x + from.w - 150; p.y = from.y - p.h; p.vx = 0; p.vy = 0; p.grounded = true;
+    scene.releaseAll();
+    scene.press('right');
+
+    let jumped = false, crossed = false;
+    for (let f = 0; f < 240; f++) {
+      /* Deliberately late: only once already off the ledge and falling. */
+      if (!jumped && !p.grounded && p.x > from.x + from.w - p.w) { scene.press('jump'); jumped = true; }
+      scene.update(f * 16.7, 16.7);
+      if (jumped && p.x > to.x && p.y + p.h < to.y + 40) { crossed = true; break; }
+      if (p.y > scene.L.deathY - 60) break;
+    }
+    scene.release('right');
+    expect(crossed, 'a jump pressed just after leaving the ledge fell into the pit').toBe(true);
+  });
+});
