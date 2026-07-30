@@ -13,7 +13,7 @@ import {
 } from '../core/logic';
 import { TREES } from '../core/trees';
 import { LEAF_COLOR } from './art';
-import { sfx, setMusicMood } from './audio';
+import { sfx, setMusicMood, currentMood, type MusicMood } from './audio';
 import type { UI } from './ui';
 import { art } from './assets';
 import { drawMeadowForeground, drawMeadowMidground } from './meadowEnvironment';
@@ -275,11 +275,30 @@ export class LevelScene extends Scene {
     };
   }
 
+  /* The score follows the situation, not the level index. Held for a beat after
+     a change so a creature walking in and out of range cannot flap the music. */
+  private musicHold = 0;
+  private updateMusic(dt: number, state: ChapterState): void {
+    this.musicHold = Math.max(0, this.musicHold - dt);
+    if (this.musicHold > 0) return;
+    const pcx = this.player.x + this.player.w / 2;
+    const frightenedNear = this.monsters.some(m =>
+      m.state === 'angry' && Math.abs((m.x + (m as any).w / 2) - pcx) < 260);
+    const want: MusicMood = this.meadowStory.restoring > 0 ? 'restored'
+      : state.bossActive && !state.bossCalmed ? 'tension'
+        : this.healTarget ? 'healing'
+          : frightenedNear ? 'tension'
+            : this.nearTree ? 'discovery'
+              : 'explore';
+    if (want !== currentMood()) { setMusicMood(want); this.musicHold = 1.6; }
+  }
+
   private updateObjective(force = false): void {
     /* Was a two-branch if: Level 1's whole script inline, and one fixed
        three-step bar shared verbatim by the other nine chapters. */
     const chapter = chapterFor(LEVEL_META[this.idx]?.regionId);
     const state = this.chapterState();
+    this.updateMusic(1 / 60, state);
     const current = currentStep(chapter, state);
     const steps = chapter.steps.map(s => s.icon);
     const label = S(chapter.steps[current].labelKey);
@@ -522,6 +541,7 @@ export class LevelScene extends Scene {
     /* monsters */
     for (const m of this.monsters) {
       if (empathyTick(m, dt, m === this.healTarget)) {
+        setMusicMood('healing');
         this.gainHeart(); this.spawnP(m.x + 20, m.ground - 40, 26, 0xffe6a0, 200, 1); sfx('heal'); this.shake(2, .12);
         if (this.idx === 0 && !this.meadowStory.helper) {
           this.meadowStory.helper = m; sfx('streak');

@@ -79,45 +79,105 @@ export function sfx(n: SfxName, extra?: number): void {
   }
 }
 
-/* Adaptive pentatonic score. The same five-note identity is reharmonised across
-   menu → exploration → restoration, so actions feel like part of one world. */
-export type MusicMood = 'menu' | 'meadow' | 'restored';
-const SCORE: Record<MusicMood, { melody: number[]; bass: number[]; pace: number; air: number }> = {
-  menu: { melody: [392, 523.25, 587.33, 659.25, 523.25, 440], bass: [98, 130.81, 110], pace: 620, air: .025 },
-  meadow: { melody: [523.25, 587.33, 659.25, 783.99, 659.25, 587.33, 440, 523.25], bass: [130.81, 146.83, 110, 130.81], pace: 430, air: .035 },
-  restored: { melody: [523.25, 659.25, 783.99, 880, 1046.5, 880, 783.99, 659.25], bass: [130.81, 164.81, 196, 164.81], pace: 330, air: .045 },
-};
-let musicMood: MusicMood = 'menu';
+/* Adaptive score. A biome supplies the scale, the timbre and the size of the
+   room (src/core/soundscape.ts); a mood supplies the intention. Ten biomes x
+   seven moods out of two small data tables, with no audio files — the game
+   stays offline-first and ships zero licensed assets.
+
+   Before this there were three moods for ten biomes and every level was set to
+   the same one, so only two were ever reachable and the cave sounded exactly
+   like the orchard. */
+import { MOODS, soundFor, pitchAt, type Mood, type BiomeSound, type Timbre } from '../core/soundscape';
+
+export type MusicMood = Mood;
+
+let musicMood: Mood = 'menu';
+let biomeSound: BiomeSound = soundFor('meadow');
 let mi = 0, musicTimer = 0;
 let musicOn = true;
+/* A mood change used to reset mi to 0 and hard-cut the timbre. Crossfading
+   across a couple of notes keeps the phrase continuous. */
+let blend = 1, blendFrom: Mood = 'menu';
+
 export function setMusicOn(on: boolean): void { musicOn = on; }
-export function setMusicMood(mood: MusicMood): void { if (musicMood !== mood) { musicMood = mood; mi = 0; } }
+
+export function setMusicBiome(biome: string | undefined): void {
+  biomeSound = soundFor(biome);
+}
+
+export function setMusicMood(mood: Mood): void {
+  if (musicMood === mood) return;
+  blendFrom = musicMood;
+  musicMood = mood;
+  blend = 0;   /* ramps to 1 over the next few notes */
+}
+
+export function currentMood(): Mood { return musicMood; }
+
+const OSC: Record<Timbre, { base: OscillatorType; upper: OscillatorType; upperGain: number }> = {
+  glass: { base: 'sine', upper: 'sine', upperGain: .55 },
+  wood: { base: 'sine', upper: 'triangle', upperGain: .45 },
+  reed: { base: 'triangle', upper: 'sawtooth', upperGain: .18 },
+  bell: { base: 'sine', upper: 'square', upperGain: .10 },
+  breath: { base: 'triangle', upper: 'sine', upperGain: .30 },
+};
+
 function musicTick(): void {
   if (!audio || !masterGain || muted || !musicOn) return;
-  const score = SCORE[musicMood], t0 = audio.currentTime;
-  const f = score.melody[mi % score.melody.length];
-  /* Soft glass-and-wood pairing: a round fundamental with a quiet harmonic. */
-  const o = audio.createOscillator(), shimmer = audio.createOscillator(), g = audio.createGain();
-  o.type = 'sine'; o.frequency.value = f / 2;
-  shimmer.type = 'triangle'; shimmer.frequency.value = f;
-  g.gain.setValueAtTime(.0001, t0); g.gain.linearRampToValueAtTime(score.air, t0 + .045);
-  g.gain.exponentialRampToValueAtTime(.0001, t0 + .72);
-  o.connect(g); shimmer.connect(g); g.connect(masterGain); o.start(t0); shimmer.start(t0);
-  o.stop(t0 + .76); shimmer.stop(t0 + .6);
+  /* iOS suspends the context whenever the app backgrounds or the ring switch
+     moves; without this the score simply stops and never returns. */
+  if (audio.state === 'suspended') { void audio.resume?.(); }
+
+  const shape = MOODS[musicMood], from = MOODS[blendFrom];
+  const t0 = audio.currentTime;
+  const voice = OSC[biomeSound.timbre];
+
+  const degree = shape.phrase[mi % shape.phrase.length];
+  const fromDegree = from.phrase[mi % from.phrase.length];
+  /* During a change, drift the pitch and level from the old mood to the new. */
+  const f = pitchAt(biomeSound, degree, shape.octave);
+  const fPrev = pitchAt(biomeSound, fromDegree, from.octave);
+  const freq = fPrev + (f - fPrev) * blend;
+  const air = from.air + (shape.air - from.air) * blend;
+
+  const o = audio.createOscillator(), upper = audio.createOscillator(), g = audio.createGain();
+  o.type = voice.base; o.frequency.value = freq / 2;
+  upper.type = voice.upper; upper.frequency.value = freq;
+  const upperG = audio.createGain(); upperG.gain.value = voice.upperGain;
+  const decay = biomeSound.decay;
+  g.gain.setValueAtTime(.0001, t0);
+  g.gain.linearRampToValueAtTime(air, t0 + .045);
+  g.gain.exponentialRampToValueAtTime(.0001, t0 + decay);
+  o.connect(g); upper.connect(upperG); upperG.connect(g); g.connect(masterGain);
+  o.start(t0); upper.start(t0);
+  o.stop(t0 + decay + .04); upper.stop(t0 + decay * .84);
+
   if (mi % 2 === 0) {
+    const bassDegree = shape.bass[Math.floor(mi / 2) % shape.bass.length];
     const ob = audio.createOscillator(), gb = audio.createGain();
-    ob.type = 'triangle'; ob.frequency.value = score.bass[Math.floor(mi / 2) % score.bass.length];
-    gb.gain.setValueAtTime(.028, t0); gb.gain.exponentialRampToValueAtTime(.0001, t0 + 1.05);
-    ob.connect(gb); gb.connect(masterGain); ob.start(t0); ob.stop(t0 + 1.1);
+    ob.type = 'triangle';
+    ob.frequency.value = pitchAt(biomeSound, bassDegree, shape.octave - 2);
+    gb.gain.setValueAtTime(.028, t0);
+    gb.gain.exponentialRampToValueAtTime(.0001, t0 + decay * 1.4);
+    ob.connect(gb); gb.connect(masterGain); ob.start(t0); ob.stop(t0 + decay * 1.5);
   }
-  if (musicMood !== 'menu' && mi % 8 === 5) noise(.32, .018, 2800); /* distant leaf hush */
+
+  /* The biome's ambient bed: a soft filtered wash whose brightness is the
+     difference between a cave and an open coast. */
+  const amb = biomeSound.ambience;
+  if (musicMood !== 'menu' && mi % amb.every === amb.every - 1) {
+    noise(.32, amb.gain, amb.cut);
+  }
+
+  blend = Math.min(1, blend + .34);
   mi++;
 }
+
 export function startMusic(): void {
   if (musicTimer) return;
   const schedule = () => {
     musicTick();
-    musicTimer = window.setTimeout(schedule, SCORE[musicMood].pace);
+    musicTimer = window.setTimeout(schedule, MOODS[musicMood].pace);
   };
   schedule();
 }

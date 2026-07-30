@@ -3,10 +3,10 @@ import { Game } from './game/engine';
 import { CONFIG } from './core/config';
 import { setLang, type Lang } from './core/i18n';
 import { loadSave, writeSave, recordTreeWake, type SaveData } from './core/save';
-import { LEVELS } from './core/world';
+import { LEVELS, LEVEL_META } from './core/world';
 import { LevelScene, type SceneHooks } from './game/LevelScene';
 import { UI } from './game/ui';
-import { initAudio, setMuted, isMuted, startMusic, setMusicMood, sfx } from './game/audio';
+import { initAudio, setMuted, isMuted, startMusic, setMusicMood, setMusicBiome, sfx } from './game/audio';
 import { preloadArt } from './game/assets';
 import * as artHelpers from './game/art';
 import { hasFullJourney, initPurchases, isFamilyPurchaseAvailable, presentFamilyPurchase } from './game/purchases';
@@ -48,8 +48,12 @@ const hooks: SceneHooks = {
 
 function startLevel(idx: number): void {
   initAudio(!!save.muted);
-  setMusicMood('meadow');
   currentIdx = Math.max(0, Math.min(idx, LEVELS.length - 1));
+  /* The biome decides the scale and timbre; the mood decides the intention.
+     Every level used to be set to the same mood, so nine of ten chapters
+     sounded identical. */
+  setMusicBiome(LEVEL_META[currentIdx]?.biome);
+  setMusicMood('explore');
   paused = false;
   if (scene) { game.scene.stop(LevelScene.KEY); game.scene.remove(LevelScene.KEY); }
   scene = new LevelScene();

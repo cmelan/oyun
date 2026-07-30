@@ -82,10 +82,16 @@ for (let idx = 0; idx < 10; idx++) {
       boss: L.boss ? { x: L.boss.x, w: L.boss.w, state: L.boss.state, hp: L.boss.hp, kind: L.boss.kind, ground: L.boss.ground } : null,
       bossActive: s.bossActive,
       arenaTrig: L.arena ? L.arena.trig : null,
-      /* a solid directly ahead at foot height means a wall, not a gap */
-      gapAhead: (() => {
-        const probe = pcx + 76;
-        return !L.platforms.some(pl => probe > pl.x && probe < pl.x + pl.w && Math.abs(pl.y - feet) < 26);
+      /* Distance from the player's front foot to the lip of the platform they
+         are standing on, and whether there is air beyond it. A fixed forward
+         probe made the bot jump ~95px early, land back on the same platform,
+         and then walk off the edge. */
+      edge: (() => {
+        const here = L.platforms.find(pl => pcx > pl.x && pcx < pl.x + pl.w && Math.abs(pl.y - feet) < 26);
+        if (!here) return null;
+        const lip = here.x + here.w;
+        const beyond = L.platforms.some(pl => lip + 30 > pl.x && lip + 30 < pl.x + pl.w && Math.abs(pl.y - feet) < 40);
+        return beyond ? null : { dist: lip - (p.x + p.w) };
       })(),
       onGround: p.grounded,
       groundY: (L.platforms.find(pl => pcx > pl.x && pcx < pl.x + pl.w) || { y: 400 }).y,
@@ -270,7 +276,9 @@ for (let idx = 0; idx < 10; idx++) {
 
       /* 5. Otherwise walk right, jumping gaps and when a puzzle sits above. */
       await hold('ArrowRight');
-      const needJump = v.gapAhead || (v.puzzle && !v.puzzle.inside && v.puzzle.zy < v.feet - 60 && Math.abs(v.puzzle.zx - v.pcx) < 130);
+      /* Jump late — the closer to the lip, the further the arc reaches. */
+      const atLip = v.edge && v.edge.dist < 26;
+      const needJump = atLip || (v.puzzle && !v.puzzle.inside && v.puzzle.zy < v.feet - 60 && Math.abs(v.puzzle.zx - v.pcx) < 130);
       if (needJump && v.onGround) {
         await page.keyboard.down('ArrowUp');
         await page.waitForTimeout(300);          /* full-height jump */
