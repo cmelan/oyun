@@ -228,3 +228,39 @@ describe('forgiveness windows suit the hand holding the phone', () => {
     expect(crossed, 'a jump pressed just after leaving the ledge fell into the pit').toBe(true);
   });
 });
+
+describe('a fall is a slip, not a punishment', () => {
+  /* Pits caused nearly every lost heart in end-to-end playthroughs, and only
+     the Meadow treated a fall as free. With three hearts and a pit as the first
+     obstacle of every generated chapter, that turned the game into attrition.
+     Hearts are now for creature contact — something a child can see coming and
+     act on. Losing the ground you walked is still a real cost. */
+  it('every chapter returns the child to safety instead of taking a heart', () => {
+    for (let idx = 0; idx < LEVELS.length; idx++) {
+      const lv = prepLevel(idx, []);
+      expect(lv.gentle, `level ${idx + 1} charges a heart for falling`).toBe(true);
+    }
+  });
+
+  it('falling actually costs no heart and returns to the checkpoint', () => {
+    const scene = boot(4);
+    const p = scene.player;
+    scene.respawn = { x: 640, y: 320 };
+    const before = scene.hearts;
+    p.x = 470; p.y = scene.L.deathY + 20; p.vy = 600;
+    scene.update(0, 16.7);
+    expect(scene.hearts, 'a fall took a heart').toBe(before);
+    expect(p.x, 'a fall did not return the child to the checkpoint').toBe(640);
+  });
+
+  it('creature contact still costs a heart — the stakes are not gone', () => {
+    const scene = boot(4);
+    const p = scene.player;
+    const m = scene.monsters[0];
+    const before = scene.hearts;
+    p.iframe = 0;
+    p.x = m.x; p.y = m.ground - p.h;
+    scene.update(0, 16.7);
+    expect(scene.hearts, 'touching a frightened creature is now free').toBeLessThan(before);
+  });
+});

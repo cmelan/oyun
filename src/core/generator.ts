@@ -117,7 +117,13 @@ export function makeSection(recipe: Recipe): LevelData {
   };
   const arena = { trig: lastCalm.x + 30, wall: { x: lastCalm.x - 8, y: 120, w: 14, h: 500 } };
   return {
-    name, w, deathY: 760, gentle: false, spawn: { x: 90, y: 300 }, platforms, water: null,
+    /* A fall returns the child to the last checkpoint and costs no heart —
+       the same rule the Meadow already used. Hearts are for creature contact,
+       which the child can understand and act on; a pit is a slip, and charging
+       a life for it turned every chapter into attrition. Measured: pits caused
+       nearly every lost heart in end-to-end playthroughs. Losing the ground you
+       walked is still a real cost. */
+    name, w, deathY: 760, gentle: true, spawn: { x: 90, y: 300 }, platforms, water: null,
     interact, monsters, boss, arena, checkpoints, goal: null, hasSand: true, hasHeal: true, trees,
     intros: [{ x: 60, text: hint || 'Yeni bir bölge — ağaçları bul, bulmacaları çöz!' }],
   };

@@ -35,7 +35,7 @@ export function level1(): LevelData {
 
 export function level2(): LevelData {
   return {
-    name: 'Bölüm 2 · Zümrüt Zirveler', w: 4400, deathY: 700, gentle: false, spawn: { x: 120, y: 300 },
+    name: 'Bölüm 2 · Zümrüt Zirveler', w: 4400, deathY: 700, gentle: true, spawn: { x: 120, y: 300 },
     platforms: [
       { x: 20, y: 380, w: 340, h: 240 }, { x: 440, y: 360, w: 200, h: 240 }, { x: 960, y: 360, w: 460, h: 240 },
       { x: 1560, y: 350, w: 200, h: 250 }, { x: 2000, y: 350, w: 180, h: 250 },
@@ -80,7 +80,7 @@ export function level2(): LevelData {
 
 export function level3(): LevelData {
   return {
-    name: 'Bölüm 3 · Kristal Mağaralar', w: 4100, deathY: 760, gentle: false, cave: true, dark: true, spawn: { x: 90, y: 340 },
+    name: 'Bölüm 3 · Kristal Mağaralar', w: 4100, deathY: 760, gentle: true, cave: true, dark: true, spawn: { x: 90, y: 340 },
     platforms: [
       { x: 20, y: 400, w: 560, h: 240 }, { x: 700, y: 300, w: 360, h: 340 }, { x: 1060, y: 340, w: 360, h: 300 },
       { x: 1560, y: 340, w: 200, h: 300 }, { x: 1858, y: 338, w: 322, h: 322 },
