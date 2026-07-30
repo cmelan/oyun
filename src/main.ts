@@ -123,7 +123,7 @@ void Promise.all([preloadArt(), initPurchases()]).finally(() => {
   if (bootParams.has('test') && stage?.startsWith('oak-')) {
     startLevel(0);
     const s = scene as any;
-    const finalTree = s.L.trees.find((tree: any) => tree.x > 2800);
+    const finalTree = s.L.trees.find((tree: any) => tree.finale);
     s.meadowStory.pressureAwake = true;
     s.player.x = finalTree.x - 135; s.player.y = 292; s.player.vx = 0; s.player.vy = 0;
     s.cam = s.L.w - CONFIG.canvas.W; s.cameras.main.setScroll(s.cam, 0);

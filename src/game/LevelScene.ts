@@ -6,7 +6,7 @@ import { Scene, Graphics, BLEND, hexToNum } from './engine';
 import { CONFIG, TOOLS, type Eye } from '../core/config';
 import { BIOME } from '../core/biomes';
 import { prepLevel, LEVEL_META, WORLD, LEVELS, regionTreePool } from '../core/world';
-import type { LevelData, Interact, BossData, Rect } from '../core/generator';
+import type { LevelData, Interact, BossData, Rect, TreeInstance } from '../core/generator';
 import {
   sandCapacity, makeMonster, sandHit, empathyTick, bossSandHit, bossCageResolve,
   mimicNextId, assistFactors, overlap, type MonsterRuntime, type AssistState,
@@ -184,6 +184,9 @@ export class LevelScene extends Scene {
     if (this.L.arena && this.bossActive && this.L.boss && this.L.boss.state !== 'defeated') arr.push(this.L.arena.wall);
     return arr;
   }
+  /* The tree whose waking ends the chapter. Identified by data, not by a
+     position guess — the level author decides, and the level can be moved. */
+  private finaleTree(): TreeInstance | undefined { return this.L.trees.find(tr => tr.finale); }
   private mbox(m: MonsterRuntime) { return { x: m.x, y: m.ground - (m as any).h, w: (m as any).w, h: (m as any).h }; }
   private bossBox(b: BossData) { return { x: b.x, y: b.ground - b.h * b.scale, w: b.w * b.scale, h: b.h * b.scale }; }
   private nearBoss(): boolean {
@@ -258,7 +261,7 @@ export class LevelScene extends Scene {
       else if (!this.L.interact[1]?.done) { current = 2; label = S('objective.meadow.grow'); }
       else if (!this.L.interact[2]?.done) { current = 3; label = S('objective.meadow.bridge'); }
       else if (!this.meadowStory.pressureAwake) { current = 4; label = S('objective.meadow.gate'); }
-      else if (!this.L.trees.find(tr => tr.x > 2800)?.awake) { current = 5; label = S('objective.meadow.oak'); }
+      else if (!this.finaleTree()?.awake) { current = 5; label = S('objective.meadow.oak'); }
       else { current = 6; label = S('objective.meadow.restore'); }
     } else {
       steps = ['→', '🏖️', '✨'];
@@ -305,7 +308,7 @@ export class LevelScene extends Scene {
       this.spawnP(tr.x, tr.y - 70, 26, 0xffe6a0, 180, 1.1); this.shake(2, .2);
       this.hooks.onTreeLearned(treeId);
     }
-    const isFinalMeadowOak = this.idx === 0 && !!tr && tr.x > 2800;
+    const isFinalMeadowOak = this.idx === 0 && !!tr && !!tr.finale;
     this.hooks.ui.showTreeWake(treeId, () => {
       this.hooks.ui.hideOverlay(); this.setModal(false);
       if (isFinalMeadowOak) this.beginMeadowRestoration();
@@ -313,7 +316,7 @@ export class LevelScene extends Scene {
   }
   private beginMeadowRestoration(): void {
     if (this.meadowStory.restoring > 0) return;
-    const oakX = this.L.trees.find(tr => tr.x > 2800)?.x ?? 3005;
+    const oakX = this.finaleTree()?.x ?? 3005;
     this.meadowStory.restoring = .001;
     this.meadowStory.restoreCue = 0;
     this.spawnP(oakX, 230, 70, 0xffe59a, 250, 2.6);
@@ -324,7 +327,7 @@ export class LevelScene extends Scene {
   private updateMeadowRestoration(dt: number): boolean {
     if (this.meadowStory.restoring <= 0) return false;
     const story = this.meadowStory;
-    const oakX = this.L.trees.find(tr => tr.x > 2800)?.x ?? 3005;
+    const oakX = this.finaleTree()?.x ?? 3005;
     story.restoring += dt;
     if (story.restoreCue === 0 && story.restoring >= .75) {
       story.restoreCue = 1; sfx('grow');
@@ -692,7 +695,7 @@ export class LevelScene extends Scene {
     if (this.idx === 0) this.drawMeadowStory(g);
     /* trees */
     for (const tr of this.L.trees) {
-      if (this.idx === 0 && tr.x > 2800) this.drawAncientOak(g, tr as any);
+      if (this.idx === 0 && tr.finale) this.drawAncientOak(g, tr as any);
       else this.drawTree(g, tr as any);
     }
     /* goal */

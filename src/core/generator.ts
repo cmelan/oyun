@@ -25,7 +25,10 @@ export interface BossData {
   paceDir: number; px0: number; px1: number; shake: number;
   cageEye: Eye; finisher: Finisher; scale: number;
 }
-export interface TreeInstance { id: string; x: number; y: number; awake?: boolean }
+/* `finale` marks the tree a chapter's ending depends on. A finale tree is never
+   pre-woken from the journal: completion must never be satisfiable by a save
+   file, or the chapter becomes unfinishable on replay. */
+export interface TreeInstance { id: string; x: number; y: number; awake?: boolean; finale?: boolean }
 export interface LevelData {
   name: string; w: number; deathY: number; gentle: boolean;
   spawn: { x: number; y: number };

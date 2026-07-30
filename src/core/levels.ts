@@ -15,7 +15,7 @@ export function level1(): LevelData {
       { type: 'grow', eye: 'green', done: false, zone: { x: 1320, y: 278, w: 170, h: 110 }, sprout: { x: 1450, y: 370 }, leaves: [{ x: 1485, y: 354, w: 105, h: 18 }, { x: 1580, y: 354, w: 115, h: 18 }], em: { x: 1450, y: 322 } },
       { type: 'bridge', eye: 'yellow', done: false, zone: { x: 1695, y: 270, w: 135, h: 110 }, bridge: { x: 1825, y: 348, w: 225, h: 18 }, ropeX: 1935, anchorY: 245, em: { x: 1762, y: 302 } },
     ],
-    trees: [{ id: 'çınar', x: 585, y: 370 }, { id: 'ıhlamur', x: 2125, y: 352 }, { id: 'meşe', x: 3005, y: 352 }],
+    trees: [{ id: 'çınar', x: 585, y: 370 }, { id: 'ıhlamur', x: 2125, y: 352 }, { id: 'meşe', x: 3005, y: 352, finale: true }],
     monsters: [
       { x: 1210, gx0: 1100, gx1: 1450, ground: 370, lo: 1088, hi: 1530, spd: 82, aggro: 185, patrolSpd: 36 },
     ],

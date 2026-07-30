@@ -78,9 +78,17 @@ describe('WORLD / bölge şeması', () => {
     });
   });
   it('prepLevel: günlükteki ağaçlar uyanık başlar', () => {
-    const lv = prepLevel(0, ['meşe']);
-    expect(lv.trees.find(t => t.id === 'meşe')!.awake).toBe(true);
-    expect(lv.trees.find(t => t.id === 'çınar')!.awake).toBe(false);
+    const lv = prepLevel(0, ['çınar']);
+    expect(lv.trees.find(t => t.id === 'çınar')!.awake).toBe(true);
+    expect(lv.trees.find(t => t.id === 'ıhlamur')!.awake).toBe(false);
+  });
+  /* The finale tree is the exception: waking it IS the chapter's ending, so a
+     journal entry must never pre-satisfy it. See tests/completability.test.ts. */
+  it('prepLevel: final ağaç günlükte olsa bile uykuda başlar', () => {
+    const lv = prepLevel(0, ['meşe', 'çınar', 'ıhlamur']);
+    const finale = lv.trees.find(t => t.finale)!;
+    expect(finale.id).toBe('meşe');
+    expect(finale.awake).toBe(false);
   });
 });
 
@@ -90,7 +98,7 @@ describe('ödüllük Çayır dikey kesiti', () => {
     expect(lv.interact.map(i => i.type)).toEqual(['freeze', 'grow', 'bridge']);
     expect(lv.monsters).toHaveLength(1);
     expect(lv.goal).toBeNull();
-    expect(lv.trees.some(t => t.id === 'meşe' && t.x > 2800)).toBe(true);
+    expect(lv.trees.some(t => t.id === 'meşe' && t.finale)).toBe(true);
     expect(lv.intros.some(i => i.text.includes('kötü değil'))).toBe(true);
   });
   it('üç doğa bulmacasının hiçbiri normal bir sıçrayışla atlanamaz', () => {
