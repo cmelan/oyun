@@ -130,7 +130,9 @@ describe('bölüm üretici', () => {
   it('yapısal geçerlilik: ağaç = kontrol noktası, bulmaca = canavar, min 3', () => {
     const lv = gen();
     expect(lv.trees.length).toBeGreaterThanOrEqual(3);
-    expect(lv.checkpoints.length).toBe(lv.trees.length);
+    /* One checkpoint per tree, plus one at the arena door so losing to the
+       boss does not rewind the whole back half of the chapter. */
+    expect(lv.checkpoints.length).toBe(lv.trees.length + 1);
     expect(lv.interact.length).toBe(lv.monsters.length);
     expect(lv.interact.length).toBeGreaterThanOrEqual(3);
     expect(lv.boss).not.toBeNull();
@@ -149,10 +151,29 @@ describe('bölüm üretici', () => {
       treeIds: ['meşe', 'çınar', 'ıhlamur'], puzzleTypes: ['freeze', 'grow', 'bridge'],
       cageEye: 'blue', finisher: 'cage',
     });
-    const expected = GAP + Math.min(30, 3 * 6);
+    /* Every tier uses the proven B1 gap. This used to widen with tier, which
+       is the one axis a five-year-old cannot get better at, and the widest
+       result sat ~28px inside the physical limit of a perfect jump. */
     for (let i = 1; i < lv.platforms.length; i++) {
       const gap = lv.platforms[i].x - (lv.platforms[i - 1].x + lv.platforms[i - 1].w);
-      expect(gap).toBe(expected);
+      expect(gap).toBe(GAP);
+    }
+    /* And the gap must keep a real margin under what the physics can reach. */
+    const reach = CONFIG.physics.MOVE * ((2 * CONFIG.physics.JUMP_V) / CONFIG.physics.GRAV);
+    expect(reach - GAP, `only ${(reach - GAP).toFixed(0)}px of margin on a gap`).toBeGreaterThan(45);
+  });
+
+  it('tier never widens a gap, at any tier', () => {
+    for (const tier of [1, 2, 3, 4, 5]) {
+      const lv = makeSection({
+        name: 't', biome: 'meadow', tier,
+        treeIds: ['meşe', 'çınar', 'ıhlamur'], puzzleTypes: ['freeze', 'grow', 'bridge'],
+        cageEye: 'blue', finisher: 'cage',
+      });
+      for (let i = 1; i < lv.platforms.length; i++) {
+        const gap = lv.platforms[i].x - (lv.platforms[i - 1].x + lv.platforms[i - 1].w);
+        expect(gap, `tier ${tier} widened a gap to ${gap}`).toBe(GAP);
+      }
     }
   });
   it('her PUZZLE_FACTORY tipi üretiliyor ve zone taşıyor', () => {
@@ -258,7 +279,9 @@ describe('v2 içerik: B5–B10', () => {
     for (let i = 4; i <= 8; i++) {
       const lv = prepLevel(i);
       expect(lv.trees.length, `B${i + 1} trees`).toBeGreaterThanOrEqual(2);
-      expect(lv.checkpoints.length).toBe(lv.trees.length);
+      /* One checkpoint per tree, plus one at the arena door so losing to the
+       boss does not rewind the whole back half of the chapter. */
+    expect(lv.checkpoints.length).toBe(lv.trees.length + 1);
       expect(lv.boss).not.toBeNull();
       for (const tr of lv.trees) for (const it of lv.interact)
         expect(pointRectDist(tr.x, tr.y, it.zone)).toBeGreaterThan(CONFIG.tree.wakeRadius);
