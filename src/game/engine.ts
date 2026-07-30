@@ -170,6 +170,21 @@ export class Graphics {
     this.ops.push(ctx => { ctx.globalAlpha = a; ctx.strokeStyle = s; ctx.lineWidth = lw; ctx.beginPath(); ctx.arc(x, y, Math.max(0, r), 0, TAU); ctx.stroke(); });
     return this;
   }
+  /* A whole silhouette as one recorded op. The path builder below allocates a
+     closure per segment, which is fine for a bridge but ruinous for a horizon:
+     a ridge line is ~120 points and there are several per frame. Points are a
+     flat [x0,y0,x1,y1,…] buffer, closed and filled. */
+  fillPolygon(points: number[]): this {
+    const f = this._fill, a = this._fillA, p = points;
+    this.ops.push(ctx => {
+      if (p.length < 6) return;
+      ctx.globalAlpha = a; ctx.fillStyle = f;
+      ctx.beginPath(); ctx.moveTo(p[0], p[1]);
+      for (let i = 2; i < p.length; i += 2) ctx.lineTo(p[i], p[i + 1]);
+      ctx.closePath(); ctx.fill();
+    });
+    return this;
+  }
   fillTriangle(x1: number, y1: number, x2: number, y2: number, x3: number, y3: number): this {
     const f = this._fill, a = this._fillA;
     this.ops.push(ctx => { ctx.globalAlpha = a; ctx.fillStyle = f; ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.lineTo(x3, y3); ctx.closePath(); ctx.fill(); });

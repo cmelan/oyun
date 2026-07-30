@@ -6,7 +6,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { Graphics } from '../src/game/engine';
 import { LevelScene } from '../src/game/LevelScene';
 
-const REC = { calls: [] as { m: string; args: any[] }[] };
+const REC = { calls: [] as { m: string; args: any[]; layer: unknown }[] };
 /* every geometry method whose coordinates must stay finite */
 const GEOM = ['fillRoundedRect', 'strokeRoundedRect', 'fillRect', 'strokeRect', 'fillCircle', 'strokeCircle', 'fillRadial', 'fillTriangle', 'fillEllipse', 'moveTo', 'lineTo', 'arc', 'translateCanvas', 'rotateCanvas'];
 
@@ -23,7 +23,7 @@ beforeEach(() => {
   for (const m of GEOM) {
     const orig = (Graphics.prototype as any)[m];
     vi.spyOn(Graphics.prototype as any, m).mockImplementation(function (this: any, ...args: any[]) {
-      REC.calls.push({ m, args });
+      REC.calls.push({ m, args, layer: this });
       return orig.apply(this, args);
     });
   }
@@ -62,10 +62,14 @@ describe('render regression', () => {
     /* the Section-3 white-dot bug: darkness ERASE must not swallow the player.
        Player body must be drawn, and the darkness layer must punch a soft
        radial hole (feathered edge) around a screen-space player position. */
-    run(2, 3);
+    const scene = run(2, 3);
     const playerish = REC.calls.filter(c => c.m === 'fillRoundedRect' && c.args[2] > 20 && c.args[2] < 80 && c.args[3] > 15 && c.args[3] < 70);
     expect(playerish.length, 'player body missing on B3').toBeGreaterThan(0);
-    const punches = REC.calls.filter(c => c.m === 'fillRadial');
+    /* Only the darkness layer's punches: the sky layer also draws radial
+       gradients now (the biome's celestial halo), and those are ordinary
+       fills, not holes cut through the dark. */
+    const darkLayer = (scene as any).darkGfx;
+    const punches = REC.calls.filter(c => c.m === 'fillRadial' && c.layer === darkLayer);
     expect(punches.length, 'darkness light punch missing on B3').toBeGreaterThan(0);
     for (const p of punches) {
       expect(Number.isFinite(p.args[0]) && Number.isFinite(p.args[1]) && p.args[2] > 0).toBe(true);

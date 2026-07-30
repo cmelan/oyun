@@ -17,6 +17,8 @@ import { sfx, setMusicMood } from './audio';
 import type { UI } from './ui';
 import { art } from './assets';
 import { drawMeadowForeground, drawMeadowMidground } from './meadowEnvironment';
+import { sceneryFor } from '../core/scenery';
+import { drawSky, drawRidges, drawPlatformSurface, drawGroundCover, drawFringe, drawAmbient } from './environment';
 import { S } from '../core/i18n';
 
 const { GRAV, MOVE, ACCEL, FRICTION, JUMP_V, JUMP_CUT, MAX_FALL, BOUNCE, COYOTE, JBUF } = CONFIG.physics;
@@ -646,17 +648,16 @@ export class LevelScene extends Scene {
     } : null;
     const meadowSoil = this.L.biome === 'meadow' ? art('meadow.soil') : null;
     const meadowGrass = this.L.biome === 'meadow' ? art('meadow.grass') : null;
-    /* sky + parallax */
+    /* sky + parallax — authored plates first, then the procedural scenery
+       profile. The profile is a full biome identity (sun, haze, cloud bands,
+       noise-silhouette ridges), not the two rows of ellipses it replaces. */
+    const S9 = sceneryFor(this.L.biome);
     bg.clear();
     if (meadowFar) {
       bg.drawImage(meadowFar, 0, 0, W, H);
     } else {
-      bg.fillGradientStyle(this.col(B.skyTop), this.col(B.skyTop), this.col(B.skyMid), this.col(B.skyBot), 1);
-      bg.fillRect(0, 0, W, H);
-      bg.fillStyle(this.col(B.hillsFar), 1);
-      for (let hx = -1; hx < 6; hx++) { const bxx = hx * 260 - (this.cam * .2) % 260; bg.fillEllipse(bxx, H - 90, 340, 220); }
-      bg.fillStyle(this.col(B.hillsMid), 1);
-      for (let hx = -1; hx < 7; hx++) { const bxx = hx * 200 - (this.cam * .45) % 200; bg.fillEllipse(bxx, H - 40, 260, 170); }
+      drawSky(bg, S9, B, this.cam, W, H, this.t);
+      drawRidges(bg, S9, this.cam, W, H);
     }
     if (this.L.biome === 'meadow') drawMeadowMidground(bg, meadowMidground, this.cam, B, W, H);
     g.clear();
@@ -676,11 +677,8 @@ export class LevelScene extends Scene {
         g.fillRect(pl.x, pl.y + 24, pl.w, Math.max(0, pl.h - 24));
         g.drawTiledX(meadowGrass, pl.x, pl.y - 14, pl.w, 38, 202);
       } else {
-        g.fillStyle(this.col(B.soil), 1); g.fillRoundedRect(pl.x, pl.y, pl.w, pl.h, 8);
-        g.fillStyle(this.col(B.soilDark), 1); g.fillRect(pl.x + 4, pl.y + 22, pl.w - 8, Math.max(0, pl.h - 26));
-        g.fillStyle(this.col(B.grass), 1); g.fillRoundedRect(pl.x, pl.y, pl.w, 16, { tl: 8, tr: 8, bl: 0, br: 0 });
-        g.fillStyle(this.col(B.grassLight), 1);
-        for (let k = pl.x + 8; k < pl.x + pl.w - 8; k += 26) g.fillRect(k, pl.y + 2, 10, 4);
+        drawPlatformSurface(g, S9.surface, B, pl.x, pl.y, pl.w, pl.h);
+        drawGroundCover(g, S9.cover, B, pl.x, pl.y, pl.w, this.t, S9.rim);
       }
     }
     /* checkpoints: flags */
@@ -724,7 +722,11 @@ export class LevelScene extends Scene {
     this.drawPlayer(g);
     /* particles */
     for (const pt of this.particles) { g.fillStyle(pt.col, pt.alpha); g.fillCircle(pt.x, pt.y, pt.r); }
+    /* Ambient motes sit in front of gameplay but behind the fringe, so the
+       biome's air reads as depth rather than as UI. */
+    drawAmbient(foreground, S9, B, this.cam, W, H, this.t, this.reducedMotion);
     if (meadowForeground) drawMeadowForeground(foreground, meadowForeground, this.cam, this.L.w, B, W, H);
+    else drawFringe(foreground, S9.fringe, this.cam, this.L.w, W, H, this.t);
     if (this.meadowStory.restoring > 0) {
       const rp = Math.min(1, this.meadowStory.restoring / 2.5);
       foreground.fillStyle(0xffedb0, Math.sin(rp * Math.PI) * .18);
