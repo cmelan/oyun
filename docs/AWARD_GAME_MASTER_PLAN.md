@@ -104,6 +104,11 @@ on its own. Everything else is marked and may be dropped without leaving a seam.
 
 ## 3. Milestones
 
+> **Status as of 2026-07-30.** MUST: 5 of 6 done (M2 outstanding). SHOULD/STRETCH:
+> none started. An unplanned milestone was added — **traversal safety** — after an
+> end-to-end playthrough harness found three defects that made nine of ten
+> chapters unplayable. See `docs/AUTONOMOUS_PROGRESS.md`.
+
 Dependency-ordered. Each states what is mechanically verifiable — a test name, a
 build output, or a screenshot comparison — so "done" is never a judgement call.
 
@@ -114,7 +119,7 @@ the two defects in D2.
 *Verified:* `tests/completability.test.ts` (6), `tests/ui.test.ts` (5); 96 tests green;
 browser replay of the free chapter reaches `ended: true`.
 
-### M1 · Procedural biome scenery system — **MUST**
+### M1 · Procedural biome scenery system — **MUST** — ✅ done (2 passes)
 
 The single largest perceived-quality lever, and the foundation every later visual
 milestone builds on.
@@ -138,7 +143,7 @@ ratio between each ridge layer and its sky exceeds the 1.11:1 the audit measured
 screenshot pairs per biome.
 *Budget:* ≤ 220 recorded ops/frame added; 60 fps retained.
 
-### M2 · Biome art manifest — **MUST**
+### M2 · Biome art manifest — **MUST** — ⬜ not started
 
 Removes the seven `biome === 'meadow'` literals from `draw()`; raster art becomes a
 data lookup, so Meadow keeps its plates and any biome can gain them later without
@@ -146,7 +151,7 @@ touching the gameplay file.
 *Tests:* Meadow renders byte-identically (op-count equality); a biome with no
 manifest entry falls back to procedural.
 
-### M3 · Creature roster — **MUST**
+### M3 · Creature roster — **MUST** — ✅ done
 
 `src/core/creatures.ts`: a species registry supplying box, palette, behaviour,
 silhouette drawing and restoration behaviour. `MonsterData.type` — a dead slot today,
@@ -156,7 +161,7 @@ renderer. Each biome gets its own creature.
 `makeMonster` boxes come from the registry; the 40×40 default is preserved so
 `tests/render.test.ts` keeps its meaning.
 
-### M4 · Boss identity — **MUST**
+### M4 · Boss identity — **MUST** — ✅ done
 
 Procedural distinct silhouettes per archetype within existing primitives. Splits
 `BossData.kind` into `finisherKind` (what ✨ does) and `species` (what it looks like),
@@ -164,38 +169,38 @@ which today are the same two-valued field.
 *Acceptance:* the final boss is no longer a rounded rectangle with two dots
 (`docs/evidence/before/L10-3.png` is the before).
 
-### M5 · Chapter script system — **MUST**
+### M5 · Chapter script system — **MUST** — ✅ done
 
 Per-level objective steps, openings and beats as data. Level 1's inline seven-branch
 script migrates onto it unchanged — that migration is the acceptance test. Kills the
 identical "Follow the glowing path" across nine levels.
 *Tests:* ten distinct objective step-arrays; Meadow's step sequence identical to today.
 
-### M6 · Audio identity — **MUST**
+### M6 · Audio identity — **MUST** — ✅ done
 
 Per-biome mode/timbre/ambience data beside the palettes; crossfaded mood changes
 instead of `mi = 0` hard cuts; AudioContext resume on every gesture (iOS suspends it);
 the SFX gaps the audit found (footsteps, checkpoint, dead-press, power acquisition,
 boss telegraph).
 
-### M7 · Learning that transfers — **SHOULD**
+### M7 · Learning that transfers — **SHOULD** — ⬜ not started
 
 The audit's sharpest finding: knowing a tree never helps you solve anything, every
 species is quizzed exactly once, and the clue and the answer are drawn from the same
 vector path (so it is picture-matching, not botany). Make recognition load-bearing in
 at least one puzzle per region, and re-quiz across regions.
 
-### M8 · Wordless play — **SHOULD**
+### M8 · Wordless play — **SHOULD** — ⬜ not started
 
 Menu operable by a non-reader; hint bar spoken; objective bar legible at iPhone SE
 size; powers gain a shape channel alongside colour.
 
-### M9 · Per-level mechanics and surprises — **SHOULD / STRETCH**
+### M9 · Per-level mechanics and surprises — **SHOULD / STRETCH** — ⬜ not started
 
 Populate the M1–M6 systems with the identities in §4. Each level is independently
 droppable; none is load-bearing for another.
 
-### M10 · Submission polish — **STRETCH**, partly human-only
+### M10 · Submission polish — **STRETCH**, partly human-only — ⬜ not started
 
 Store record, RevenueCat product, demo video, promo code, TestFlight. Marked
 human-only in `docs/SHIPATON_2026.md`; no agent can perform these.
