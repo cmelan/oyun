@@ -144,10 +144,8 @@ node scripts/playthrough-all.mjs                        # every chapter, end to 
   Everything here is agent-verified, which is not the same thing.
 - **No independent art review.** All three critique agents died to the account
   spend limit. The scenery has had two passes by the same author who wrote it.
-- **`scripts/playthrough-all.mjs` is a smoke test, not a player.** It decides
-  every ~60ms, so it cannot time a jump the way continuous human input can.
-  Where it fails, that is evidence of difficulty, **not proof of impossibility** —
-  and where it stalls, it is often the bot failing to solve a puzzle chain.
+- **Only 1 of 10 chapters completes end-to-end under the bot.** But see §8: the
+  failure mode moved decisively, and the bot is a smoke test, not a player.
 - **The competition scorecard is unverified.** `docs/audit/SCORECARD.md` carries
   a safety-classifier warning; confirm every claim about Shipaton rules against
   the live pages before relying on it.
@@ -163,3 +161,39 @@ node scripts/playthrough-all.mjs                        # every chapter, end to 
    human-only, per `docs/SHIPATON_2026.md`.
 4. **Nothing has been merged or deployed.** All work is on
    `agent/award-game-transformation`.
+
+
+---
+
+## 8. What the playthroughs actually measured
+
+`scripts/playthrough-all.mjs` drives the real keyboard and card UI. It decides
+every ~60ms, so it cannot time a jump the way continuous human input can. It is
+a smoke test, not a player — where it fails, that is evidence of difficulty, not
+proof of impossibility.
+
+What it measured is still the most useful signal in this whole effort, because
+the **failure mode moved**:
+
+| Run | Where hearts were lost | How far the bot got |
+| --- | --- | --- |
+| Baseline | `pit` at x≈470–504, every chapter | ~12% in, dead in 8s |
+| After landing-zone fix | `pit`, same place | ~12–35% in |
+| After gap + checkpoint + forgiveness + gentle falls | **`boss` at x≈3100** | **50–80% in, at the arena** |
+
+Not a single heart is now lost to a pit. Every chapter's run reaches the boss
+arena, or stalls on a puzzle chain with all three hearts intact. The traversal
+work did what it was meant to do.
+
+The remaining failures are two different things:
+
+1. **The boss fight.** The bot loses both hearts to the boss at x≈3100 in
+   several chapters. Whether that is unfair *for a child* is a real open
+   question — the arena is sealed, holds no creature to heal for a heart, and
+   needs three sand-then-power cycles. It deserves a look.
+2. **The bot getting stuck.** Several "stalls" are the bot running out of sand
+   and then retreating from a creature forever, because its combat rule has no
+   "walk past" branch. A child would jump over. That is a harness limitation,
+   not a game defect.
+
+Neither is settled by this harness. A child playtest is still the gate.
