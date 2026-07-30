@@ -22,6 +22,7 @@ import { drawSky, drawRidges, drawPlatformSurface, drawGroundCover, drawFringe, 
 import { speciesFor } from '../core/creatures';
 import { drawCreature } from './creatureArt';
 import { drawBossCreature } from './bossArt';
+import { chapterFor, currentStep, type ChapterState } from '../core/chapters';
 import { S } from '../core/i18n';
 
 const { GRAV, MOVE, ACCEL, FRICTION, JUMP_V, JUMP_CUT, MAX_FALL, BOUNCE, COYOTE, JBUF } = CONFIG.physics;
@@ -257,22 +258,31 @@ export class LevelScene extends Scene {
     }
   }
 
+  /** Everything a chapter step is allowed to see. */
+  private chapterState(): ChapterState {
+    const b = this.L.boss;
+    return {
+      puzzles: this.L.interact.map(it => it.done),
+      healed: this.monsters.filter(m => m.state === 'happy').length,
+      creatures: this.monsters.length,
+      treesAwake: this.L.trees.filter(t => t.awake).length,
+      trees: this.L.trees.length,
+      finaleAwake: !!this.finaleTree()?.awake,
+      bossActive: this.bossActive,
+      bossCalmed: !!b && (b.state === 'blind' || b.state === 'caged' || b.state === 'defeated'),
+      gateOpen: this.meadowStory.pressureAwake,
+      progress: this.L.w > 0 ? (this.player.x + this.player.w / 2) / this.L.w : 0,
+    };
+  }
+
   private updateObjective(force = false): void {
-    let steps: string[], current: number, label: string;
-    if (this.idx === 0) {
-      steps = ['❄️', '💛', '🌿', '🌀', '💛', '🌳', '✨'];
-      if (!this.L.interact[0]?.done) { current = 0; label = S('objective.meadow.freeze'); }
-      else if (!this.meadowStory.helper) { current = 1; label = S('objective.meadow.friend'); }
-      else if (!this.L.interact[1]?.done) { current = 2; label = S('objective.meadow.grow'); }
-      else if (!this.L.interact[2]?.done) { current = 3; label = S('objective.meadow.bridge'); }
-      else if (!this.meadowStory.pressureAwake) { current = 4; label = S('objective.meadow.gate'); }
-      else if (!this.finaleTree()?.awake) { current = 5; label = S('objective.meadow.oak'); }
-      else { current = 6; label = S('objective.meadow.restore'); }
-    } else {
-      steps = ['→', '🏖️', '✨'];
-      current = this.bossActive ? (this.L.boss?.state === 'blind' || this.L.boss?.state === 'caged' ? 2 : 1) : 0;
-      label = this.bossActive ? S('objective.boss') : S('objective.explore');
-    }
+    /* Was a two-branch if: Level 1's whole script inline, and one fixed
+       three-step bar shared verbatim by the other nine chapters. */
+    const chapter = chapterFor(LEVEL_META[this.idx]?.regionId);
+    const state = this.chapterState();
+    const current = currentStep(chapter, state);
+    const steps = chapter.steps.map(s => s.icon);
+    const label = S(chapter.steps[current].labelKey);
     const key = `${current}:${label}`;
     if (force || key !== this.objectiveKey) {
       this.objectiveKey = key; this.noProgressT = 0;

@@ -1,0 +1,478 @@
+{
+  "generatedFrom": "http://127.0.0.1:5199",
+  "viewport": "960x540",
+  "fps": 60.2,
+  "consoleErrors": [],
+  "levels": [
+    {
+      "idx": 0,
+      "name": "Bölüm 1 · İlk Adımlar",
+      "w": 3120,
+      "biome": "meadow",
+      "dark": false,
+      "platforms": 6,
+      "interact": [
+        "freeze",
+        "grow",
+        "bridge"
+      ],
+      "monsters": [
+        {
+          "type": "walker",
+          "spd": 82,
+          "aggro": 185
+        }
+      ],
+      "boss": null,
+      "trees": [
+        "çınar",
+        "ıhlamur",
+        "meşe"
+      ],
+      "checkpoints": 3,
+      "intros": 6,
+      "sandMax": 3,
+      "objective": "❄️💛🌿🌀💛🌳✨Heal the stream  ❄️  ✨"
+    },
+    {
+      "idx": 1,
+      "name": "Bölüm 2 · Zümrüt Zirveler",
+      "w": 4400,
+      "biome": "peaks",
+      "dark": false,
+      "platforms": 10,
+      "interact": [
+        "freeze",
+        "thorn",
+        "grow",
+        "bridge",
+        "grow",
+        "thorn"
+      ],
+      "monsters": [
+        {
+          "type": "walker"
+        },
+        {
+          "type": "walker"
+        },
+        {
+          "type": "walker",
+          "spd": 148,
+          "aggro": 295
+        },
+        {
+          "type": "walker",
+          "spd": 152,
+          "aggro": 305
+        },
+        {
+          "type": "flipper",
+          "spd": 158,
+          "aggro": 312
+        },
+        {
+          "type": "walker",
+          "spd": 144,
+          "aggro": 278
+        }
+      ],
+      "boss": {
+        "kind": "thrower",
+        "finisher": "cage",
+        "hp": 3,
+        "cageEye": "green"
+      },
+      "trees": [
+        "çam",
+        "servi",
+        "huş",
+        "akçaağaç"
+      ],
+      "checkpoints": 4,
+      "intros": 5,
+      "sandMax": 11,
+      "objective": "☁️🕊️🌲🏖️✨Rise with the wind  🌬️"
+    },
+    {
+      "idx": 2,
+      "name": "Bölüm 3 · Kristal Mağaralar",
+      "w": 4100,
+      "biome": "cave",
+      "dark": true,
+      "platforms": 10,
+      "interact": [
+        "rock",
+        "mush",
+        "torch",
+        "rock",
+        "torch",
+        "mush"
+      ],
+      "monsters": [
+        {
+          "type": "walker",
+          "spd": 118,
+          "aggro": 230
+        },
+        {
+          "type": "walker",
+          "spd": 105,
+          "aggro": 215
+        },
+        {
+          "type": "walker",
+          "spd": 132,
+          "aggro": 262
+        },
+        {
+          "type": "flipper",
+          "spd": 150,
+          "aggro": 305
+        },
+        {
+          "type": "walker",
+          "spd": 158,
+          "aggro": 315
+        }
+      ],
+      "boss": {
+        "kind": "thrower",
+        "finisher": "shrink",
+        "hp": 3,
+        "cageEye": "purple"
+      },
+      "trees": [
+        "söğüt",
+        "ginkgo",
+        "zeytin"
+      ],
+      "checkpoints": 4,
+      "intros": 7,
+      "sandMax": 10,
+      "objective": "🟣🔥💛🏖️✨Shrink the rock, open the way  🟣"
+    },
+    {
+      "idx": 3,
+      "name": "Bölüm 4 · Kestane Korusu",
+      "w": 4196,
+      "biome": "forest",
+      "dark": false,
+      "platforms": 8,
+      "interact": [
+        "grow",
+        "bridge",
+        "thorn"
+      ],
+      "monsters": [
+        {
+          "type": "walker",
+          "spd": 102,
+          "aggro": 189
+        },
+        {
+          "type": "walker",
+          "spd": 102,
+          "aggro": 189
+        },
+        {
+          "type": "walker",
+          "spd": 102,
+          "aggro": 189
+        }
+      ],
+      "boss": {
+        "kind": "thrower",
+        "finisher": "cage",
+        "hp": 3,
+        "cageEye": "green"
+      },
+      "trees": [
+        "kestane",
+        "kayın",
+        "kavak"
+      ],
+      "checkpoints": 3,
+      "intros": 1,
+      "sandMax": 8,
+      "objective": "🌰💛🌳🏖️✨Bring the spiky husks down  🌰"
+    },
+    {
+      "idx": 4,
+      "name": "Bölüm 5 · Toros Yaylası",
+      "w": 4244,
+      "biome": "toros",
+      "dark": false,
+      "platforms": 8,
+      "interact": [
+        "freeze",
+        "rock",
+        "bridge"
+      ],
+      "monsters": [
+        {
+          "type": "walker",
+          "spd": 112,
+          "aggro": 201
+        },
+        {
+          "type": "walker",
+          "spd": 112,
+          "aggro": 201
+        },
+        {
+          "type": "walker",
+          "spd": 112,
+          "aggro": 201
+        }
+      ],
+      "boss": {
+        "kind": "thrower",
+        "finisher": "shrink",
+        "hp": 3,
+        "cageEye": "blue"
+      },
+      "trees": [
+        "toros sediri",
+        "ardıç",
+        "sekoya"
+      ],
+      "checkpoints": 3,
+      "intros": 1,
+      "sandMax": 8,
+      "objective": "🌬️💛🌲🏖️✨Shelter from the wind  🌬️"
+    },
+    {
+      "idx": 5,
+      "name": "Bölüm 6 · Meyve Bahçesi",
+      "w": 4244,
+      "biome": "orchard",
+      "dark": false,
+      "platforms": 8,
+      "interact": [
+        "grow",
+        "mush",
+        "bridge"
+      ],
+      "monsters": [
+        {
+          "type": "walker",
+          "spd": 112,
+          "aggro": 201
+        },
+        {
+          "type": "walker",
+          "spd": 112,
+          "aggro": 201
+        },
+        {
+          "type": "walker",
+          "spd": 112,
+          "aggro": 201
+        }
+      ],
+      "boss": {
+        "kind": "mimic",
+        "finisher": "cage",
+        "hp": 3,
+        "cageEye": "green"
+      },
+      "trees": [
+        "elma",
+        "kiraz",
+        "ceviz"
+      ],
+      "checkpoints": 3,
+      "intros": 1,
+      "sandMax": 8,
+      "objective": "🌸💛🍎🌳✨Carry a blossom  🌸"
+    },
+    {
+      "idx": 6,
+      "name": "Bölüm 7 · Akdeniz Kıyısı",
+      "w": 4292,
+      "biome": "coast",
+      "dark": false,
+      "platforms": 8,
+      "interact": [
+        "bridge",
+        "thorn",
+        "freeze"
+      ],
+      "monsters": [
+        {
+          "type": "walker",
+          "spd": 122,
+          "aggro": 213
+        },
+        {
+          "type": "walker",
+          "spd": 122,
+          "aggro": 213
+        },
+        {
+          "type": "walker",
+          "spd": 122,
+          "aggro": 213
+        }
+      ],
+      "boss": {
+        "kind": "thrower",
+        "finisher": "shrink",
+        "hp": 3,
+        "cageEye": "yellow"
+      },
+      "trees": [
+        "palmiye",
+        "incir",
+        "limon"
+      ],
+      "checkpoints": 3,
+      "intros": 1,
+      "sandMax": 8,
+      "objective": "🌊💛🌴🏖️✨Follow the shore  🌊"
+    },
+    {
+      "idx": 7,
+      "name": "Bölüm 8 · Karadeniz Ormanı",
+      "w": 4292,
+      "biome": "rainforest",
+      "dark": false,
+      "platforms": 8,
+      "interact": [
+        "torch",
+        "grow",
+        "mush"
+      ],
+      "monsters": [
+        {
+          "type": "walker",
+          "spd": 122,
+          "aggro": 213
+        },
+        {
+          "type": "walker",
+          "spd": 122,
+          "aggro": 213
+        },
+        {
+          "type": "walker",
+          "spd": 122,
+          "aggro": 213
+        }
+      ],
+      "boss": {
+        "kind": "thrower",
+        "finisher": "cage",
+        "hp": 3,
+        "cageEye": "red"
+      },
+      "trees": [
+        "ladin",
+        "fındık",
+        "kayın"
+      ],
+      "checkpoints": 3,
+      "intros": 1,
+      "sandMax": 8,
+      "objective": "🔥💛🌲🏖️✨Light a way through the mist  🔥"
+    },
+    {
+      "idx": 8,
+      "name": "Bölüm 9 · Göl Kenarı",
+      "w": 4340,
+      "biome": "lakeside",
+      "dark": false,
+      "platforms": 8,
+      "interact": [
+        "freeze",
+        "bridge",
+        "grow"
+      ],
+      "monsters": [
+        {
+          "type": "walker",
+          "spd": 132,
+          "aggro": 225
+        },
+        {
+          "type": "walker",
+          "spd": 132,
+          "aggro": 225
+        },
+        {
+          "type": "walker",
+          "spd": 132,
+          "aggro": 225
+        }
+      ],
+      "boss": {
+        "kind": "mimic",
+        "finisher": "shrink",
+        "hp": 3,
+        "cageEye": "blue"
+      },
+      "trees": [
+        "kızılağaç",
+        "dişbudak",
+        "söğüt"
+      ],
+      "checkpoints": 3,
+      "intros": 1,
+      "sandMax": 8,
+      "objective": "💧💛🌿🌳✨Follow the water’s edge  💧"
+    },
+    {
+      "idx": 9,
+      "name": "Bölüm 10 · Usta Bahçıvan",
+      "w": 5360,
+      "biome": "mastery",
+      "dark": false,
+      "platforms": 10,
+      "interact": [
+        "rock",
+        "torch",
+        "thorn",
+        "mush"
+      ],
+      "monsters": [
+        {
+          "type": "walker",
+          "spd": 132,
+          "aggro": 225
+        },
+        {
+          "type": "walker",
+          "spd": 132,
+          "aggro": 225
+        },
+        {
+          "type": "walker",
+          "spd": 132,
+          "aggro": 225
+        },
+        {
+          "type": "walker",
+          "spd": 132,
+          "aggro": 225
+        }
+      ],
+      "boss": {
+        "kind": "mimic",
+        "finisher": "cage",
+        "hp": 3,
+        "cageEye": "purple"
+      },
+      "trees": [
+        "söğüt",
+        "ginkgo",
+        "zeytin",
+        "kestane"
+      ],
+      "checkpoints": 4,
+      "intros": 1,
+      "sandMax": 9,
+      "objective": "📖🌳💛🌳⭐Remember what you learned  📖"
+    }
+  ]
+}
