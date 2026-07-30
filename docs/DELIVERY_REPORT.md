@@ -177,13 +177,25 @@ the **failure mode moved**:
 
 | Run | Where hearts were lost | How far the bot got |
 | --- | --- | --- |
-| Baseline | `pit` at x≈470–504, every chapter | ~12% in, dead in 8s |
+| Baseline | `pit` at x≈470–504, in every chapter | ~12% in, dead in 8s |
 | After landing-zone fix | `pit`, same place | ~12–35% in |
-| After gap + checkpoint + forgiveness + gentle falls | **`boss` at x≈3100** | **50–80% in, at the arena** |
+| After gap + checkpoint + forgiveness + gentle falls | **`boss` at x≈3100–3148, nowhere else** | **42–78% in** |
 
-Not a single heart is now lost to a pit. Every chapter's run reaches the boss
-arena, or stalls on a puzzle chain with all three hearts intact. The traversal
-work did what it was meant to do.
+**Not a single heart is lost to a pit in any chapter.** That was the dominant
+failure mode and it is gone. Of the nine chapters the bot does not finish, four
+(L4, L5, L7, L9) reach the boss arena and lose hearts only there; the other five
+stall mid-level with hearts still intact, which is the bot failing to solve
+something rather than the game taking anything from it.
+
+Final run, per chapter (L1 completed in 28.0s):
+
+| | L2 | L3 | L4 | L5 | L6 | L7 | L8 | L9 | L10 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| reached | 67% | 66% | 78% | arena | 42% | arena | 55% | 74% | *invalid* |
+| hearts lost to pits | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+
+L10's row is void: the preview server was stopped while that chapter was still
+running, so its 6% is an artefact of my own tooling, not a measurement.
 
 The remaining failures are two different things:
 
