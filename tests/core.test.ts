@@ -320,13 +320,17 @@ describe('v2 içerik: B5–B10', () => {
     expect(streakAnswer(s, true)).toBe(false); /* fresh question counts again */
     expect(s.run).toBe(1);
   });
-  it('görünmez yardım: sınırlı, etiketsiz, 2 ölüme kadar devreye girmez', () => {
+  /* Was: "2 ölüme kadar devreye girmez" — it asserted that the assist stays off
+     until two deaths, which with three hearts meant it only ever arrived at the
+     game-over screen. The threshold moved to one; see the assist suite below. */
+  it('görünmez yardım: sınırlı ve etiketsiz, ilk kalpten sonra devreye girer', () => {
     expect(assistFactors({ deaths: 0 }).monsterSpd).toBe(1);
-    expect(assistFactors({ deaths: 2 }).monsterSpd).toBe(1);
+    expect(assistFactors({ deaths: 1 }).monsterSpd).toBe(1);
+    expect(assistFactors({ deaths: 2 }).monsterSpd).toBeLessThan(1);
     const heavy = assistFactors({ deaths: 20 });
-    expect(heavy.monsterSpd).toBeGreaterThanOrEqual(0.75);
-    expect(heavy.iframeBonus).toBeLessThanOrEqual(0.6);
-    expect(heavy.blindBonus).toBeLessThanOrEqual(2);
+    expect(heavy.monsterSpd).toBeGreaterThanOrEqual(0.62);
+    expect(heavy.iframeBonus).toBeLessThanOrEqual(0.9);
+    expect(heavy.blindBonus).toBeLessThanOrEqual(2.5);
   });
   it('aile yıldızları: tam aile ★', () => {
     const trees = { a: { family: 'X' }, b: { family: 'X' }, c: { family: 'Y' } };
@@ -359,5 +363,41 @@ describe('dil', () => {
       for (const key of ['family.button', 'family.title', 'family.body', 'family.question', 'family.wrong', 'family.unlocked', 'family.unlocked.body', 'map.familyLocked']) expect(S(key)).not.toBe(key);
     }
     setLang('tr');
+  });
+});
+
+describe('görünmez yardım (invisible assist)', () => {
+  /* This assist could never fire. It started at `deaths - 2`, but with exactly
+     three hearts the third death IS the game over — so it first became non-zero
+     at the instant the chapter ended, and the retry rebuilt the scene with the
+     count reset to zero. */
+  it('does nothing on a clean run', () => {
+    const none = assistFactors({ deaths: 0 });
+    expect(none.monsterSpd).toBe(1);
+    expect(none.iframeBonus).toBe(0);
+    expect(none.blindBonus).toBe(0);
+  });
+
+  it('starts helping while the child still has hearts left', () => {
+    /* The player has CONFIG.hearts hearts. The assist must do something before
+       that many deaths, or it only ever arrives too late. */
+    const beforeGameOver = assistFactors({ deaths: CONFIG.hearts - 1 });
+    expect(beforeGameOver.monsterSpd, 'assist has not started before the last heart').toBeLessThan(1);
+    expect(beforeGameOver.iframeBonus).toBeGreaterThan(0);
+  });
+
+  it('keeps widening the margins the longer a child struggles', () => {
+    const a = assistFactors({ deaths: 2 });
+    const b = assistFactors({ deaths: 5 });
+    expect(b.monsterSpd).toBeLessThan(a.monsterSpd);
+    expect(b.iframeBonus).toBeGreaterThan(a.iframeBonus);
+    expect(b.blindBonus).toBeGreaterThan(a.blindBonus);
+  });
+
+  it('never plays the game for the child', () => {
+    const extreme = assistFactors({ deaths: 500 });
+    expect(extreme.monsterSpd).toBeGreaterThanOrEqual(0.6);
+    expect(extreme.iframeBonus).toBeLessThanOrEqual(1);
+    expect(extreme.blindBonus).toBeLessThanOrEqual(3);
   });
 });

@@ -83,9 +83,13 @@ export class LevelScene extends Scene {
 
   constructor() { super(LevelScene.KEY); }
 
-  init(data: { idx: number; hooks: SceneHooks }): void {
+  init(data: { idx: number; hooks: SceneHooks; priorDeaths?: number }): void {
     this.idx = data.idx; this.hooks = data.hooks;
+    this.priorDeaths = data.priorDeaths ?? 0;
   }
+  private priorDeaths = 0;
+  /** Total failures on this chapter, including previous attempts. */
+  deathCount(): number { return this.assist.deaths; }
 
   create(): void {
     this.L = prepLevel(this.idx, this.hooks.journal());
@@ -97,7 +101,7 @@ export class LevelScene extends Scene {
     this.player.vx = 0; this.player.vy = 0; this.player.iframe = 0; this.player.squash = 1;
     this.cam = 0; this.t = 0; this.ended = false; this.modal = false;
     this.bossActive = false; this.bossShots = []; this.sands = []; this.particles = [];
-    this.assist = { deaths: 0 }; this.introSeen.clear();
+    this.assist = { deaths: this.priorDeaths }; this.introSeen.clear();
     this.objectiveKey = ''; this.progressSignature = ''; this.noProgressT = 0; this.bossRefillT = 0;
     this.meadowStory = { helper: null, pressureAwake: false, restoring: 0, restoreCue: 0, gateStep: 0, oakGuided: false };
     this.reducedMotion = typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;

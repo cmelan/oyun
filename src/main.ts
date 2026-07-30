@@ -26,6 +26,10 @@ const game = new Game({
 let scene: LevelScene | null = null;
 let currentIdx = 0;
 let paused = false;
+/* Failures carried across retries of the SAME chapter. The invisible assist is
+   worthless if it resets every time the scene is rebuilt, which is exactly what
+   a retry does. Cleared on success or on leaving for a different chapter. */
+let priorDeaths = 0;
 
 function persist(): void { writeSave(save, localStorage); }
 
@@ -36,11 +40,13 @@ const hooks: SceneHooks = {
     if (recordTreeWake(save, id)) persist();
   },
   onLevelComplete(idx: number, name: string, isLast: boolean) {
+    priorDeaths = 0;
     save.furthest = Math.max(save.furthest || 0, idx + 1); persist();
     ui.setGameplayVisible(false);
     ui.showLevelComplete(name, isLast, idx === 0);
   },
   onGameOver() {
+    priorDeaths = scene ? scene.deathCount() : priorDeaths;
     ui.setGameplayVisible(false);
     ui.showGameOver();
   },
@@ -48,7 +54,9 @@ const hooks: SceneHooks = {
 
 function startLevel(idx: number): void {
   initAudio(!!save.muted);
-  currentIdx = Math.max(0, Math.min(idx, LEVELS.length - 1));
+  const next = Math.max(0, Math.min(idx, LEVELS.length - 1));
+  if (next !== currentIdx) priorDeaths = 0;   /* a different chapter starts fresh */
+  currentIdx = next;
   /* The biome decides the scale and timbre; the mood decides the intention.
      Every level used to be set to the same mood, so nine of ten chapters
      sounded identical. */
@@ -57,7 +65,7 @@ function startLevel(idx: number): void {
   paused = false;
   if (scene) { game.scene.stop(LevelScene.KEY); game.scene.remove(LevelScene.KEY); }
   scene = new LevelScene();
-  game.scene.add(LevelScene.KEY, scene, true, { idx: currentIdx, hooks });
+  game.scene.add(LevelScene.KEY, scene, true, { idx: currentIdx, hooks, priorDeaths });
 }
 
 function pauseToggle(): void {
