@@ -1,6 +1,6 @@
 # Delivery report
 
-Branch `agent/award-game-transformation`, 16 commits on top of `3330301`.
+Branch `agent/award-game-transformation`, 19 commits on top of `3330301`.
 Sessions of 2026-07-29 and 2026-07-30.
 
 **This is not a finished transformation.** It is five of six MUST milestones, six
@@ -13,7 +13,7 @@ listed in §6 and is substantial.
 
 | | before | after |
 | --- | --- | --- |
-| Tests | 84 | **177** |
+| Tests | 84 | **180** |
 | Test files | 7 | **15** |
 | Distinct objective bars across 10 chapters | 2 | **10** |
 | Creatures in the whole game | 1 | **10** |
@@ -80,7 +80,7 @@ pits as the overwhelming cause of lost hearts.
 | M4 Boss identity | `src/game/bossArt.ts` | `boss.test.ts` (6) |
 | M5 Chapter scripts | `src/core/chapters.ts` | `chapters.test.ts` (14) |
 | M6 Audio identity | `src/core/soundscape.ts` | `soundscape.test.ts` (12) |
-| Traversal safety | `src/core/generator.ts` | `traversal.test.ts` (15) |
+| Traversal safety | `src/core/generator.ts` | `traversal.test.ts` (18) |
 | Completability | `src/core/world.ts` | `completability.test.ts` (6) |
 
 Every system is data-driven, and Level 1 — the one chapter that was already
