@@ -80,8 +80,8 @@ export const SCENERY: Record<string, SceneryProfile> = {
       { y: 156, parallax: .11, scale: .85, gap: 330, alpha: .38, color: '#ffffff', shape: 'puff', seed: 8 },
     ],
     ridges: [
-      { parallax: .10, color: '#c8e9dc', alpha: .85, baseY: 396, amp: 84, wavelength: 620, shape: 'rolling', seed: 11 },
-      { parallax: .22, color: '#47916f', alpha: .90, baseY: 432, amp: 66, wavelength: 400, shape: 'canopy', seed: 5 },
+      { parallax: .10, color: '#c8e9dc', alpha: .85, baseY: 402, amp: 150, wavelength: 430, shape: 'rolling', seed: 11 },
+      { parallax: .22, color: '#47916f', alpha: .90, baseY: 424, amp: 118, wavelength: 300, shape: 'canopy', seed: 5 },
     ],
     surface: 'soil', cover: 'grass',
     fringe: { kind: 'grass', color: '#3f7d52', alpha: .85, parallax: 1.10, stride: 700, height: 96, seed: 2 },
@@ -98,9 +98,9 @@ export const SCENERY: Record<string, SceneryProfile> = {
       { y: 214, parallax: .09, scale: 1.0, gap: 300, alpha: .34, color: '#f2fbfa', shape: 'streak', seed: 14 },
     ],
     ridges: [
-      { parallax: .07, color: '#a8d8d2', alpha: .80, baseY: 372, amp: 168, wavelength: 700, shape: 'peaks', seed: 31 },
-      { parallax: .16, color: '#9acac3', alpha: .88, baseY: 414, amp: 124, wavelength: 460, shape: 'peaks', seed: 7 },
-      { parallax: .30, color: '#4e8d84', alpha: .92, baseY: 452, amp: 74, wavelength: 320, shape: 'rolling', seed: 19 },
+      { parallax: .07, color: '#95bfba', alpha: .80, baseY: 400, amp: 205, wavelength: 440, shape: 'peaks', seed: 31 },
+      { parallax: .16, color: '#8ebab4', alpha: .88, baseY: 416, amp: 150, wavelength: 320, shape: 'peaks', seed: 7 },
+      { parallax: .30, color: '#4e8d84', alpha: .92, baseY: 432, amp: 112, wavelength: 230, shape: 'rolling', seed: 19 },
     ],
     surface: 'rock', cover: 'snow',
     fringe: { kind: 'branch', color: '#2f5f58', alpha: .78, parallax: 1.12, stride: 820, height: 108, seed: 6 },
@@ -114,8 +114,8 @@ export const SCENERY: Record<string, SceneryProfile> = {
     haze: { y: 260, color: '#2a2246', alpha: .50 },
     clouds: [],
     ridges: [
-      { parallax: .08, color: '#322b4b', alpha: .95, baseY: 470, amp: 210, wavelength: 380, shape: 'spires', seed: 44 },
-      { parallax: .20, color: '#443f56', alpha: .95, baseY: 500, amp: 150, wavelength: 260, shape: 'spires', seed: 12 },
+      { parallax: .08, color: '#322b4b', alpha: .95, baseY: 430, amp: 200, wavelength: 300, shape: 'spires', seed: 44 },
+      { parallax: .20, color: '#443f56', alpha: .95, baseY: 448, amp: 140, wavelength: 210, shape: 'spires', seed: 12 },
     ],
     surface: 'crystal', cover: 'crystal',
     fringe: { kind: 'crystal', color: '#120d24', alpha: .90, parallax: 1.14, stride: 620, height: 128, seed: 27 },
@@ -129,9 +129,9 @@ export const SCENERY: Record<string, SceneryProfile> = {
     haze: { y: 320, color: '#f2cf9c', alpha: .38 },
     clouds: [{ y: 104, parallax: .05, scale: 1.1, gap: 470, alpha: .34, color: '#fff2d8', shape: 'streak', seed: 9 }],
     ridges: [
-      { parallax: .09, color: '#e8bd8d', alpha: .82, baseY: 388, amp: 92, wavelength: 540, shape: 'rolling', seed: 15 },
-      { parallax: .20, color: '#a5672e', alpha: .90, baseY: 430, amp: 108, wavelength: 300, shape: 'canopy', seed: 33 },
-      { parallax: .34, color: '#7c4a22', alpha: .92, baseY: 468, amp: 72, wavelength: 210, shape: 'canopy', seed: 4 },
+      { parallax: .09, color: '#cda77d', alpha: .82, baseY: 400, amp: 150, wavelength: 400, shape: 'rolling', seed: 15 },
+      { parallax: .20, color: '#a5672e', alpha: .90, baseY: 418, amp: 128, wavelength: 260, shape: 'canopy', seed: 33 },
+      { parallax: .34, color: '#7c4a22', alpha: .92, baseY: 434, amp: 110, wavelength: 180, shape: 'canopy', seed: 4 },
     ],
     surface: 'soil', cover: 'moss',
     fringe: { kind: 'fern', color: '#5c3618', alpha: .82, parallax: 1.10, stride: 660, height: 116, seed: 18 },
@@ -148,9 +148,9 @@ export const SCENERY: Record<string, SceneryProfile> = {
       { y: 178, parallax: .10, scale: 1.1, gap: 380, alpha: .30, color: '#ffffff', shape: 'wisp', seed: 37 },
     ],
     ridges: [
-      { parallax: .07, color: '#c4dde2', alpha: .84, baseY: 366, amp: 146, wavelength: 780, shape: 'peaks', seed: 52 },
-      { parallax: .17, color: '#77958e', alpha: .88, baseY: 418, amp: 96, wavelength: 500, shape: 'cliffs', seed: 22 },
-      { parallax: .32, color: '#5c7f68', alpha: .90, baseY: 458, amp: 58, wavelength: 300, shape: 'rolling', seed: 41 },
+      { parallax: .07, color: '#a6bcc0', alpha: .84, baseY: 398, amp: 190, wavelength: 460, shape: 'peaks', seed: 52 },
+      { parallax: .17, color: '#77958e', alpha: .88, baseY: 418, amp: 132, wavelength: 330, shape: 'cliffs', seed: 22 },
+      { parallax: .32, color: '#5c7f68', alpha: .90, baseY: 434, amp: 108, wavelength: 240, shape: 'rolling', seed: 41 },
     ],
     surface: 'strata', cover: 'pebble',
     fringe: { kind: 'grass', color: '#3f5c46', alpha: .76, parallax: 1.08, stride: 740, height: 88, seed: 13 },
@@ -164,8 +164,8 @@ export const SCENERY: Record<string, SceneryProfile> = {
     haze: { y: 330, color: '#ffe0c4', alpha: .34 },
     clouds: [{ y: 110, parallax: .05, scale: 1.2, gap: 440, alpha: .42, color: '#fff6ec', shape: 'puff', seed: 6 }],
     ridges: [
-      { parallax: .10, color: '#f5d1a4', alpha: .80, baseY: 392, amp: 76, wavelength: 580, shape: 'rolling', seed: 28 },
-      { parallax: .23, color: '#af8656', alpha: .86, baseY: 434, amp: 88, wavelength: 270, shape: 'canopy', seed: 16 },
+      { parallax: .10, color: '#d0b28b', alpha: .80, baseY: 404, amp: 145, wavelength: 420, shape: 'rolling', seed: 28 },
+      { parallax: .23, color: '#af8656', alpha: .86, baseY: 426, amp: 118, wavelength: 250, shape: 'canopy', seed: 16 },
     ],
     surface: 'soil', cover: 'blossom',
     fringe: { kind: 'branch', color: '#7c5334', alpha: .80, parallax: 1.12, stride: 690, height: 104, seed: 35 },
@@ -179,9 +179,9 @@ export const SCENERY: Record<string, SceneryProfile> = {
     haze: { y: 300, color: '#cdeef7', alpha: .40 },
     clouds: [{ y: 92, parallax: .04, scale: 1.35, gap: 600, alpha: .40, color: '#ffffff', shape: 'streak', seed: 43 }],
     ridges: [
-      { parallax: .06, color: '#7fc9d8', alpha: .70, baseY: 336, amp: 26, wavelength: 900, shape: 'rolling', seed: 2 },
-      { parallax: .14, color: '#4899af', alpha: .78, baseY: 392, amp: 40, wavelength: 460, shape: 'rolling', seed: 24 },
-      { parallax: .28, color: '#e6d5ba', alpha: .88, baseY: 448, amp: 70, wavelength: 380, shape: 'dunes', seed: 38 },
+      { parallax: .06, color: '#75b9c7', alpha: .70, baseY: 356, amp: 26, wavelength: 640, shape: 'rolling', seed: 2 },
+      { parallax: .14, color: '#4899af', alpha: .78, baseY: 400, amp: 76, wavelength: 380, shape: 'rolling', seed: 24 },
+      { parallax: .28, color: '#c9a366', alpha: .88, baseY: 430, amp: 120, wavelength: 300, shape: 'dunes', seed: 38 },
     ],
     surface: 'sand', cover: 'sand',
     fringe: { kind: 'palm', color: '#2f7a5c', alpha: .80, parallax: 1.10, stride: 780, height: 132, seed: 30 },
@@ -198,9 +198,9 @@ export const SCENERY: Record<string, SceneryProfile> = {
       { y: 246, parallax: .13, scale: 1.2, gap: 260, alpha: .30, color: '#e4f1e8', shape: 'wisp', seed: 29 },
     ],
     ridges: [
-      { parallax: .08, color: '#9dc0a8', alpha: .78, baseY: 372, amp: 110, wavelength: 420, shape: 'canopy', seed: 51 },
-      { parallax: .19, color: '#7da38a', alpha: .86, baseY: 424, amp: 96, wavelength: 280, shape: 'canopy', seed: 17 },
-      { parallax: .33, color: '#3f6a4c', alpha: .92, baseY: 466, amp: 74, wavelength: 190, shape: 'canopy', seed: 36 },
+      { parallax: .08, color: '#85a38f', alpha: .78, baseY: 398, amp: 158, wavelength: 340, shape: 'canopy', seed: 51 },
+      { parallax: .19, color: '#7da38a', alpha: .86, baseY: 418, amp: 130, wavelength: 250, shape: 'canopy', seed: 17 },
+      { parallax: .33, color: '#3f6a4c', alpha: .92, baseY: 436, amp: 112, wavelength: 170, shape: 'canopy', seed: 36 },
     ],
     surface: 'peat', cover: 'moss',
     fringe: { kind: 'fern', color: '#274a34', alpha: .86, parallax: 1.13, stride: 580, height: 124, seed: 20 },
@@ -217,9 +217,9 @@ export const SCENERY: Record<string, SceneryProfile> = {
       { y: 186, parallax: .10, scale: .9, gap: 340, alpha: .28, color: '#f2f9ff', shape: 'wisp', seed: 45 },
     ],
     ridges: [
-      { parallax: .08, color: '#b3d2e6', alpha: .80, baseY: 368, amp: 66, wavelength: 660, shape: 'rolling', seed: 26 },
-      { parallax: .18, color: '#4f7fa0', alpha: .86, baseY: 412, amp: 80, wavelength: 340, shape: 'canopy', seed: 39 },
-      { parallax: .30, color: '#5f8a68', alpha: .88, baseY: 456, amp: 46, wavelength: 240, shape: 'rolling', seed: 8 },
+      { parallax: .08, color: '#98b2c3', alpha: .80, baseY: 396, amp: 140, wavelength: 430, shape: 'rolling', seed: 26 },
+      { parallax: .18, color: '#4f7fa0', alpha: .86, baseY: 418, amp: 124, wavelength: 290, shape: 'canopy', seed: 39 },
+      { parallax: .30, color: '#5f8a68', alpha: .88, baseY: 434, amp: 106, wavelength: 210, shape: 'rolling', seed: 8 },
     ],
     surface: 'peat', cover: 'reed',
     fringe: { kind: 'reed', color: '#3c6a48', alpha: .84, parallax: 1.11, stride: 520, height: 118, seed: 34 },
@@ -236,9 +236,9 @@ export const SCENERY: Record<string, SceneryProfile> = {
       { y: 172, parallax: .10, scale: 1.0, gap: 360, alpha: .32, color: '#fff2d4', shape: 'streak', seed: 32 },
     ],
     ridges: [
-      { parallax: .07, color: '#f2d49c', alpha: .80, baseY: 378, amp: 108, wavelength: 700, shape: 'peaks', seed: 48 },
-      { parallax: .18, color: '#b9955b', alpha: .86, baseY: 424, amp: 84, wavelength: 380, shape: 'rolling', seed: 23 },
-      { parallax: .32, color: '#869654', alpha: .90, baseY: 462, amp: 78, wavelength: 230, shape: 'canopy', seed: 40 },
+      { parallax: .07, color: '#d6bc8a', alpha: .80, baseY: 400, amp: 165, wavelength: 450, shape: 'peaks', seed: 48 },
+      { parallax: .18, color: '#b9955b', alpha: .86, baseY: 420, amp: 128, wavelength: 300, shape: 'rolling', seed: 23 },
+      { parallax: .32, color: '#869654', alpha: .90, baseY: 436, amp: 110, wavelength: 200, shape: 'canopy', seed: 40 },
     ],
     /* A walled, terraced garden — dry stone under cultivated turf. Deliberately
        not the Meadow's bare soil: this is the same world, tended. */
@@ -253,6 +253,37 @@ export const DEFAULT_SCENERY = SCENERY.meadow;
 export function sceneryFor(biome: string | undefined): SceneryProfile {
   return (biome && SCENERY[biome]) || DEFAULT_SCENERY;
 }
+
+/* The gameplay line. Platform tops across the ten levels sit between y=342 and
+   y=400, so anything below this is hidden behind the level and cannot count as
+   scenery. Every ridge must peak above it or it is drawn for nobody. */
+export const HORIZON_CEILING = 332;
+
+/** The sky colour behind a given screen y, matching the gradient the renderer
+ *  actually paints: skyTop at y=0, skyMid at y=H/2, skyBot at y=H.
+ *
+ *  This exists because contrast-checking a ridge against `skyBot` is wrong: a
+ *  ridge's peak sits high, where the sky is skyMid or skyTop. Pale far ridges
+ *  passed a skyBot check and then vanished against the actual sky behind them. */
+export function skyColorAt(
+  palette: { skyTop: string; skyMid: string; skyBot: string },
+  y: number, H = 540,
+): string {
+  const t = Math.max(0, Math.min(1, y / H));
+  const [from, to, k] = t <= .5
+    ? [palette.skyTop, palette.skyMid, t / .5]
+    : [palette.skyMid, palette.skyBot, (t - .5) / .5];
+  const a = parseInt(from.slice(1), 16), b = parseInt(to.slice(1), 16);
+  const mix = (shift: number) => {
+    const ca = (a >> shift) & 255, cb = (b >> shift) & 255;
+    return Math.round(ca + (cb - ca) * k);
+  };
+  return '#' + [mix(16), mix(8), mix(0)]
+    .map(v => v.toString(16).padStart(2, '0')).join('');
+}
+
+/** Screen y of a ridge's peaks — the height its colour must survive against. */
+export const ridgePeakY = (r: RidgeLayer): number => r.baseY - r.amp;
 
 /* ---------- deterministic noise ----------
    Shared by the renderer and the tests. Must be a pure function of world x, or

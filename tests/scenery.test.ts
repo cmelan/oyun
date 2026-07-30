@@ -8,7 +8,10 @@
      old ellipse hills at 1.03–1.11:1 against their own sky, which is why nine
      of ten horizons were invisible. */
 import { describe, it, expect } from 'vitest';
-import { SCENERY, sceneryFor, ridgeHeight, fbm, valueNoise, hash01 } from '../src/core/scenery';
+import {
+  SCENERY, sceneryFor, ridgeHeight, fbm, valueNoise, hash01,
+  skyColorAt, ridgePeakY, HORIZON_CEILING,
+} from '../src/core/scenery';
 import { BIOME } from '../src/core/biomes';
 import { WORLD } from '../src/core/world';
 
@@ -66,19 +69,33 @@ describe('scenery data', () => {
     }
   });
 
-  it('every ridge is perceptible, and the nearest one is clearly readable', () => {
-    /* Tiered on purpose. Atmospheric perspective genuinely fades the farthest
-       layer toward the sky, so demanding one flat ratio would fight physics.
-       But the measured baseline was 1.03:1 — invisible, not atmospheric. So:
-       every layer must be perceptible, and the layer that defines the horizon
-       the child actually reads must clearly separate. */
+  it('every ridge peaks above the gameplay line', () => {
+    /* Platform tops sit between y=342 and y=400. A ridge whose peak is below
+       HORIZON_CEILING is drawn entirely behind the level and seen by nobody —
+       which is exactly what happened on the first pass. */
     for (const [id, profile] of Object.entries(SCENERY)) {
-      const sky = BIOME[id].skyBot;
       profile.ridges.forEach((ridge, i) => {
+        expect(ridgePeakY(ridge), `${id} ridge ${i} peaks at y=${ridgePeakY(ridge)}, behind the level`)
+          .toBeLessThanOrEqual(HORIZON_CEILING);
+      });
+    }
+  });
+
+  it('every ridge is perceptible against the sky AT ITS OWN HEIGHT', () => {
+    /* Checking against skyBot is the trap: a far ridge's peaks sit high, where
+       the sky is skyMid or skyTop. Pale ridges passed a skyBot check and then
+       vanished against the sky actually behind them.
+
+       Tiered on purpose — atmospheric perspective genuinely fades the farthest
+       layer, so one flat ratio would fight physics. But the measured baseline
+       was 1.03:1: invisible, not atmospheric. */
+    for (const [id, profile] of Object.entries(SCENERY)) {
+      profile.ridges.forEach((ridge, i) => {
+        const sky = skyColorAt(BIOME[id], ridgePeakY(ridge) + ridge.amp * 0.25);
         const ratio = contrast(ridge.color, sky);
         const nearest = i === profile.ridges.length - 1;
-        const floor = nearest ? 1.5 : 1.25;
-        expect(ratio, `${id}: ${nearest ? 'nearest' : `ridge ${i}`} ${ridge.color} vs sky ${sky} is only ${ratio.toFixed(2)}:1`)
+        const floor = nearest ? 1.45 : 1.22;
+        expect(ratio, `${id}: ${nearest ? 'nearest' : `ridge ${i}`} ${ridge.color} vs sky ${sky} at its own height is only ${ratio.toFixed(2)}:1`)
           .toBeGreaterThan(floor);
       });
     }

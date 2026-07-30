@@ -39,24 +39,34 @@ export function drawSky(
 
   const c = profile.celestial;
   if (c.kind !== 'none') {
-    /* Breathing halo first, disc on top, so the disc stays crisp. */
-    g.fillStyle(hexToNum(c.halo), 1);
+    /* Three nested falloffs, not a disc. A hard-edged opaque circle reads as a
+       UI dot pasted on the sky; a sun is mostly bloom. */
     const breathe = 1 + Math.sin(time * .5) * .03;
-    g.fillRadial(c.x, c.y, c.haloR * breathe, [[0, .42], [.45, .16], [1, 0]]);
+    g.fillStyle(hexToNum(c.halo), 1);
+    g.fillRadial(c.x, c.y, c.haloR * breathe, [[0, .34], [.35, .15], [1, 0]]);
     if (c.r > 0) {
-      g.fillStyle(hexToNum(c.core), .95);
-      g.fillCircle(c.x, c.y, c.r);
+      g.fillStyle(hexToNum(c.core), 1);
+      g.fillRadial(c.x, c.y, c.r * 2.6, [[0, .55], [.4, .28], [1, 0]]);
+      g.fillRadial(c.x, c.y, c.r * 1.05, [[0, .92], [.72, .78], [1, 0]]);
     }
   }
 
   for (const band of profile.clouds) drawCloudBand(g, band, cameraX, W, time);
+}
 
-  if (profile.haze) {
-    /* A soft band at the horizon: without it, distant ridges sit flat against
-       the sky at barely 1.1:1 contrast and read as nothing at all. */
-    g.fillStyle(hexToNum(profile.haze.color), profile.haze.alpha);
-    g.fillRect(0, profile.haze.y - 60, W, 130);
-  }
+/** Atmospheric band, drawn BETWEEN ridge layers rather than over all of them.
+ *  Painted on top of everything it hazed the whole horizon flat; between the
+ *  far and mid ranks it does its actual job — pushing distance back while the
+ *  near silhouette stays crisp. */
+function drawHaze(g: Graphics, profile: SceneryProfile, W: number): void {
+  if (!profile.haze) return;
+  const { y, color, alpha } = profile.haze;
+  const col = hexToNum(color);
+  /* Two stacked bands approximate a vertical falloff without a gradient op. */
+  g.fillStyle(col, alpha * .55);
+  g.fillRect(0, y - 74, W, 52);
+  g.fillStyle(col, alpha);
+  g.fillRect(0, y - 22, W, 74);
 }
 
 function drawCloudBand(g: Graphics, band: CloudBand, cameraX: number, W: number, time: number): void {
@@ -85,7 +95,13 @@ function drawCloudBand(g: Graphics, band: CloudBand, cameraX: number, W: number,
 /* ---------------- ridges ---------------- */
 
 export function drawRidges(g: Graphics, profile: SceneryProfile, cameraX: number, W: number, H: number): void {
-  profile.ridges.forEach((layer, i) => drawRidge(g, layer, i, cameraX, W, H));
+  profile.ridges.forEach((layer, i) => {
+    drawRidge(g, layer, i, cameraX, W, H);
+    /* Haze sits immediately behind the nearest rank: distance recedes, the
+       silhouette the child actually reads stays sharp. */
+    if (i === profile.ridges.length - 2) drawHaze(g, profile, W);
+  });
+  if (profile.ridges.length < 2) drawHaze(g, profile, W);
 }
 
 function drawRidge(g: Graphics, layer: RidgeLayer, index: number, cameraX: number, W: number, H: number): void {
@@ -287,13 +303,39 @@ function drawFringeCluster(
         g.fillTriangle(x + k * 11 - 3, H + 6, x + k * 11 + 3, H + 6, x + k * 11 + sway * .6, H + 6 - len);
       }
       break;
-    case 'palm':
-      g.fillRect(x - 5, H - h * .55, 10, h * .55 + 8);
-      for (let k = -3; k <= 3; k++) {
-        const a = Math.PI + k * .38;
-        g.fillEllipse(x + Math.cos(a) * h * .34, H - h * .55 + Math.sin(a) * h * .2, h * .58, h * .13);
+    case 'palm': {
+      /* A palm is a leaning tapered trunk under a crown of fronds that arc up
+         and then fall under their own weight. Straight lines and flat wedges
+         read as an arrow on a pole, which is what the first two attempts drew. */
+      const crownY = H + 8 - h, lean = sway * .8;
+      g.fillPolygon([
+        x - 8, H + 10,
+        x - 4 + lean * .5, crownY + h * .45,
+        x - 3.5 + lean, crownY + 4,
+        x + 3.5 + lean, crownY + 4,
+        x + 4 + lean * .5, crownY + h * .45,
+        x + 8, H + 10,
+      ]);
+
+      const cx = x + lean, cy = crownY + 2, FRONDS = 7, SEGMENTS = 5;
+      for (let f = 0; f < FRONDS; f++) {
+        const angle = -Math.PI + (f + .5) * (Math.PI / FRONDS);
+        const outward = Math.abs(Math.cos(angle));           /* 1 at the sides, 0 overhead */
+        const len = h * (.30 + .26 * outward);
+        const droop = h * (.10 + .40 * outward);
+        const pts: number[] = [];
+        const at = (t: number) => {
+          const px = cx + Math.cos(angle) * len * t;
+          const py = cy + Math.sin(angle) * len * t * .75 + droop * t * t;
+          return [px, py, 6.5 * (1 - t * .85) + 1] as const;
+        };
+        for (let i = 0; i <= SEGMENTS; i++) { const [px, py, wdt] = at(i / SEGMENTS); pts.push(px, py - wdt); }
+        for (let i = SEGMENTS; i >= 0; i--) { const [px, py, wdt] = at(i / SEGMENTS); pts.push(px, py + wdt); }
+        g.fillPolygon(pts);
       }
+      g.fillCircle(cx, cy, 7);
       break;
+    }
     case 'crystal':
       for (let k = -2; k <= 2; k++) {
         const len = h * (.45 + hash01(i * 3 + k) * .7);
