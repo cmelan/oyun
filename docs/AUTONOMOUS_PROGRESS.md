@@ -7,57 +7,117 @@ Newest entry at the top. Every entry records evidence, not intent.
 
 ---
 
-## Baseline captured — 2026-07-29
+## Blocker: account spend limit — still active
 
-**Repository state at fork point** (`3330301 fix: make progression recoverable across levels`)
+Hit 2026-07-30 during the audit run and **not resolved**. Two workflows have now
+been cut short by it:
 
-| Check | Result |
-| --- | --- |
-| `npm test` | 84 passed / 7 files |
-| `npm run build` | green — `dist/assets/index-*.js` 137.53 kB (gzip 46.88 kB) |
-| `npm run typecheck` | green (part of build) |
-| Console errors during a 10-level sweep | none |
-| rAF frame rate, level 10, headless Chromium 960×540 | 60.0 fps |
+| Run | Agents | Lost |
+| --- | --- | --- |
+| Audit + research | 6 of 11 completed | L07–L10 design rows, all 3 research agents, the synthesis |
+| Research recovery + art critique | 3 of 7 completed | L07–L10 design rows again, **all 3 art-critique passes** |
 
-**Visual/structural baseline** — all 10 levels captured at 4 camera positions each
-plus menu and journey map. Screenshots and a machine-readable structural dump live
-in the session scratchpad (`shots/L01-0.png` … `L10-3.png`, `level-report.json`);
-they are the before-half of the required before/after evidence.
+What survived: 111 audit findings, level matrix rows 1–6, design-principle and
+child-learning research, and a competition scorecard. What is still missing:
+the L07–L10 matrix rows and any independent art review of the new procedural
+biomes. The scorecard also carries a safety-classifier warning and must be
+treated as unverified.
 
-### What the baseline proves
+Everything below the audit was done solo.
 
-1. **Level 1 (Çayır Vadisi) is genuinely award-quality.** Authored painted plates
-   (far background, parallax treeline, three foreground foliage clusters, tiled soil
-   + grass edge), a painted Guardian, a painted Mossling, a dormant→awake Ancient Oak
-   crossfade, a bespoke 7-step objective bar, a cooperation finale and a restoration
-   choreography.
-2. **Levels 2–10 share one skin and one shape.** Flat colour palettes, procedural
-   primitives, and — critically — *the same Mossling sprite is every creature in the
-   game*, and *every boss is a rounded rectangle with two dots* (see `L10-3.png`: that
-   is the final boss).
-3. **Levels 4–10 are the same level.** All seven are one-line `makeSection()` recipes
-   sharing `SECTION_RHYTHM` and a fixed `GAP`, so their platform layout is identical
-   modulo total width.
+---
 
-### Bugs confirmed by observation (not yet fixed)
+## Session 2 — 2026-07-30
 
-- **B-01 · Hint queue leaks across level changes.** `UI.showHint` queues messages and
-  `LevelScene.create()` never drains them. Reproduced: three hints queued in level 1,
-  then `startLevel(4)` — level 5 displays `LEVEL-ONE-HINT-A` immediately and
-  `LEVEL-ONE-HINT-B` 3.4 s later. In real play this fires whenever a child restarts or
-  advances while a hint is still on screen. `src/game/ui.ts:109-128`.
-- **B-02 · Identical objective bar for nine of ten levels.** Levels 2–10 all render
-  exactly `→ 🏖️ ✨ Follow the glowing path →`. `src/game/LevelScene.ts:262-266`.
+### Shipped
 
-### Not a bug, but recorded as architectural debt
+| Milestone | State | Evidence |
+| --- | --- | --- |
+| M0 · Baseline + shipped defects | done | 2 defects fixed, both browser-verified before/after |
+| M1 · Procedural biome scenery | done (2 passes) | `tests/scenery.test.ts` (14) |
+| M3 · Creature roster | done | `tests/creatures.test.ts` (12) |
+| M4 · Boss identity | done | `tests/boss.test.ts` (6) |
+| M5 · Chapter scripts | done | `tests/chapters.test.ts` (14) |
+| Traversal safety | done | `tests/traversal.test.ts` (13) |
+| M2 · Biome art manifest | not started | — |
+| M6 · Audio identity | not started | — |
+| M7–M9 | not started | — |
 
-- `LevelScene.solids()` pushes a hardcoded rect `{x:2640,y:188,w:34,h:164}` when
-  `idx === 0`. It is correctly guarded (verified: absent at `idx = 4`), but it couples
-  one level's geometry into shared collision code. `src/game/LevelScene.ts:182`.
+**Tests 84 → 159. Build green. 60 fps. No console errors.**
 
-### Status
+### Measured before → after
 
-- [x] Phase 1 — repository, build, test and gameplay baseline
-- [ ] Phase 2 — audit matrix, design research, competition scorecard
-- [ ] Phase 3 — master plan
-- [ ] Phase 4+ — implementation milestones
+| | Before | After |
+| --- | --- | --- |
+| Distinct objective bars across 10 levels | 2 | **10** |
+| Creatures in the game | 1 | **10** |
+| Boss silhouettes | 1 | **2 archetypes, both purpose-drawn** |
+| Biome horizons | 1 shared shape | **10 distinct** |
+| Widest generated gap | 170px (of ~198px reach) | **140px** |
+| Last checkpoint, generated levels | ~48% in | **at the arena door** |
+| Chapters ever played to completion | 1 | see the playthrough log |
+
+### Defects found and fixed
+
+- **The free chapter could not be finished twice.** `prepLevel` pre-woke journal
+  trees; Level 1's ending *is* waking the oak. Once a child learned `meşe` the
+  Meadow had no card, no goal and no boss. Reached by playing the free chapter
+  twice — exactly what a judge does. Fixed with a `finale` flag; guarded by
+  `tests/completability.test.ts`.
+- **Hints leaked across chapters.** A queue built in the Meadow kept playing over
+  the next level. Fixed; guarded by `tests/ui.test.ts`.
+- **Creatures stood on landing zones.** Generated patrols reached 14px *past* the
+  platform's left edge, so a frightened creature stood exactly where an incoming
+  jump lands. The child crossed, was knocked back into the pit, and lost three
+  hearts in eight seconds. This is why nine chapters were unplayable. Fixed with
+  `LANDING_ZONE`, plus seven hand-authored patrols in levels 2–3.
+- **Gaps widened with tier toward the physical limit.** 170px against ~198px of
+  reach. Escalating timing precision is the one axis a five-year-old cannot
+  improve at. Now fixed at the proven 140px.
+- **No checkpoint in the back half of generated levels.**
+
+### Things my own tests caught in my own work
+
+Recorded because they are the reason the tests are worth having:
+
+- 13 ridge colours that were invisible against their sky.
+- A further 10 that passed a `skyBot` check but vanished against the sky at
+  their actual height — the check itself was wrong.
+- Every ridge peaking *below* the platform line, i.e. drawn for nobody.
+- Emerald Peaks and Toros showing the identical objective icons.
+- Mastery duplicating Meadow's ground treatment.
+
+### Harness bugs found in the harness
+
+Both would have produced false passes, which is worse than a failure:
+
+- `playthrough-all.mjs` treated `scene.ended` as success. `ended` is set by game
+  over too, so it reported **10/10 complete while the player was dying in a pit.**
+  It now asks the UI which card it put up.
+- The traversal probe demanded `grounded` to count a crossing, so a successful
+  jump that landed on a bounce pad read as a failure; and it started the player
+  inside unsolved thorn walls.
+
+### Open
+
+- **M2, M6, M7–M9 not started.** No biome art manifest, no audio identity, no
+  learning-transfer work, no wordless-play pass, and none of the ten per-level
+  mechanics from the master plan's §4.
+- **Scenery quality.** Two passes done and the horizons now read, but this has
+  had no independent art review — all three critique agents died to the spend
+  limit.
+- **The autoplayer is a smoke test, not a player.** Where it fails, that is
+  evidence of difficulty, not proof of impossibility. A real child playtest is
+  still the gate the master plan calls for and has never happened.
+
+---
+
+## Session 1 — baseline captured 2026-07-29
+
+Repository state at fork point (`3330301`): 84 tests, build green, no console
+errors, 60 fps. All 10 levels captured at 4 camera positions
+(`docs/evidence/before/`) with a structural report.
+
+What the baseline proved: Level 1 was genuinely award-quality and levels 2–10
+shared one skin, one creature, one boss silhouette, one platform rhythm and one
+objective line — and levels 4–10 were the same level modulo width.
