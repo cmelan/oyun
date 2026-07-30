@@ -1,5 +1,5 @@
 {
-  "generatedFrom": "http://127.0.0.1:5199",
+  "generatedFrom": "http://127.0.0.1:5210",
   "viewport": "960x540",
   "fps": 60.2,
   "consoleErrors": [],
@@ -155,7 +155,7 @@
     {
       "idx": 3,
       "name": "Bölüm 4 · Kestane Korusu",
-      "w": 4196,
+      "w": 4100,
       "biome": "forest",
       "dark": false,
       "platforms": 8,
@@ -192,7 +192,7 @@
         "kayın",
         "kavak"
       ],
-      "checkpoints": 3,
+      "checkpoints": 4,
       "intros": 1,
       "sandMax": 8,
       "objective": "🌰💛🌳🏖️✨Bring the spiky husks down  🌰"
@@ -200,7 +200,7 @@
     {
       "idx": 4,
       "name": "Bölüm 5 · Toros Yaylası",
-      "w": 4244,
+      "w": 4100,
       "biome": "toros",
       "dark": false,
       "platforms": 8,
@@ -237,7 +237,7 @@
         "ardıç",
         "sekoya"
       ],
-      "checkpoints": 3,
+      "checkpoints": 4,
       "intros": 1,
       "sandMax": 8,
       "objective": "🌬️💛🌲🏖️✨Shelter from the wind  🌬️"
@@ -245,7 +245,7 @@
     {
       "idx": 5,
       "name": "Bölüm 6 · Meyve Bahçesi",
-      "w": 4244,
+      "w": 4100,
       "biome": "orchard",
       "dark": false,
       "platforms": 8,
@@ -282,7 +282,7 @@
         "kiraz",
         "ceviz"
       ],
-      "checkpoints": 3,
+      "checkpoints": 4,
       "intros": 1,
       "sandMax": 8,
       "objective": "🌸💛🍎🌳✨Carry a blossom  🌸"
@@ -290,7 +290,7 @@
     {
       "idx": 6,
       "name": "Bölüm 7 · Akdeniz Kıyısı",
-      "w": 4292,
+      "w": 4100,
       "biome": "coast",
       "dark": false,
       "platforms": 8,
@@ -327,7 +327,7 @@
         "incir",
         "limon"
       ],
-      "checkpoints": 3,
+      "checkpoints": 4,
       "intros": 1,
       "sandMax": 8,
       "objective": "🌊💛🌴🏖️✨Follow the shore  🌊"
@@ -335,7 +335,7 @@
     {
       "idx": 7,
       "name": "Bölüm 8 · Karadeniz Ormanı",
-      "w": 4292,
+      "w": 4100,
       "biome": "rainforest",
       "dark": false,
       "platforms": 8,
@@ -372,7 +372,7 @@
         "fındık",
         "kayın"
       ],
-      "checkpoints": 3,
+      "checkpoints": 4,
       "intros": 1,
       "sandMax": 8,
       "objective": "🔥💛🌲🏖️✨Light a way through the mist  🔥"
@@ -380,7 +380,7 @@
     {
       "idx": 8,
       "name": "Bölüm 9 · Göl Kenarı",
-      "w": 4340,
+      "w": 4100,
       "biome": "lakeside",
       "dark": false,
       "platforms": 8,
@@ -417,7 +417,7 @@
         "dişbudak",
         "söğüt"
       ],
-      "checkpoints": 3,
+      "checkpoints": 4,
       "intros": 1,
       "sandMax": 8,
       "objective": "💧💛🌿🌳✨Follow the water’s edge  💧"
@@ -425,7 +425,7 @@
     {
       "idx": 9,
       "name": "Bölüm 10 · Usta Bahçıvan",
-      "w": 5360,
+      "w": 5060,
       "biome": "mastery",
       "dark": false,
       "platforms": 10,
@@ -469,7 +469,7 @@
         "zeytin",
         "kestane"
       ],
-      "checkpoints": 4,
+      "checkpoints": 5,
       "intros": 1,
       "sandMax": 9,
       "objective": "📖🌳💛🌳⭐Remember what you learned  📖"
