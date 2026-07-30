@@ -78,9 +78,17 @@ describe('WORLD / bölge şeması', () => {
     });
   });
   it('prepLevel: günlükteki ağaçlar uyanık başlar', () => {
-    const lv = prepLevel(0, ['meşe']);
-    expect(lv.trees.find(t => t.id === 'meşe')!.awake).toBe(true);
-    expect(lv.trees.find(t => t.id === 'çınar')!.awake).toBe(false);
+    const lv = prepLevel(0, ['çınar']);
+    expect(lv.trees.find(t => t.id === 'çınar')!.awake).toBe(true);
+    expect(lv.trees.find(t => t.id === 'ıhlamur')!.awake).toBe(false);
+  });
+  /* The finale tree is the exception: waking it IS the chapter's ending, so a
+     journal entry must never pre-satisfy it. See tests/completability.test.ts. */
+  it('prepLevel: final ağaç günlükte olsa bile uykuda başlar', () => {
+    const lv = prepLevel(0, ['meşe', 'çınar', 'ıhlamur']);
+    const finale = lv.trees.find(t => t.finale)!;
+    expect(finale.id).toBe('meşe');
+    expect(finale.awake).toBe(false);
   });
 });
 
@@ -90,7 +98,7 @@ describe('ödüllük Çayır dikey kesiti', () => {
     expect(lv.interact.map(i => i.type)).toEqual(['freeze', 'grow', 'bridge']);
     expect(lv.monsters).toHaveLength(1);
     expect(lv.goal).toBeNull();
-    expect(lv.trees.some(t => t.id === 'meşe' && t.x > 2800)).toBe(true);
+    expect(lv.trees.some(t => t.id === 'meşe' && t.finale)).toBe(true);
     expect(lv.intros.some(i => i.text.includes('kötü değil'))).toBe(true);
   });
   it('üç doğa bulmacasının hiçbiri normal bir sıçrayışla atlanamaz', () => {
@@ -122,7 +130,9 @@ describe('bölüm üretici', () => {
   it('yapısal geçerlilik: ağaç = kontrol noktası, bulmaca = canavar, min 3', () => {
     const lv = gen();
     expect(lv.trees.length).toBeGreaterThanOrEqual(3);
-    expect(lv.checkpoints.length).toBe(lv.trees.length);
+    /* One checkpoint per tree, plus one at the arena door so losing to the
+       boss does not rewind the whole back half of the chapter. */
+    expect(lv.checkpoints.length).toBe(lv.trees.length + 1);
     expect(lv.interact.length).toBe(lv.monsters.length);
     expect(lv.interact.length).toBeGreaterThanOrEqual(3);
     expect(lv.boss).not.toBeNull();
@@ -141,10 +151,29 @@ describe('bölüm üretici', () => {
       treeIds: ['meşe', 'çınar', 'ıhlamur'], puzzleTypes: ['freeze', 'grow', 'bridge'],
       cageEye: 'blue', finisher: 'cage',
     });
-    const expected = GAP + Math.min(30, 3 * 6);
+    /* Every tier uses the proven B1 gap. This used to widen with tier, which
+       is the one axis a five-year-old cannot get better at, and the widest
+       result sat ~28px inside the physical limit of a perfect jump. */
     for (let i = 1; i < lv.platforms.length; i++) {
       const gap = lv.platforms[i].x - (lv.platforms[i - 1].x + lv.platforms[i - 1].w);
-      expect(gap).toBe(expected);
+      expect(gap).toBe(GAP);
+    }
+    /* And the gap must keep a real margin under what the physics can reach. */
+    const reach = CONFIG.physics.MOVE * ((2 * CONFIG.physics.JUMP_V) / CONFIG.physics.GRAV);
+    expect(reach - GAP, `only ${(reach - GAP).toFixed(0)}px of margin on a gap`).toBeGreaterThan(45);
+  });
+
+  it('tier never widens a gap, at any tier', () => {
+    for (const tier of [1, 2, 3, 4, 5]) {
+      const lv = makeSection({
+        name: 't', biome: 'meadow', tier,
+        treeIds: ['meşe', 'çınar', 'ıhlamur'], puzzleTypes: ['freeze', 'grow', 'bridge'],
+        cageEye: 'blue', finisher: 'cage',
+      });
+      for (let i = 1; i < lv.platforms.length; i++) {
+        const gap = lv.platforms[i].x - (lv.platforms[i - 1].x + lv.platforms[i - 1].w);
+        expect(gap, `tier ${tier} widened a gap to ${gap}`).toBe(GAP);
+      }
     }
   });
   it('her PUZZLE_FACTORY tipi üretiliyor ve zone taşıyor', () => {
@@ -250,7 +279,9 @@ describe('v2 içerik: B5–B10', () => {
     for (let i = 4; i <= 8; i++) {
       const lv = prepLevel(i);
       expect(lv.trees.length, `B${i + 1} trees`).toBeGreaterThanOrEqual(2);
-      expect(lv.checkpoints.length).toBe(lv.trees.length);
+      /* One checkpoint per tree, plus one at the arena door so losing to the
+       boss does not rewind the whole back half of the chapter. */
+    expect(lv.checkpoints.length).toBe(lv.trees.length + 1);
       expect(lv.boss).not.toBeNull();
       for (const tr of lv.trees) for (const it of lv.interact)
         expect(pointRectDist(tr.x, tr.y, it.zone)).toBeGreaterThan(CONFIG.tree.wakeRadius);
@@ -289,13 +320,17 @@ describe('v2 içerik: B5–B10', () => {
     expect(streakAnswer(s, true)).toBe(false); /* fresh question counts again */
     expect(s.run).toBe(1);
   });
-  it('görünmez yardım: sınırlı, etiketsiz, 2 ölüme kadar devreye girmez', () => {
+  /* Was: "2 ölüme kadar devreye girmez" — it asserted that the assist stays off
+     until two deaths, which with three hearts meant it only ever arrived at the
+     game-over screen. The threshold moved to one; see the assist suite below. */
+  it('görünmez yardım: sınırlı ve etiketsiz, ilk kalpten sonra devreye girer', () => {
     expect(assistFactors({ deaths: 0 }).monsterSpd).toBe(1);
-    expect(assistFactors({ deaths: 2 }).monsterSpd).toBe(1);
+    expect(assistFactors({ deaths: 1 }).monsterSpd).toBe(1);
+    expect(assistFactors({ deaths: 2 }).monsterSpd).toBeLessThan(1);
     const heavy = assistFactors({ deaths: 20 });
-    expect(heavy.monsterSpd).toBeGreaterThanOrEqual(0.75);
-    expect(heavy.iframeBonus).toBeLessThanOrEqual(0.6);
-    expect(heavy.blindBonus).toBeLessThanOrEqual(2);
+    expect(heavy.monsterSpd).toBeGreaterThanOrEqual(0.62);
+    expect(heavy.iframeBonus).toBeLessThanOrEqual(0.9);
+    expect(heavy.blindBonus).toBeLessThanOrEqual(2.5);
   });
   it('aile yıldızları: tam aile ★', () => {
     const trees = { a: { family: 'X' }, b: { family: 'X' }, c: { family: 'Y' } };
@@ -328,5 +363,41 @@ describe('dil', () => {
       for (const key of ['family.button', 'family.title', 'family.body', 'family.question', 'family.wrong', 'family.unlocked', 'family.unlocked.body', 'map.familyLocked']) expect(S(key)).not.toBe(key);
     }
     setLang('tr');
+  });
+});
+
+describe('görünmez yardım (invisible assist)', () => {
+  /* This assist could never fire. It started at `deaths - 2`, but with exactly
+     three hearts the third death IS the game over — so it first became non-zero
+     at the instant the chapter ended, and the retry rebuilt the scene with the
+     count reset to zero. */
+  it('does nothing on a clean run', () => {
+    const none = assistFactors({ deaths: 0 });
+    expect(none.monsterSpd).toBe(1);
+    expect(none.iframeBonus).toBe(0);
+    expect(none.blindBonus).toBe(0);
+  });
+
+  it('starts helping while the child still has hearts left', () => {
+    /* The player has CONFIG.hearts hearts. The assist must do something before
+       that many deaths, or it only ever arrives too late. */
+    const beforeGameOver = assistFactors({ deaths: CONFIG.hearts - 1 });
+    expect(beforeGameOver.monsterSpd, 'assist has not started before the last heart').toBeLessThan(1);
+    expect(beforeGameOver.iframeBonus).toBeGreaterThan(0);
+  });
+
+  it('keeps widening the margins the longer a child struggles', () => {
+    const a = assistFactors({ deaths: 2 });
+    const b = assistFactors({ deaths: 5 });
+    expect(b.monsterSpd).toBeLessThan(a.monsterSpd);
+    expect(b.iframeBonus).toBeGreaterThan(a.iframeBonus);
+    expect(b.blindBonus).toBeGreaterThan(a.blindBonus);
+  });
+
+  it('never plays the game for the child', () => {
+    const extreme = assistFactors({ deaths: 500 });
+    expect(extreme.monsterSpd).toBeGreaterThanOrEqual(0.6);
+    expect(extreme.iframeBonus).toBeLessThanOrEqual(1);
+    expect(extreme.blindBonus).toBeLessThanOrEqual(3);
   });
 });

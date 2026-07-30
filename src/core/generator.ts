@@ -25,7 +25,10 @@ export interface BossData {
   paceDir: number; px0: number; px1: number; shake: number;
   cageEye: Eye; finisher: Finisher; scale: number;
 }
-export interface TreeInstance { id: string; x: number; y: number; awake?: boolean }
+/* `finale` marks the tree a chapter's ending depends on. A finale tree is never
+   pre-woken from the journal: completion must never be satisfiable by a save
+   file, or the chapter becomes unfinishable on replay. */
+export interface TreeInstance { id: string; x: number; y: number; awake?: boolean; finale?: boolean }
 export interface LevelData {
   name: string; w: number; deathY: number; gentle: boolean;
   spawn: { x: number; y: number };
@@ -49,6 +52,9 @@ export const SECTION_RHYTHM: { w: number; h: number }[] = [
   { w: 220, h: 245 }, { w: 240, h: 248 }, { w: 260, h: 252 },
 ];
 export const GAP = 140; /* proven gap from B1 */
+/** How much of a platform's left edge stays clear of creatures, so a jump can
+ *  always be landed before anything has to be dealt with. */
+export const LANDING_ZONE = 96;
 
 export const PUZZLE_FACTORY: Record<string, (x: number, gy: number) => Interact> = {
   freeze: (x, gy) => ({ type: 'freeze', eye: 'blue', done: false, zone: { x: x - 20, y: gy - 90, w: 200, h: 150 }, ice: { x: x + 20, y: gy, w: 280, h: 40 } }),
@@ -67,7 +73,12 @@ export function makeSection(recipe: Recipe): LevelData {
   const platforms: Rect[] = []; let x = 20;
   for (let i = 0; i < segCount; i++) {
     const r = SECTION_RHYTHM[i % SECTION_RHYTHM.length], y = 370 - ((Math.floor(i / 2) % 3) * 6);
-    platforms.push({ x, y, w: r.w, h: r.h }); x += r.w + GAP + Math.min(30, tier * 6);
+    /* The gap stays at the proven B1 value for every tier. It used to widen by
+       up to 30px with tier, which pushed the widest gaps to 170px against a
+       full-speed perfect jump of ~198px — a timing margin of about a tenth of a
+       second. That escalates the one axis a five-year-old cannot improve at.
+       Difficulty ramps through puzzle chaining and creature variety instead. */
+    platforms.push({ x, y, w: r.w, h: r.h }); x += r.w + GAP;
   }
   const w = x + 420;
   const calmP: Rect[] = [], puzzleP: Rect[] = [];
@@ -79,13 +90,25 @@ export function makeSection(recipe: Recipe): LevelData {
   });
   const interact = puzzleP.map((p, i) => PUZZLE_FACTORY[puzzleTypes[i % puzzleTypes.length]](p.x + p.w * 0.22, p.y));
   const monsters: MonsterData[] = puzzleP.map((p, i) => {
-    const gx0 = p.x + 16, gx1 = p.x + p.w - 16;
+    /* Keep every creature clear of the landing zone. Patrol used to start at
+       p.x + 16 with lo = p.x - 14, so a creature could stand ON the spot an
+       incoming jump lands — and did: the child crossed the gap, touched it on
+       touchdown, was knocked back into the pit, and lost the chapter to three
+       deaths in eight seconds. A frightened creature must never be the first
+       thing a landing foot meets. */
+    const gx0 = p.x + LANDING_ZONE, gx1 = Math.max(gx0 + 40, p.x + p.w - 16);
     return {
-      x: (gx0 + gx1) / 2, gx0, gx1, ground: p.y, lo: gx0 - 30, hi: gx1 + 30,
+      x: (gx0 + gx1) / 2, gx0, gx1, ground: p.y,
+      lo: p.x + LANDING_ZONE - 24, hi: gx1 + 30,
       spd: 82 + tier * 10, aggro: 165 + tier * 12, patrolSpd: 34 + tier * 3, flip: (i % 3 === 2),
     };
   });
   const lastCalm = platforms[segCount - 2], lastPlat = platforms[segCount - 1];
+  /* A checkpoint at the arena door. Without it the last checkpoint sat on a
+     calm platform around the level's midpoint, so losing to the boss rewound
+     the child through the entire back half of the chapter — the single most
+     discouraging thing a level can do to a five-year-old. */
+  checkpoints.push({ x: lastCalm.x + 22, y: lastCalm.y });
   const boss: BossData = {
     kind: bossKind,
     x: lastPlat.x + lastPlat.w * 0.35, w: 88, h: 88, ground: lastPlat.y, hp: 3, state: 'sleep',
@@ -94,7 +117,13 @@ export function makeSection(recipe: Recipe): LevelData {
   };
   const arena = { trig: lastCalm.x + 30, wall: { x: lastCalm.x - 8, y: 120, w: 14, h: 500 } };
   return {
-    name, w, deathY: 760, gentle: false, spawn: { x: 90, y: 300 }, platforms, water: null,
+    /* A fall returns the child to the last checkpoint and costs no heart —
+       the same rule the Meadow already used. Hearts are for creature contact,
+       which the child can understand and act on; a pit is a slip, and charging
+       a life for it turned every chapter into attrition. Measured: pits caused
+       nearly every lost heart in end-to-end playthroughs. Losing the ground you
+       walked is still a real cost. */
+    name, w, deathY: 760, gentle: true, spawn: { x: 90, y: 300 }, platforms, water: null,
     interact, monsters, boss, arena, checkpoints, goal: null, hasSand: true, hasHeal: true, trees,
     intros: [{ x: 60, text: hint || 'Yeni bir bölge — ağaçları bul, bulmacaları çöz!' }],
   };

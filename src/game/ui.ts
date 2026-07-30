@@ -109,16 +109,31 @@ export class UI {
   private hintTimer = 0;
   private hintQueue: { msg: string; secs: number }[] = [];
   private hintActive = false;
+  private hintCurrent = '';
+  /* A hint belongs to the moment that raised it. Without this, a queue built up
+     in one chapter keeps playing over the next one — the child reads "go back to
+     the frightened creature" in a level that has no frightened creature. */
+  clearHints(): void {
+    clearTimeout(this.hintTimer);
+    this.hintQueue.length = 0;
+    this.hintActive = false;
+    this.hintCurrent = '';
+    const el = $('hintBar'); el.style.opacity = '0'; el.textContent = '';
+  }
   showHint(msg: string, secs = 2.2): void {
     if (this.hintActive) {
+      /* Compare against the tail of what is already scheduled — the playing
+         message included — so walking back into a trigger never repeats a
+         sentence the child is still reading. */
       const tail = this.hintQueue[this.hintQueue.length - 1];
-      if (!tail || tail.msg !== msg) this.hintQueue.push({ msg, secs });
+      if ((tail ? tail.msg : this.hintCurrent) !== msg) this.hintQueue.push({ msg, secs });
       return;
     }
     this.playHint(msg, secs);
   }
   private playHint(msg: string, secs: number): void {
-    const el = $('hintBar'); this.hintActive = true; el.textContent = msg; el.style.opacity = '1';
+    const el = $('hintBar'); this.hintActive = true; this.hintCurrent = msg;
+    el.textContent = msg; el.style.opacity = '1';
     clearTimeout(this.hintTimer);
     this.hintTimer = window.setTimeout(() => {
       el.style.opacity = '0'; this.hintActive = false;
@@ -141,7 +156,7 @@ export class UI {
     $('menu').style.display = on ? 'none' : '';
     if (on) document.body.classList.remove('menu-open', 'journey-start');
     if (on) $('mapView').classList.add('hidden');
-    if (!on) { $('objectiveBar').classList.remove('visible'); this.setRescueVisible(false); }
+    if (!on) { $('objectiveBar').classList.remove('visible'); this.setRescueVisible(false); this.clearHints(); }
   }
 
   /* ---------- overlay plumbing ---------- */

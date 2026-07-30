@@ -90,15 +90,23 @@ export function streakAnswer(s: StreakState, correct: boolean): boolean {
   return s.run % 3 === 0;
 }
 
-/* --- Invisible assist: repeated deaths in a level gently widen the margins.
-   No labels, no shame; resets per level. Bounded so the game never plays itself. --- */
+/* --- Invisible assist: repeated failure gently widens the margins. No labels,
+   no shame; bounded so the game never plays itself.
+
+   This used to start at `deaths - 2`. With exactly three hearts, the third
+   death IS the game over — so the assist first became non-zero at the instant
+   the chapter ended, and the scene was rebuilt with deaths reset to 0. It could
+   never help anybody. It now starts after the first heart and, crucially,
+   accumulates across retries of the same chapter (main.ts owns that count), so
+   a child who keeps failing genuinely gets more room each time. --- */
 export interface AssistState { deaths: number }
+export const ASSIST_FREE_DEATHS = 1;
 export function assistFactors(a: AssistState): { monsterSpd: number; iframeBonus: number; blindBonus: number } {
-  const over = Math.max(0, a.deaths - 2);
+  const over = Math.max(0, a.deaths - ASSIST_FREE_DEATHS);
   return {
-    monsterSpd: Math.max(0.75, 1 - over * 0.08),   /* monsters up to 25% slower */
-    iframeBonus: Math.min(0.6, over * 0.2),        /* up to +0.6s invulnerability */
-    blindBonus: Math.min(2, over * 0.7),           /* blinded monsters stay calm up to +2s */
+    monsterSpd: Math.max(0.62, 1 - over * 0.07),   /* creatures up to 38% slower */
+    iframeBonus: Math.min(0.9, over * 0.15),       /* up to +0.9s invulnerability */
+    blindBonus: Math.min(2.5, over * 0.45),        /* calmed creatures stay calm longer */
   };
 }
 

@@ -3,10 +3,10 @@ import { Game } from './game/engine';
 import { CONFIG } from './core/config';
 import { setLang, type Lang } from './core/i18n';
 import { loadSave, writeSave, recordTreeWake, type SaveData } from './core/save';
-import { LEVELS } from './core/world';
+import { LEVELS, LEVEL_META } from './core/world';
 import { LevelScene, type SceneHooks } from './game/LevelScene';
 import { UI } from './game/ui';
-import { initAudio, setMuted, isMuted, startMusic, setMusicMood, sfx } from './game/audio';
+import { initAudio, setMuted, isMuted, startMusic, setMusicMood, setMusicBiome, sfx } from './game/audio';
 import { preloadArt } from './game/assets';
 import * as artHelpers from './game/art';
 import { hasFullJourney, initPurchases, isFamilyPurchaseAvailable, presentFamilyPurchase } from './game/purchases';
@@ -26,6 +26,10 @@ const game = new Game({
 let scene: LevelScene | null = null;
 let currentIdx = 0;
 let paused = false;
+/* Failures carried across retries of the SAME chapter. The invisible assist is
+   worthless if it resets every time the scene is rebuilt, which is exactly what
+   a retry does. Cleared on success or on leaving for a different chapter. */
+let priorDeaths = 0;
 
 function persist(): void { writeSave(save, localStorage); }
 
@@ -36,11 +40,13 @@ const hooks: SceneHooks = {
     if (recordTreeWake(save, id)) persist();
   },
   onLevelComplete(idx: number, name: string, isLast: boolean) {
+    priorDeaths = 0;
     save.furthest = Math.max(save.furthest || 0, idx + 1); persist();
     ui.setGameplayVisible(false);
     ui.showLevelComplete(name, isLast, idx === 0);
   },
   onGameOver() {
+    priorDeaths = scene ? scene.deathCount() : priorDeaths;
     ui.setGameplayVisible(false);
     ui.showGameOver();
   },
@@ -48,12 +54,18 @@ const hooks: SceneHooks = {
 
 function startLevel(idx: number): void {
   initAudio(!!save.muted);
-  setMusicMood('meadow');
-  currentIdx = Math.max(0, Math.min(idx, LEVELS.length - 1));
+  const next = Math.max(0, Math.min(idx, LEVELS.length - 1));
+  if (next !== currentIdx) priorDeaths = 0;   /* a different chapter starts fresh */
+  currentIdx = next;
+  /* The biome decides the scale and timbre; the mood decides the intention.
+     Every level used to be set to the same mood, so nine of ten chapters
+     sounded identical. */
+  setMusicBiome(LEVEL_META[currentIdx]?.biome);
+  setMusicMood('explore');
   paused = false;
   if (scene) { game.scene.stop(LevelScene.KEY); game.scene.remove(LevelScene.KEY); }
   scene = new LevelScene();
-  game.scene.add(LevelScene.KEY, scene, true, { idx: currentIdx, hooks });
+  game.scene.add(LevelScene.KEY, scene, true, { idx: currentIdx, hooks, priorDeaths });
 }
 
 function pauseToggle(): void {
@@ -123,7 +135,7 @@ void Promise.all([preloadArt(), initPurchases()]).finally(() => {
   if (bootParams.has('test') && stage?.startsWith('oak-')) {
     startLevel(0);
     const s = scene as any;
-    const finalTree = s.L.trees.find((tree: any) => tree.x > 2800);
+    const finalTree = s.L.trees.find((tree: any) => tree.finale);
     s.meadowStory.pressureAwake = true;
     s.player.x = finalTree.x - 135; s.player.y = 292; s.player.vx = 0; s.player.vy = 0;
     s.cam = s.L.w - CONFIG.canvas.W; s.cameras.main.setScroll(s.cam, 0);

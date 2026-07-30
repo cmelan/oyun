@@ -43,7 +43,13 @@ export function prepLevel(idx: number, journal: string[] = []): LevelData {
   const lv = LEVELS[idx](journal);
   lv.biome = LEVEL_META[idx].biome;
   lv.regionIdx = LEVEL_META[idx].regionIdx;
-  lv.trees = (lv.trees || []).map(tr => ({ ...tr, awake: journal.includes(tr.id) && LEVEL_META[idx].regionId !== 'usta' }));
+  /* A tree the child already knows greets them awake instead of re-quizzing —
+     except the finale tree, whose waking IS the chapter's ending. Pre-waking
+     that one would make the chapter impossible to finish on a replay. */
+  lv.trees = (lv.trees || []).map(tr => ({
+    ...tr,
+    awake: !tr.finale && journal.includes(tr.id) && LEVEL_META[idx].regionId !== 'usta',
+  }));
   return lv;
 }
 

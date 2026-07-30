@@ -15,7 +15,7 @@ export function level1(): LevelData {
       { type: 'grow', eye: 'green', done: false, zone: { x: 1320, y: 278, w: 170, h: 110 }, sprout: { x: 1450, y: 370 }, leaves: [{ x: 1485, y: 354, w: 105, h: 18 }, { x: 1580, y: 354, w: 115, h: 18 }], em: { x: 1450, y: 322 } },
       { type: 'bridge', eye: 'yellow', done: false, zone: { x: 1695, y: 270, w: 135, h: 110 }, bridge: { x: 1825, y: 348, w: 225, h: 18 }, ropeX: 1935, anchorY: 245, em: { x: 1762, y: 302 } },
     ],
-    trees: [{ id: 'çınar', x: 585, y: 370 }, { id: 'ıhlamur', x: 2125, y: 352 }, { id: 'meşe', x: 3005, y: 352 }],
+    trees: [{ id: 'çınar', x: 585, y: 370 }, { id: 'ıhlamur', x: 2125, y: 352 }, { id: 'meşe', x: 3005, y: 352, finale: true }],
     monsters: [
       { x: 1210, gx0: 1100, gx1: 1450, ground: 370, lo: 1088, hi: 1530, spd: 82, aggro: 185, patrolSpd: 36 },
     ],
@@ -35,7 +35,7 @@ export function level1(): LevelData {
 
 export function level2(): LevelData {
   return {
-    name: 'Bölüm 2 · Zümrüt Zirveler', w: 4400, deathY: 700, gentle: false, spawn: { x: 120, y: 300 },
+    name: 'Bölüm 2 · Zümrüt Zirveler', w: 4400, deathY: 700, gentle: true, spawn: { x: 120, y: 300 },
     platforms: [
       { x: 20, y: 380, w: 340, h: 240 }, { x: 440, y: 360, w: 200, h: 240 }, { x: 960, y: 360, w: 460, h: 240 },
       { x: 1560, y: 350, w: 200, h: 250 }, { x: 2000, y: 350, w: 180, h: 250 },
@@ -52,12 +52,15 @@ export function level2(): LevelData {
       { type: 'grow', eye: 'green', done: false, zone: { x: 2258, y: 248, w: 148, h: 108 }, sprout: { x: 2330, y: 342 }, leaves: [{ x: 2444, y: 342, w: 82, h: 18 }, { x: 2534, y: 348, w: 82, h: 18 }], em: { x: 2330, y: 270 } },
       { type: 'thorn', eye: 'red', done: false, zone: { x: 2808, y: 240, w: 148, h: 120 }, wall: { x: 2888, y: 228, w: 28, h: 117 }, em: { x: 2902, y: 210 } },
     ],
+    /* Patrol ranges keep clear of each platform's landing zone: a creature
+       standing where a jump lands knocks the child straight back into the pit.
+       See tests/traversal.test.ts. */
     monsters: [
       { x: 1060, gx0: 1010, gx1: 1200, ground: 360, lo: 980, hi: 1280 },
       { x: 1668, gx0: 1568, gx1: 1728, ground: 350, lo: 1564, hi: 1756 },
       { x: 2580, gx0: 2530, gx1: 2710, ground: 348, lo: 2524, hi: 2734, spd: 148, aggro: 295, patrolSpd: 66 },
-      { x: 2856, gx0: 2806, gx1: 3016, ground: 345, lo: 2804, hi: 3040, spd: 152, aggro: 305, patrolSpd: 68 },
-      { type: 'flipper', x: 3174, gx0: 3118, gx1: 3330, ground: 342, lo: 3116, hi: 3350, spd: 158, aggro: 312, patrolSpd: 70 },
+      { x: 2930, gx0: 2880, gx1: 3016, ground: 345, lo: 2876, hi: 3040, spd: 152, aggro: 305, patrolSpd: 68 },
+      { type: 'flipper', x: 3250, gx0: 3192, gx1: 3330, ground: 342, lo: 3188, hi: 3350, spd: 158, aggro: 312, patrolSpd: 70 },
       { x: 3380, gx0: 3322, gx1: 3412, ground: 345, lo: 3320, hi: 3415, spd: 144, aggro: 278, patrolSpd: 62 },
     ],
     boss: { kind: 'thrower', x: 3840, w: 88, h: 88, ground: 345, hp: 3, state: 'sleep', face: -1, atkT: 1.8, tel: 0, blindT: 0, cageT: 0, defT: 0, paceDir: -1, px0: 3640, px1: 3960, shake: 0, cageEye: 'green', finisher: 'cage', scale: 1 },
@@ -77,7 +80,7 @@ export function level2(): LevelData {
 
 export function level3(): LevelData {
   return {
-    name: 'Bölüm 3 · Kristal Mağaralar', w: 4100, deathY: 760, gentle: false, cave: true, dark: true, spawn: { x: 90, y: 340 },
+    name: 'Bölüm 3 · Kristal Mağaralar', w: 4100, deathY: 760, gentle: true, cave: true, dark: true, spawn: { x: 90, y: 340 },
     platforms: [
       { x: 20, y: 400, w: 560, h: 240 }, { x: 700, y: 300, w: 360, h: 340 }, { x: 1060, y: 340, w: 360, h: 300 },
       { x: 1560, y: 340, w: 200, h: 300 }, { x: 1858, y: 338, w: 322, h: 322 },
@@ -95,11 +98,11 @@ export function level3(): LevelData {
       { type: 'mush', eye: 'purple', done: false, zone: { x: 2886, y: 228, w: 150, h: 118 }, sprout: { x: 2960, y: 332 }, pad: { x: 2980, y: 322, w: 120, h: 20, bounce: true }, em: { x: 2960, y: 278 } },
     ],
     monsters: [
-      { x: 1862, gx0: 1862, gx1: 2070, ground: 338, lo: 1862, hi: 2175, spd: 118, aggro: 230, patrolSpd: 55 },
-      { x: 2310, gx0: 2265, gx1: 2445, ground: 330, lo: 2262, hi: 2516, spd: 105, aggro: 215, patrolSpd: 48 },
-      { x: 2658, gx0: 2608, gx1: 2776, ground: 336, lo: 2602, hi: 2794, spd: 132, aggro: 262, patrolSpd: 58 },
-      { type: 'flipper', x: 2940, gx0: 2882, gx1: 3100, ground: 332, lo: 2880, hi: 3135, spd: 150, aggro: 305, patrolSpd: 66 },
-      { x: 3376, gx0: 3324, gx1: 3512, ground: 334, lo: 3322, hi: 3514, spd: 158, aggro: 315, patrolSpd: 72 },
+      { x: 1990, gx0: 1936, gx1: 2070, ground: 338, lo: 1932, hi: 2175, spd: 118, aggro: 230, patrolSpd: 55 },
+      { x: 2390, gx0: 2336, gx1: 2445, ground: 330, lo: 2332, hi: 2516, spd: 105, aggro: 215, patrolSpd: 48 },
+      { x: 2700, gx0: 2676, gx1: 2776, ground: 336, lo: 2672, hi: 2794, spd: 132, aggro: 262, patrolSpd: 58 },
+      { type: 'flipper', x: 3010, gx0: 2956, gx1: 3100, ground: 332, lo: 2952, hi: 3135, spd: 150, aggro: 305, patrolSpd: 66 },
+      { x: 3430, gx0: 3396, gx1: 3512, ground: 334, lo: 3392, hi: 3514, spd: 158, aggro: 315, patrolSpd: 72 },
     ],
     boss: { kind: 'thrower', x: 3790, w: 88, h: 88, ground: 334, hp: 3, state: 'sleep', face: -1, atkT: 1.8, tel: 0, blindT: 0, cageT: 0, defT: 0, paceDir: -1, px0: 3648, px1: 3860, shake: 0, cageEye: 'purple', finisher: 'shrink', scale: 1 },
     arena: { trig: 3656, wall: { x: 3604, y: 120, w: 14, h: 540 } },

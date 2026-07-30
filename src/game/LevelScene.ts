@@ -6,17 +6,23 @@ import { Scene, Graphics, BLEND, hexToNum } from './engine';
 import { CONFIG, TOOLS, type Eye } from '../core/config';
 import { BIOME } from '../core/biomes';
 import { prepLevel, LEVEL_META, WORLD, LEVELS, regionTreePool } from '../core/world';
-import type { LevelData, Interact, BossData, Rect } from '../core/generator';
+import type { LevelData, Interact, BossData, Rect, TreeInstance } from '../core/generator';
 import {
   sandCapacity, makeMonster, sandHit, empathyTick, bossSandHit, bossCageResolve,
   mimicNextId, assistFactors, overlap, type MonsterRuntime, type AssistState,
 } from '../core/logic';
 import { TREES } from '../core/trees';
 import { LEAF_COLOR } from './art';
-import { sfx, setMusicMood } from './audio';
+import { sfx, setMusicMood, currentMood, type MusicMood } from './audio';
 import type { UI } from './ui';
 import { art } from './assets';
 import { drawMeadowForeground, drawMeadowMidground } from './meadowEnvironment';
+import { sceneryFor } from '../core/scenery';
+import { drawSky, drawRidges, drawPlatformSurface, drawGroundCover, drawFringe, drawAmbient } from './environment';
+import { speciesFor } from '../core/creatures';
+import { drawCreature } from './creatureArt';
+import { drawBossCreature } from './bossArt';
+import { chapterFor, currentStep, type ChapterState } from '../core/chapters';
 import { S } from '../core/i18n';
 
 const { GRAV, MOVE, ACCEL, FRICTION, JUMP_V, JUMP_CUT, MAX_FALL, BOUNCE, COYOTE, JBUF } = CONFIG.physics;
@@ -77,9 +83,13 @@ export class LevelScene extends Scene {
 
   constructor() { super(LevelScene.KEY); }
 
-  init(data: { idx: number; hooks: SceneHooks }): void {
+  init(data: { idx: number; hooks: SceneHooks; priorDeaths?: number }): void {
     this.idx = data.idx; this.hooks = data.hooks;
+    this.priorDeaths = data.priorDeaths ?? 0;
   }
+  private priorDeaths = 0;
+  /** Total failures on this chapter, including previous attempts. */
+  deathCount(): number { return this.assist.deaths; }
 
   create(): void {
     this.L = prepLevel(this.idx, this.hooks.journal());
@@ -91,7 +101,7 @@ export class LevelScene extends Scene {
     this.player.vx = 0; this.player.vy = 0; this.player.iframe = 0; this.player.squash = 1;
     this.cam = 0; this.t = 0; this.ended = false; this.modal = false;
     this.bossActive = false; this.bossShots = []; this.sands = []; this.particles = [];
-    this.assist = { deaths: 0 }; this.introSeen.clear();
+    this.assist = { deaths: this.priorDeaths }; this.introSeen.clear();
     this.objectiveKey = ''; this.progressSignature = ''; this.noProgressT = 0; this.bossRefillT = 0;
     this.meadowStory = { helper: null, pressureAwake: false, restoring: 0, restoreCue: 0, gateStep: 0, oakGuided: false };
     this.reducedMotion = typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -103,6 +113,7 @@ export class LevelScene extends Scene {
     this.cameras.main.setBounds(0, 0, this.L.w, H);
     this.bindKeys();
     const ui = this.hooks.ui;
+    ui.clearHints();          /* a new chapter never inherits the last one's voice */
     ui.setGameplayVisible(true);
     ui.setHearts(this.hearts, CONFIG.hearts);
     ui.setSand(this.sandLeft);
@@ -183,6 +194,9 @@ export class LevelScene extends Scene {
     if (this.L.arena && this.bossActive && this.L.boss && this.L.boss.state !== 'defeated') arr.push(this.L.arena.wall);
     return arr;
   }
+  /* The tree whose waking ends the chapter. Identified by data, not by a
+     position guess — the level author decides, and the level can be moved. */
+  private finaleTree(): TreeInstance | undefined { return this.L.trees.find(tr => tr.finale); }
   private mbox(m: MonsterRuntime) { return { x: m.x, y: m.ground - (m as any).h, w: (m as any).w, h: (m as any).h }; }
   private bossBox(b: BossData) { return { x: b.x, y: b.ground - b.h * b.scale, w: b.w * b.scale, h: b.h * b.scale }; }
   private nearBoss(): boolean {
@@ -248,22 +262,50 @@ export class LevelScene extends Scene {
     }
   }
 
+  /** Everything a chapter step is allowed to see. */
+  private chapterState(): ChapterState {
+    const b = this.L.boss;
+    return {
+      puzzles: this.L.interact.map(it => it.done),
+      healed: this.monsters.filter(m => m.state === 'happy').length,
+      creatures: this.monsters.length,
+      treesAwake: this.L.trees.filter(t => t.awake).length,
+      trees: this.L.trees.length,
+      finaleAwake: !!this.finaleTree()?.awake,
+      bossActive: this.bossActive,
+      bossCalmed: !!b && (b.state === 'blind' || b.state === 'caged' || b.state === 'defeated'),
+      gateOpen: this.meadowStory.pressureAwake,
+      progress: this.L.w > 0 ? (this.player.x + this.player.w / 2) / this.L.w : 0,
+    };
+  }
+
+  /* The score follows the situation, not the level index. Held for a beat after
+     a change so a creature walking in and out of range cannot flap the music. */
+  private musicHold = 0;
+  private updateMusic(dt: number, state: ChapterState): void {
+    this.musicHold = Math.max(0, this.musicHold - dt);
+    if (this.musicHold > 0) return;
+    const pcx = this.player.x + this.player.w / 2;
+    const frightenedNear = this.monsters.some(m =>
+      m.state === 'angry' && Math.abs((m.x + (m as any).w / 2) - pcx) < 260);
+    const want: MusicMood = this.meadowStory.restoring > 0 ? 'restored'
+      : state.bossActive && !state.bossCalmed ? 'tension'
+        : this.healTarget ? 'healing'
+          : frightenedNear ? 'tension'
+            : this.nearTree ? 'discovery'
+              : 'explore';
+    if (want !== currentMood()) { setMusicMood(want); this.musicHold = 1.6; }
+  }
+
   private updateObjective(force = false): void {
-    let steps: string[], current: number, label: string;
-    if (this.idx === 0) {
-      steps = ['❄️', '💛', '🌿', '🌀', '💛', '🌳', '✨'];
-      if (!this.L.interact[0]?.done) { current = 0; label = S('objective.meadow.freeze'); }
-      else if (!this.meadowStory.helper) { current = 1; label = S('objective.meadow.friend'); }
-      else if (!this.L.interact[1]?.done) { current = 2; label = S('objective.meadow.grow'); }
-      else if (!this.L.interact[2]?.done) { current = 3; label = S('objective.meadow.bridge'); }
-      else if (!this.meadowStory.pressureAwake) { current = 4; label = S('objective.meadow.gate'); }
-      else if (!this.L.trees.find(tr => tr.x > 2800)?.awake) { current = 5; label = S('objective.meadow.oak'); }
-      else { current = 6; label = S('objective.meadow.restore'); }
-    } else {
-      steps = ['→', '🏖️', '✨'];
-      current = this.bossActive ? (this.L.boss?.state === 'blind' || this.L.boss?.state === 'caged' ? 2 : 1) : 0;
-      label = this.bossActive ? S('objective.boss') : S('objective.explore');
-    }
+    /* Was a two-branch if: Level 1's whole script inline, and one fixed
+       three-step bar shared verbatim by the other nine chapters. */
+    const chapter = chapterFor(LEVEL_META[this.idx]?.regionId);
+    const state = this.chapterState();
+    this.updateMusic(1 / 60, state);
+    const current = currentStep(chapter, state);
+    const steps = chapter.steps.map(s => s.icon);
+    const label = S(chapter.steps[current].labelKey);
     const key = `${current}:${label}`;
     if (force || key !== this.objectiveKey) {
       this.objectiveKey = key; this.noProgressT = 0;
@@ -304,7 +346,7 @@ export class LevelScene extends Scene {
       this.spawnP(tr.x, tr.y - 70, 26, 0xffe6a0, 180, 1.1); this.shake(2, .2);
       this.hooks.onTreeLearned(treeId);
     }
-    const isFinalMeadowOak = this.idx === 0 && !!tr && tr.x > 2800;
+    const isFinalMeadowOak = this.idx === 0 && !!tr && !!tr.finale;
     this.hooks.ui.showTreeWake(treeId, () => {
       this.hooks.ui.hideOverlay(); this.setModal(false);
       if (isFinalMeadowOak) this.beginMeadowRestoration();
@@ -312,7 +354,7 @@ export class LevelScene extends Scene {
   }
   private beginMeadowRestoration(): void {
     if (this.meadowStory.restoring > 0) return;
-    const oakX = this.L.trees.find(tr => tr.x > 2800)?.x ?? 3005;
+    const oakX = this.finaleTree()?.x ?? 3005;
     this.meadowStory.restoring = .001;
     this.meadowStory.restoreCue = 0;
     this.spawnP(oakX, 230, 70, 0xffe59a, 250, 2.6);
@@ -323,7 +365,7 @@ export class LevelScene extends Scene {
   private updateMeadowRestoration(dt: number): boolean {
     if (this.meadowStory.restoring <= 0) return false;
     const story = this.meadowStory;
-    const oakX = this.L.trees.find(tr => tr.x > 2800)?.x ?? 3005;
+    const oakX = this.finaleTree()?.x ?? 3005;
     story.restoring += dt;
     if (story.restoreCue === 0 && story.restoring >= .75) {
       story.restoreCue = 1; sfx('grow');
@@ -503,6 +545,7 @@ export class LevelScene extends Scene {
     /* monsters */
     for (const m of this.monsters) {
       if (empathyTick(m, dt, m === this.healTarget)) {
+        setMusicMood('healing');
         this.gainHeart(); this.spawnP(m.x + 20, m.ground - 40, 26, 0xffe6a0, 200, 1); sfx('heal'); this.shake(2, .12);
         if (this.idx === 0 && !this.meadowStory.helper) {
           this.meadowStory.helper = m; sfx('streak');
@@ -642,17 +685,16 @@ export class LevelScene extends Scene {
     } : null;
     const meadowSoil = this.L.biome === 'meadow' ? art('meadow.soil') : null;
     const meadowGrass = this.L.biome === 'meadow' ? art('meadow.grass') : null;
-    /* sky + parallax */
+    /* sky + parallax — authored plates first, then the procedural scenery
+       profile. The profile is a full biome identity (sun, haze, cloud bands,
+       noise-silhouette ridges), not the two rows of ellipses it replaces. */
+    const S9 = sceneryFor(this.L.biome);
     bg.clear();
     if (meadowFar) {
       bg.drawImage(meadowFar, 0, 0, W, H);
     } else {
-      bg.fillGradientStyle(this.col(B.skyTop), this.col(B.skyTop), this.col(B.skyMid), this.col(B.skyBot), 1);
-      bg.fillRect(0, 0, W, H);
-      bg.fillStyle(this.col(B.hillsFar), 1);
-      for (let hx = -1; hx < 6; hx++) { const bxx = hx * 260 - (this.cam * .2) % 260; bg.fillEllipse(bxx, H - 90, 340, 220); }
-      bg.fillStyle(this.col(B.hillsMid), 1);
-      for (let hx = -1; hx < 7; hx++) { const bxx = hx * 200 - (this.cam * .45) % 200; bg.fillEllipse(bxx, H - 40, 260, 170); }
+      drawSky(bg, S9, B, this.cam, W, H, this.t);
+      drawRidges(bg, S9, this.cam, W, H);
     }
     if (this.L.biome === 'meadow') drawMeadowMidground(bg, meadowMidground, this.cam, B, W, H);
     g.clear();
@@ -672,11 +714,8 @@ export class LevelScene extends Scene {
         g.fillRect(pl.x, pl.y + 24, pl.w, Math.max(0, pl.h - 24));
         g.drawTiledX(meadowGrass, pl.x, pl.y - 14, pl.w, 38, 202);
       } else {
-        g.fillStyle(this.col(B.soil), 1); g.fillRoundedRect(pl.x, pl.y, pl.w, pl.h, 8);
-        g.fillStyle(this.col(B.soilDark), 1); g.fillRect(pl.x + 4, pl.y + 22, pl.w - 8, Math.max(0, pl.h - 26));
-        g.fillStyle(this.col(B.grass), 1); g.fillRoundedRect(pl.x, pl.y, pl.w, 16, { tl: 8, tr: 8, bl: 0, br: 0 });
-        g.fillStyle(this.col(B.grassLight), 1);
-        for (let k = pl.x + 8; k < pl.x + pl.w - 8; k += 26) g.fillRect(k, pl.y + 2, 10, 4);
+        drawPlatformSurface(g, S9.surface, B, pl.x, pl.y, pl.w, pl.h);
+        drawGroundCover(g, S9.cover, B, pl.x, pl.y, pl.w, this.t, S9.rim);
       }
     }
     /* checkpoints: flags */
@@ -691,7 +730,7 @@ export class LevelScene extends Scene {
     if (this.idx === 0) this.drawMeadowStory(g);
     /* trees */
     for (const tr of this.L.trees) {
-      if (this.idx === 0 && tr.x > 2800) this.drawAncientOak(g, tr as any);
+      if (this.idx === 0 && tr.finale) this.drawAncientOak(g, tr as any);
       else this.drawTree(g, tr as any);
     }
     /* goal */
@@ -720,7 +759,11 @@ export class LevelScene extends Scene {
     this.drawPlayer(g);
     /* particles */
     for (const pt of this.particles) { g.fillStyle(pt.col, pt.alpha); g.fillCircle(pt.x, pt.y, pt.r); }
+    /* Ambient motes sit in front of gameplay but behind the fringe, so the
+       biome's air reads as depth rather than as UI. */
+    drawAmbient(foreground, S9, B, this.cam, W, H, this.t, this.reducedMotion);
     if (meadowForeground) drawMeadowForeground(foreground, meadowForeground, this.cam, this.L.w, B, W, H);
+    else drawFringe(foreground, S9.fringe, this.cam, this.L.w, W, H, this.t);
     if (this.meadowStory.restoring > 0) {
       const rp = Math.min(1, this.meadowStory.restoring / 2.5);
       foreground.fillStyle(0xffedb0, Math.sin(rp * Math.PI) * .18);
@@ -892,71 +935,57 @@ export class LevelScene extends Scene {
     }
   }
   private drawMonster(g: Graphics, m: MonsterRuntime): void {
-    const md = m as any, x = m.x, y = m.ground - md.h;
-    const body = m.state === 'happy' ? 0x70bd83 : m.state === 'blind' ? 0x9e9aaa : 0xb87977;
-    const face = md.face || -1, bob = m.state === 'happy' ? Math.sin(this.t * 7 + x) * 2 : 0;
-    g.fillStyle(0x173e35, .16); g.fillEllipse(x + md.w / 2, m.ground + 2, md.w * .9, 8);
-    const mossling = art('character.mossling');
-    if (mossling) {
-      const mh = md.h * 1.7, mw = mh * .75;
-      const mx = x + md.w / 2 - mw / 2, my = m.ground - mh + bob;
-      if (m.state === 'happy') {
-        g.fillStyle(0x9fe6a9, .22 + Math.sin(this.t * 4) * .06); g.fillCircle(x + md.w / 2, my + mh * .48, mw * .65);
-      }
-      if (face < 0) g.drawImageFlipX(mossling, mx, my, mw, mh, m.state === 'blind' ? .82 : 1);
-      else g.drawImage(mossling, mx, my, mw, mh, m.state === 'blind' ? .82 : 1);
-      if (m.state === 'blind') {
-        g.fillStyle(0xe8c27a, .95); g.fillRoundedRect(x + 1, my + mh * .34, md.w - 2, 8, 4);
-      } else if (m.state === 'happy') {
-        g.fillStyle(0xffd868, 1); g.fillCircle(x + md.w / 2, my - 5, 4 + Math.sin(this.t * 5) * .5);
-      }
-      if (m === this.healTarget && m.healT > 0) {
-        g.fillStyle(0xffd54a, .9); g.fillRect(x, my - 12, md.w * Math.min(1, m.healT / CONFIG.heal.HEAL_TIME), 5);
-        g.lineStyle(1, 0x8a6a1a, .8); g.strokeRect(x, my - 12, md.w, 5);
-      }
+    const md = m as any;
+    const species = speciesFor(this.L.biome, md.species);
+    const healProgress = m === this.healTarget && m.healT > 0
+      ? m.healT / CONFIG.heal.HEAL_TIME : 0;
+    /* Only the Meadow's Mossling has a painted sprite. Every other biome draws
+       its own silhouette — before this, that one Mossling was every creature in
+       the game, including in the crystal cave and on the Mediterranean coast. */
+    const sprite = species.art ? art(species.art) : null;
+    if (!sprite) {
+      drawCreature(g, species, {
+        x: m.x, ground: m.ground, w: md.w, h: md.h,
+        face: md.face || -1, state: m.state, t: this.t, healProgress,
+      });
       return;
     }
-    /* A round, nervous mossling—not an enemy block. Its silhouette reads from
-       across a phone screen, while ears, tail and posture carry its emotion. */
-    g.fillStyle(body, 1); g.fillRoundedRect(x, y + bob, md.w, md.h, 15);
-    g.fillTriangle(x + 8, y + 12 + bob, x + 13, y - 2 + bob, x + 19, y + 10 + bob);
-    g.fillTriangle(x + 23, y + 9 + bob, x + 31, y - 1 + bob, x + 34, y + 14 + bob);
-    g.fillStyle(m.state === 'happy' ? 0x9bd49d : 0xd69a91, 1);
-    g.fillCircle(x + 12, y + 7 + bob, 3.5); g.fillCircle(x + 29, y + 7 + bob, 3.5);
-    g.lineStyle(4, body, 1); g.beginPath(); g.moveTo(x + (face > 0 ? 35 : 5), y + 25 + bob); g.arc(x + (face > 0 ? 42 : -2), y + 22 + bob, 8, face > 0 ? .8 : -.2, face > 0 ? 5.2 : 4.2); g.strokePath();
-    if (m.state === 'blind') { g.fillStyle(0xe8c27a, 1); g.fillRoundedRect(x + 4, y + 10 + bob, md.w - 8, 9, 4); }
-    else {
-      g.fillStyle(0xffffff, 1); g.fillCircle(x + md.w * .32, y + 15 + bob, 5); g.fillCircle(x + md.w * .68, y + 15 + bob, 5);
-      g.fillStyle(0x33222a, 1);
-      const dx = face * 1.6;
-      g.fillCircle(x + md.w * .32 + dx, y + 15 + bob, 2.4); g.fillCircle(x + md.w * .68 + dx, y + 15 + bob, 2.4);
-    }
+    const x = m.x, face = md.face || -1;
+    const bob = m.state === 'happy' ? Math.sin(this.t * 7 + x) * 2 : 0;
+    const mh = md.h * 1.7, mw = mh * .75;
+    const mx = x + md.w / 2 - mw / 2, my = m.ground - mh + bob;
+    g.fillStyle(0x173e35, .16); g.fillEllipse(x + md.w / 2, m.ground + 2, md.w * .9, 8);
     if (m.state === 'happy') {
-      g.lineStyle(2.4, 0x2a4a33); g.beginPath(); g.arc(x + md.w / 2, y + 26 + bob, 7, .15 * Math.PI, .85 * Math.PI); g.strokePath();
-      g.fillStyle(0xffd868, 1); g.fillCircle(x + md.w / 2, y - 9 + bob, 4 + Math.sin(this.t * 5) * .5);
-    } else if (m.state === 'angry') {
-      g.lineStyle(2.4, 0x573b42); g.beginPath(); g.arc(x + md.w / 2, y + 31 + bob, 6, 1.15 * Math.PI, 1.85 * Math.PI); g.strokePath();
+      g.fillStyle(0x9fe6a9, .22 + Math.sin(this.t * 4) * .06);
+      g.fillCircle(x + md.w / 2, my + mh * .48, mw * .65);
     }
-    if (m === this.healTarget && m.healT > 0) {
-      g.fillStyle(0xffd54a, .9); g.fillRect(x, y - 12, md.w * Math.min(1, m.healT / CONFIG.heal.HEAL_TIME), 5);
-      g.lineStyle(1, 0x8a6a1a, .8); g.strokeRect(x, y - 12, md.w, 5);
+    if (face < 0) g.drawImageFlipX(sprite, mx, my, mw, mh, m.state === 'blind' ? .82 : 1);
+    else g.drawImage(sprite, mx, my, mw, mh, m.state === 'blind' ? .82 : 1);
+    if (m.state === 'blind') {
+      g.fillStyle(0xe8c27a, .95 - healProgress * .35);
+      g.fillRoundedRect(x + 1, my + mh * .34, md.w - 2, 8, 4);
+    } else if (m.state === 'happy') {
+      g.fillStyle(0xffd868, 1); g.fillCircle(x + md.w / 2, my - 5, 4 + Math.sin(this.t * 5) * .5);
+    }
+    if (healProgress > 0) {
+      g.fillStyle(0xffd54a, .9); g.fillRect(x, my - 12, md.w * Math.min(1, healProgress), 5);
+      g.lineStyle(1, 0x8a6a1a, .8); g.strokeRect(x, my - 12, md.w, 5);
     }
   }
   private drawBoss(g: Graphics, b: BossData): void {
     const sc = b.scale, w = b.w * sc, h = b.h * sc;
     const wob = b.shake > 0 ? Math.sin(this.t * 40) * 3 : 0;
     const x = b.x + wob, y = b.ground - h;
-    const body = b.state === 'blind' ? 0xb8b2c9 : b.kind === 'mimic' ? 0x5e8a52 : 0x9a5e8a;
-    g.fillStyle(body, 1); g.fillRoundedRect(x, y, w, h, 16);
-    if (b.kind === 'mimic') { /* leafy disguise tufts */
-      g.fillStyle(0x76b45e, 1);
-      for (let k = 0; k < 4; k++) g.fillCircle(x + w * (.2 + k * .2), y - 6 * sc, 9 * sc);
-    }
-    if (b.state === 'blind') { g.fillStyle(0xe8c27a, 1); g.fillRoundedRect(x + 8 * sc, y + 16 * sc, w - 16 * sc, 12 * sc, 5); }
-    else {
-      g.fillStyle(0xffffff, 1); g.fillCircle(x + w * .3, y + 24 * sc, 8 * sc); g.fillCircle(x + w * .7, y + 24 * sc, 8 * sc);
-      g.fillStyle(0x2a1420, 1); g.fillCircle(x + w * .3 + b.face * 2, y + 24 * sc, 3.6 * sc); g.fillCircle(x + w * .7 + b.face * 2, y + 24 * sc, 3.6 * sc);
-      if (b.tel > 0) { g.lineStyle(3, 0xffcc3a, .9); g.strokeCircle(x + w / 2, y + h / 2, w * .62); }
+    /* Each archetype has its own silhouette. Before this, every boss in the
+       game — including the last one — was a rounded rectangle with two dots. */
+    drawBossCreature(g, b.kind === 'mimic' ? 'mimic' : 'thrower', {
+      x, ground: b.ground, w, h, face: b.face, t: this.t, state: b.state,
+      calm: 1 - Math.max(0, Math.min(1, b.hp / 3)),
+    });
+    /* Telegraph ring stays outside the silhouette so it reads on any form. */
+    if (b.state === 'idle' && b.tel > 0) {
+      g.lineStyle(3, 0xffcc3a, .9);
+      g.strokeCircle(x + w / 2, b.ground - h * .6, w * .78);
     }
     if (b.state === 'caged' && b.finisher === 'cage') {
       g.lineStyle(3, 0x5fc77f, .95);
@@ -964,8 +993,24 @@ export class LevelScene extends Scene {
       g.strokeRect(x - 6, y - 10, w + 12, h + 14);
     }
     if (b.state === 'defeated') { g.fillStyle(0xffe6a0, .8); g.fillCircle(x + w / 2, y + h / 2, w * (.5 + Math.sin(this.t * 6) * .06)); }
-    /* hp pips */
-    for (let k = 0; k < 3; k++) { g.fillStyle(k < b.hp ? 0xff6b8a : 0x3a2a35, 1); g.fillCircle(x + w / 2 - 20 + k * 20, y - 18, 6); }
+    /* Calm meter. This used to be three pink "hp" pips drawn at y-18, which
+       landed squarely on the boss's face once bosses had faces — and read as a
+       damage bar in a game where nothing is ever damaged. It now sits clear
+       above the silhouette and FILLS as the creature calms: gold hearts for
+       the calm already given, hollow ones for what is left. */
+    const meterY = b.ground - h * 1.45;
+    const calmed = 3 - Math.max(0, Math.min(3, b.hp));
+    for (let k = 0; k < 3; k++) {
+      const mx = x + w / 2 - 22 + k * 22;
+      if (k < calmed) {
+        g.fillStyle(0xffd76b, 1);
+        g.fillCircle(mx - 3.4, meterY - 1.6, 3.4); g.fillCircle(mx + 3.4, meterY - 1.6, 3.4);
+        g.fillTriangle(mx - 6.8, meterY - .8, mx + 6.8, meterY - .8, mx, meterY + 7.4);
+      } else {
+        g.lineStyle(2, 0xfff4c7, .55);
+        g.strokeCircle(mx, meterY + 1, 5.5);
+      }
+    }
   }
   private drawTree(g: Graphics, tr: { id: string; x: number; y: number; awake?: boolean }): void {
     const info = TREES[tr.id]; const crown = info?.crown || 'broad';
