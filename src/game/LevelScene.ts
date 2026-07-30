@@ -19,6 +19,8 @@ import { art } from './assets';
 import { drawMeadowForeground, drawMeadowMidground } from './meadowEnvironment';
 import { sceneryFor } from '../core/scenery';
 import { drawSky, drawRidges, drawPlatformSurface, drawGroundCover, drawFringe, drawAmbient } from './environment';
+import { speciesFor } from '../core/creatures';
+import { drawCreature } from './creatureArt';
 import { S } from '../core/i18n';
 
 const { GRAV, MOVE, ACCEL, FRICTION, JUMP_V, JUMP_CUT, MAX_FALL, BOUNCE, COYOTE, JBUF } = CONFIG.physics;
@@ -898,54 +900,41 @@ export class LevelScene extends Scene {
     }
   }
   private drawMonster(g: Graphics, m: MonsterRuntime): void {
-    const md = m as any, x = m.x, y = m.ground - md.h;
-    const body = m.state === 'happy' ? 0x70bd83 : m.state === 'blind' ? 0x9e9aaa : 0xb87977;
-    const face = md.face || -1, bob = m.state === 'happy' ? Math.sin(this.t * 7 + x) * 2 : 0;
-    g.fillStyle(0x173e35, .16); g.fillEllipse(x + md.w / 2, m.ground + 2, md.w * .9, 8);
-    const mossling = art('character.mossling');
-    if (mossling) {
-      const mh = md.h * 1.7, mw = mh * .75;
-      const mx = x + md.w / 2 - mw / 2, my = m.ground - mh + bob;
-      if (m.state === 'happy') {
-        g.fillStyle(0x9fe6a9, .22 + Math.sin(this.t * 4) * .06); g.fillCircle(x + md.w / 2, my + mh * .48, mw * .65);
-      }
-      if (face < 0) g.drawImageFlipX(mossling, mx, my, mw, mh, m.state === 'blind' ? .82 : 1);
-      else g.drawImage(mossling, mx, my, mw, mh, m.state === 'blind' ? .82 : 1);
-      if (m.state === 'blind') {
-        g.fillStyle(0xe8c27a, .95); g.fillRoundedRect(x + 1, my + mh * .34, md.w - 2, 8, 4);
-      } else if (m.state === 'happy') {
-        g.fillStyle(0xffd868, 1); g.fillCircle(x + md.w / 2, my - 5, 4 + Math.sin(this.t * 5) * .5);
-      }
-      if (m === this.healTarget && m.healT > 0) {
-        g.fillStyle(0xffd54a, .9); g.fillRect(x, my - 12, md.w * Math.min(1, m.healT / CONFIG.heal.HEAL_TIME), 5);
-        g.lineStyle(1, 0x8a6a1a, .8); g.strokeRect(x, my - 12, md.w, 5);
-      }
+    const md = m as any;
+    const species = speciesFor(this.L.biome, md.species);
+    const healProgress = m === this.healTarget && m.healT > 0
+      ? m.healT / CONFIG.heal.HEAL_TIME : 0;
+    /* Only the Meadow's Mossling has a painted sprite. Every other biome draws
+       its own silhouette — before this, that one Mossling was every creature in
+       the game, including in the crystal cave and on the Mediterranean coast. */
+    const sprite = species.art ? art(species.art) : null;
+    if (!sprite) {
+      drawCreature(g, species, {
+        x: m.x, ground: m.ground, w: md.w, h: md.h,
+        face: md.face || -1, state: m.state, t: this.t, healProgress,
+      });
       return;
     }
-    /* A round, nervous mossling—not an enemy block. Its silhouette reads from
-       across a phone screen, while ears, tail and posture carry its emotion. */
-    g.fillStyle(body, 1); g.fillRoundedRect(x, y + bob, md.w, md.h, 15);
-    g.fillTriangle(x + 8, y + 12 + bob, x + 13, y - 2 + bob, x + 19, y + 10 + bob);
-    g.fillTriangle(x + 23, y + 9 + bob, x + 31, y - 1 + bob, x + 34, y + 14 + bob);
-    g.fillStyle(m.state === 'happy' ? 0x9bd49d : 0xd69a91, 1);
-    g.fillCircle(x + 12, y + 7 + bob, 3.5); g.fillCircle(x + 29, y + 7 + bob, 3.5);
-    g.lineStyle(4, body, 1); g.beginPath(); g.moveTo(x + (face > 0 ? 35 : 5), y + 25 + bob); g.arc(x + (face > 0 ? 42 : -2), y + 22 + bob, 8, face > 0 ? .8 : -.2, face > 0 ? 5.2 : 4.2); g.strokePath();
-    if (m.state === 'blind') { g.fillStyle(0xe8c27a, 1); g.fillRoundedRect(x + 4, y + 10 + bob, md.w - 8, 9, 4); }
-    else {
-      g.fillStyle(0xffffff, 1); g.fillCircle(x + md.w * .32, y + 15 + bob, 5); g.fillCircle(x + md.w * .68, y + 15 + bob, 5);
-      g.fillStyle(0x33222a, 1);
-      const dx = face * 1.6;
-      g.fillCircle(x + md.w * .32 + dx, y + 15 + bob, 2.4); g.fillCircle(x + md.w * .68 + dx, y + 15 + bob, 2.4);
-    }
+    const x = m.x, face = md.face || -1;
+    const bob = m.state === 'happy' ? Math.sin(this.t * 7 + x) * 2 : 0;
+    const mh = md.h * 1.7, mw = mh * .75;
+    const mx = x + md.w / 2 - mw / 2, my = m.ground - mh + bob;
+    g.fillStyle(0x173e35, .16); g.fillEllipse(x + md.w / 2, m.ground + 2, md.w * .9, 8);
     if (m.state === 'happy') {
-      g.lineStyle(2.4, 0x2a4a33); g.beginPath(); g.arc(x + md.w / 2, y + 26 + bob, 7, .15 * Math.PI, .85 * Math.PI); g.strokePath();
-      g.fillStyle(0xffd868, 1); g.fillCircle(x + md.w / 2, y - 9 + bob, 4 + Math.sin(this.t * 5) * .5);
-    } else if (m.state === 'angry') {
-      g.lineStyle(2.4, 0x573b42); g.beginPath(); g.arc(x + md.w / 2, y + 31 + bob, 6, 1.15 * Math.PI, 1.85 * Math.PI); g.strokePath();
+      g.fillStyle(0x9fe6a9, .22 + Math.sin(this.t * 4) * .06);
+      g.fillCircle(x + md.w / 2, my + mh * .48, mw * .65);
     }
-    if (m === this.healTarget && m.healT > 0) {
-      g.fillStyle(0xffd54a, .9); g.fillRect(x, y - 12, md.w * Math.min(1, m.healT / CONFIG.heal.HEAL_TIME), 5);
-      g.lineStyle(1, 0x8a6a1a, .8); g.strokeRect(x, y - 12, md.w, 5);
+    if (face < 0) g.drawImageFlipX(sprite, mx, my, mw, mh, m.state === 'blind' ? .82 : 1);
+    else g.drawImage(sprite, mx, my, mw, mh, m.state === 'blind' ? .82 : 1);
+    if (m.state === 'blind') {
+      g.fillStyle(0xe8c27a, .95 - healProgress * .35);
+      g.fillRoundedRect(x + 1, my + mh * .34, md.w - 2, 8, 4);
+    } else if (m.state === 'happy') {
+      g.fillStyle(0xffd868, 1); g.fillCircle(x + md.w / 2, my - 5, 4 + Math.sin(this.t * 5) * .5);
+    }
+    if (healProgress > 0) {
+      g.fillStyle(0xffd54a, .9); g.fillRect(x, my - 12, md.w * Math.min(1, healProgress), 5);
+      g.lineStyle(1, 0x8a6a1a, .8); g.strokeRect(x, my - 12, md.w, 5);
     }
   }
   private drawBoss(g: Graphics, b: BossData): void {
