@@ -21,6 +21,7 @@ import { sceneryFor } from '../core/scenery';
 import { drawSky, drawRidges, drawPlatformSurface, drawGroundCover, drawFringe, drawAmbient } from './environment';
 import { speciesFor } from '../core/creatures';
 import { drawCreature } from './creatureArt';
+import { drawBossCreature } from './bossArt';
 import { S } from '../core/i18n';
 
 const { GRAV, MOVE, ACCEL, FRICTION, JUMP_V, JUMP_CUT, MAX_FALL, BOUNCE, COYOTE, JBUF } = CONFIG.physics;
@@ -941,17 +942,16 @@ export class LevelScene extends Scene {
     const sc = b.scale, w = b.w * sc, h = b.h * sc;
     const wob = b.shake > 0 ? Math.sin(this.t * 40) * 3 : 0;
     const x = b.x + wob, y = b.ground - h;
-    const body = b.state === 'blind' ? 0xb8b2c9 : b.kind === 'mimic' ? 0x5e8a52 : 0x9a5e8a;
-    g.fillStyle(body, 1); g.fillRoundedRect(x, y, w, h, 16);
-    if (b.kind === 'mimic') { /* leafy disguise tufts */
-      g.fillStyle(0x76b45e, 1);
-      for (let k = 0; k < 4; k++) g.fillCircle(x + w * (.2 + k * .2), y - 6 * sc, 9 * sc);
-    }
-    if (b.state === 'blind') { g.fillStyle(0xe8c27a, 1); g.fillRoundedRect(x + 8 * sc, y + 16 * sc, w - 16 * sc, 12 * sc, 5); }
-    else {
-      g.fillStyle(0xffffff, 1); g.fillCircle(x + w * .3, y + 24 * sc, 8 * sc); g.fillCircle(x + w * .7, y + 24 * sc, 8 * sc);
-      g.fillStyle(0x2a1420, 1); g.fillCircle(x + w * .3 + b.face * 2, y + 24 * sc, 3.6 * sc); g.fillCircle(x + w * .7 + b.face * 2, y + 24 * sc, 3.6 * sc);
-      if (b.tel > 0) { g.lineStyle(3, 0xffcc3a, .9); g.strokeCircle(x + w / 2, y + h / 2, w * .62); }
+    /* Each archetype has its own silhouette. Before this, every boss in the
+       game — including the last one — was a rounded rectangle with two dots. */
+    drawBossCreature(g, b.kind === 'mimic' ? 'mimic' : 'thrower', {
+      x, ground: b.ground, w, h, face: b.face, t: this.t, state: b.state,
+      calm: 1 - Math.max(0, Math.min(1, b.hp / 3)),
+    });
+    /* Telegraph ring stays outside the silhouette so it reads on any form. */
+    if (b.state === 'idle' && b.tel > 0) {
+      g.lineStyle(3, 0xffcc3a, .9);
+      g.strokeCircle(x + w / 2, b.ground - h * .6, w * .78);
     }
     if (b.state === 'caged' && b.finisher === 'cage') {
       g.lineStyle(3, 0x5fc77f, .95);
@@ -959,8 +959,24 @@ export class LevelScene extends Scene {
       g.strokeRect(x - 6, y - 10, w + 12, h + 14);
     }
     if (b.state === 'defeated') { g.fillStyle(0xffe6a0, .8); g.fillCircle(x + w / 2, y + h / 2, w * (.5 + Math.sin(this.t * 6) * .06)); }
-    /* hp pips */
-    for (let k = 0; k < 3; k++) { g.fillStyle(k < b.hp ? 0xff6b8a : 0x3a2a35, 1); g.fillCircle(x + w / 2 - 20 + k * 20, y - 18, 6); }
+    /* Calm meter. This used to be three pink "hp" pips drawn at y-18, which
+       landed squarely on the boss's face once bosses had faces — and read as a
+       damage bar in a game where nothing is ever damaged. It now sits clear
+       above the silhouette and FILLS as the creature calms: gold hearts for
+       the calm already given, hollow ones for what is left. */
+    const meterY = b.ground - h * 1.45;
+    const calmed = 3 - Math.max(0, Math.min(3, b.hp));
+    for (let k = 0; k < 3; k++) {
+      const mx = x + w / 2 - 22 + k * 22;
+      if (k < calmed) {
+        g.fillStyle(0xffd76b, 1);
+        g.fillCircle(mx - 3.4, meterY - 1.6, 3.4); g.fillCircle(mx + 3.4, meterY - 1.6, 3.4);
+        g.fillTriangle(mx - 6.8, meterY - .8, mx + 6.8, meterY - .8, mx, meterY + 7.4);
+      } else {
+        g.lineStyle(2, 0xfff4c7, .55);
+        g.strokeCircle(mx, meterY + 1, 5.5);
+      }
+    }
   }
   private drawTree(g: Graphics, tr: { id: string; x: number; y: number; awake?: boolean }): void {
     const info = TREES[tr.id]; const crown = info?.crown || 'broad';
